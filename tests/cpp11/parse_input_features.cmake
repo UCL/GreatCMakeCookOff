@@ -8,7 +8,7 @@ include(${cookoff_path}/CheckCXX11Features.cmake)
 set(ALL_FEATURES "first;second;third")
 
 # No input OPTIONALS == ALL_FEATURES
-parse_input_features("${ALL_FEATURES}" OPTIONALS ERRORS REQUIRED "")
+parse_input_features("${ALL_FEATURES}" OPTIONALS REQUIRED ERRORS "")
 if(NOT "${OPTIONALS}" STREQUAL "${ALL_FEATURES}")
   message(FATAL_ERROR "OPTIONALS results should contain everything.") 
 endif(NOT "${OPTIONALS}" STREQUAL "${ALL_FEATURES}")
@@ -20,7 +20,7 @@ if(NOT "${ERRORS}" STREQUAL "")
 endif(NOT "${ERRORS}" STREQUAL "")
 
 # Single input without REQUIRED
-parse_input_features("${ALL_FEATURES}" OPTIONALS ERRORS REQUIRED "second")
+parse_input_features("${ALL_FEATURES}" OPTIONALS REQUIRED ERRORS "second")
 if(NOT "${OPTIONALS}" STREQUAL "second")
   message(FATAL_ERROR "OPTIONALS results should second.") 
 endif()
@@ -32,7 +32,7 @@ if(NOT "${ERRORS}" STREQUAL "")
 endif()
 
 # Single error input without REQUIRED
-parse_input_features("${ALL_FEATURES}" OPTIONALS ERRORS REQUIRED "none")
+parse_input_features("${ALL_FEATURES}" OPTIONALS REQUIRED ERRORS "none")
 if(NOT "${OPTIONALS}" STREQUAL "")
   message(FATAL_ERROR "OPTIONALS results should be empty.") 
 endif()
@@ -44,10 +44,7 @@ if(NOT "${ERRORS}" STREQUAL "none")
 endif()
 
 # Single valid input with REQUIRED
-parse_input_features("${ALL_FEATURES}" OPTIONALS ERRORS REQUIRED REQUIRED first)
-message(STATUS "[OPTIONS] ${OPTIONALS}")
-message(STATUS "[REQUIRED] ${REQUIRED}")
-message(STATUS "[ERRORS] ${ERRORS}")
+parse_input_features("${ALL_FEATURES}" OPTIONALS REQUIRED ERRORS REQUIRED first)
 if(NOT "${OPTIONALS}" STREQUAL "")
   message(FATAL_ERROR "OPTIONALS results should be empty.") 
 endif()
@@ -59,7 +56,7 @@ if(NOT "${ERRORS}" STREQUAL "")
 endif()
 
 # one of each
-parse_input_features("${ALL_FEATURES}" OPTIONALS ERRORS REQUIRED second third REQUIRED first none)
+parse_input_features("${ALL_FEATURES}" OPTIONALS REQUIRED ERRORS second third REQUIRED first none)
 if(NOT "${OPTIONALS}" STREQUAL "second;third")
   message(FATAL_ERROR "OPTIONALS results should be second;optional.") 
 endif()

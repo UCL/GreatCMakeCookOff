@@ -17,7 +17,8 @@
 # Further Modifications by RSDT@UCL
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 
-set(CPP11_FEATURE_CHECK_DIR ${CMAKE_CURRENT_LIST_DIR}/cpp11)
+set(CPP11_FEATURE_CHECK_DIR ${CMAKE_CURRENT_LIST_DIR}/cpp11
+    CACHE INTERNAL "c++11 file directory")
 
 MACRO(cxx11_check_single_feature FEATURE_NAME FEATURE_NUMBER RESULT_VAR)
 	IF (NOT DEFINED ${RESULT_VAR})
@@ -83,9 +84,12 @@ function(cxx11_find_all_features outvar)
   set(OUTPUT_VARIABLES)
   foreach(filename ${ALL_CPP11_FEATURE_FILES})
     get_filename_component(filename ${filename} NAME_WE)
+    string(REGEX REPLACE "_fail_compile" "" filename "${filename}")
+    string(REGEX REPLACE "_fail" "" filename "${filename}")
     string(REGEX REPLACE "-N[0-9]*" "" filename "${filename}")
     set(OUTPUT_VARIABLES ${OUTPUT_VARIABLES} ${filename})
   endforeach()
+  list(REMOVE_DUPLICATES OUTPUT_VARIABLES)
   set(${outvar} ${OUTPUT_VARIABLES} PARENT_SCOPE)
 endfunction()
 
@@ -93,7 +97,7 @@ endfunction()
 # Arguments before REQUIRED are OPTIONALS.
 # Arguments after REQUIRED are REQUIRED.
 # If no arguments, then sets output OPTIONALS to ALLFEATURES.
-function(parse_input_features ALLFEATURES OPTIONALS ERRORS REQUIRED)
+function(parse_input_features ALLFEATURES OPTIONALS REQUIRED ERRORS)
 
   if("${ARGN}" STREQUAL "")
     set(${OPTIONALS} ${ALLFEATURES} PARENT_SCOPE)
@@ -109,7 +113,7 @@ function(parse_input_features ALLFEATURES OPTIONALS ERRORS REQUIRED)
       else()
         list(FIND ALLFEATURES ${feature} feature_was_found)
 
-        if(feature_was_found EQUAL "-1")
+        if(feature_was_found EQUAL -1)
           list(APPEND UNKNOWN_FEATURES ${feature})
         else()
           list(APPEND ${result_type} ${feature})
@@ -124,39 +128,70 @@ function(parse_input_features ALLFEATURES OPTIONALS ERRORS REQUIRED)
   endif("${ARGN}" STREQUAL "")
 endfunction(parse_input_features)
 
+# Figures out name and number of feature
+# then calls macro that does the work
+macro(_figure_out_cxx11_feature current_feature)
+  # Find set of files that match current_feature, excepting _fail and _fail_compile.
+  file(GLOB ALL_FEATURE_FILES "${CPP11_FEATURE_CHECK_DIR}/${current_feature}*.cpp")
+  foreach(filename ${ALL_FEATURE_FILES})
+    if(filename MATCHES "_fail")
+      list(REMOVE_ITEM ALL_FEATURE_FILES ${filename})
+    endif()
+  endforeach()
+  
+  list(LENGTH ALL_FEATURE_FILES NFILES)
+  if(NOT ${NFILES} EQUAL 1)
+    message(FATAL_ERROR "[c++11] Expected to find only one feature. Found ${NFILES} -- ${ALL_FEATURE_FILES}.")
+  endif(NOT ${NFILES} EQUAL 1)
+  
+  # Now we know which file corresponds to option.
+  get_filename_component(basename ${ALL_FEATURE_FILES} NAME_WE)
+  # If has feature number, extract it
+  set(number "")
+  if(basename MATCHES "-N[0-9]*$")
+    string(REGEX REPLACE "${current_feature}-N" "" number "${basename}")
+  endif()
+  # Then call macro
+  string(TOUPPER ${current_feature} UPPER_OPTIONAL)
+  set(VARNAME HAS_CXX11_${UPPER_OPTIONAL})
+  cxx11_check_single_feature(${current_feature} "${number}" ${VARNAME})
+endmacro(_figure_out_cxx11_feature)
 
 function(cxx11_feature_check)
 
   # find all features
   cxx11_find_all_features(ALL_CPP11_FEATURES)
 
+  # Parses input to this function.
+  parse_input_features("${ALL_CPP11_FEATURES}" OPTIONALS REQUIRED ERRORS ${ARGN})
+  if(NOT ${ERRORS} STREQUAL "")
+    message(STATUS "[c++11] The following features are unknown: ${ERRORS}.")
+  endif()
 
+  # MinGW has not implemented std::random_device fully yet. Unfortunately, this can only be detected
+  # by running a program which tries to call std::random_device. However that generates an error that
+  # is *not* caught by CMake's try_run. 
+  if(MSYS)
+    list(REMOVE_ITEM OPTIONALS "random_device")
+    list(FIND REQUIRED "random_device" feature_was_found)
+    if(NOT feature_was_found EQUAL "-1")
+      message(FATAL_ERROR "[c++1] MSYS does not implement Random devices fully.\n"
+                          "       It cannot be required on this system.")
+    endif()
+  endif()
+
+  # Check optional features
+  foreach(current_feature ${OPTIONALS})
+    _figure_out_cxx11_feature(${current_feature})
+  endforeach(current_feature ${ARGN})
+
+  # Check required features
+  foreach(current_feature ${REQUIRED})
+    _figure_out_cxx11_feature(${current_feature})
+    set(VARNAME HAS_CXX11_${UPPER_OPTIONAL})
+    if(NOT ${VARNAME})
+      message(FATAL_ERROR "[c++11] Required feature ${current_feature} is not available.")
+    endif(NOT ${VARNAME})
+  endforeach(current_feature ${REQUIRED})
 
 endfunction(cxx11_feature_check)
-
-
-# CXX11_CHECK_FEATURE("auto"                  2546 HAS_CXX11_AUTO)
-# CXX11_CHECK_FEATURE("lambda"                2927 HAS_CXX11_LAMBDA)
-# CXX11_CHECK_FEATURE("static_assert"         1720 HAS_CXX11_STATIC_ASSERT)
-# CXX11_CHECK_FEATURE("rvalue_references"     2118 HAS_CXX11_RVALUE_REFERENCES)
-# CXX11_CHECK_FEATURE("decltype"              2343 HAS_CXX11_DECLTYPE)
-# CXX11_CHECK_FEATURE("type_traits"           ""   HAS_CXX11_TYPETRAITS)
-# CXX11_CHECK_FEATURE("trivial_type_traits"   ""   HAS_CXX11_TRIVIALTYPETRAITS)
-# CXX11_CHECK_FEATURE("noexcept"              ""   HAS_CXX11_NOEXCEPT)
-# CXX11_CHECK_FEATURE("constexpr"             2235 HAS_CXX11_CONSTEXPR)
-# CXX11_CHECK_FEATURE("unique_ptr"            ""   HAS_CXX11_UNIQUE_PTR)
-# CXX11_CHECK_FEATURE("shared_ptr"            ""   HAS_CXX11_SHARED_PTR)
-# CXX11_CHECK_FEATURE("constructor_delegate"  ""   HAS_CXX11_CONSTRUCTOR_DELEGATE)
-# CXX11_CHECK_FEATURE("initialization"        ""   HAS_CXX11_UNIQUE_INITIALIZATION)
-# # MinGW has not implemented std::random_device fully yet. Unfortunately, this can only be detected
-# # by running a program which tries to call std::random_device. However that generates an error that
-# # is *not* caught by CMake's try_run. 
-# if(NOT MSYS)
-#   CXX11_CHECK_FEATURE("random_device"       ""   HAS_CXX11_RANDOM_DEVICE)
-# endif(NOT MSYS)
-# CXX11_CHECK_FEATURE("nullptr"            2431 HAS_CXX11_NULLPTR)
-# CXX11_CHECK_FEATURE("cstdint"            ""   HAS_CXX11_CSTDINT_H)
-# CXX11_CHECK_FEATURE("long_long"          1811 HAS_CXX11_LONG_LONG)
-# CXX11_CHECK_FEATURE("variadic_templates" 2555 HAS_CXX11_VARIADIC_TEMPLATES)
-# CXX11_CHECK_FEATURE("sizeof_member"      2253 HAS_CXX11_SIZEOF_MEMBER)
-# CXX11_CHECK_FEATURE("__func__"           2340 HAS_CXX11_FUNC)
