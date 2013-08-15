@@ -1,11 +1,9 @@
 function(cmake_test testname)
 
   # Parse further arguments
-  foreach(argument ${ARGN})
-    if(${argument} STREQUAL SOURCE)
+  if(${ARGN} MATCHES SOURCE)
       set(SOURCE True)
-    endif(SOURCE)
-  endforeach()
+  endif()
 
   # set source and build dir.
   set(FAKE_PROJECT_DIR ${CMAKE_CURRENT_BINARY_DIR}/${testname})

@@ -6,5 +6,6 @@ enable_testing()
 include(${PROJECT_SOURCE_DIR}/../TestCMake.cmake)
 
 cmake_test(checkisnan SOURCE)
+cmake_test(checkcpp11flags)
 
 add_subdirectory(cpp11)

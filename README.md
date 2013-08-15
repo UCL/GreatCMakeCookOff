@@ -24,8 +24,11 @@ set(EXTERNAL_ROOT ${PROJECT_BINARY_DIR}/external)
 find_package(Eigen)
 ```
 
-Check c++11 feature sets
-========================
+C++11
+=====
+
+Checking for specific features
+------------------------------
 
 Look for some c++11 features. Uses a script modified from [here](http://pageant.ghulbus.eu/?p=664).
 Usage is given below.
@@ -57,6 +60,22 @@ cxx11_feature_check(auto lambda REQUIRED long_long share_ptr variadic_templates)
 The previous statement will fail if ``long long``, ``std::shared_ptr<...>``, and variadic templates
 are not available. It will also check for the availability of ``auto`` and ``lambda``, but without
 failing.
+
+Figuring out flags for some compilers
+-------------------------------------
+
+The script checks the existence of a few flags to enable c++11 features on different compilers.
+The output is somewhat verbose, but it seems to do the job for gcc, darwin-gcc, and microsoft visual
+studio. In addition, the intel compilers have to be told to use an external c++11 standard library.
+This script cannot figure where this library would be (hint: g++ provides it), so that is left up to
+the user. The script can be activated with a one liner.
+
+```cmake
+include("path/to/cookoff/AddCPP11Flags.cmake")
+```
+
+**NOTE:** On windows + visual studio, disables warnings 4251 and ups fake variadic templates to 10.
+
 
 Figure out ``isnan``
 ====================
