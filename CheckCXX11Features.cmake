@@ -1,16 +1,18 @@
 # Checks for C++11 features
-#  HAS_CXX11_AUTO               - auto keyword
-#  HAS_CXX11_NULLPTR            - nullptr
-#  HAS_CXX11_LAMBDA             - lambdas
-#  HAS_CXX11_STATIC_ASSERT      - static_assert()
-#  HAS_CXX11_RVALUE_REFERENCES  - rvalue references
-#  HAS_CXX11_DECLTYPE           - decltype keyword
-#  HAS_CXX11_CSTDINT_H          - cstdint header
-#  HAS_CXX11_LONG_LONG          - long long signed & unsigned types
-#  HAS_CXX11_VARIADIC_TEMPLATES - variadic templates
-#  HAS_CXX11_CONSTEXPR          - constexpr keyword
-#  HAS_CXX11_SIZEOF_MEMBER      - sizeof() non-static members
-#  HAS_CXX11_FUNC               - __func__ preprocessor constant
+# 
+# USAGE: There are two functions
+#
+# cxx11_find_all_features(OUTPUT_VARIABLE) 
+# This function returns a variable with all possible features.
+#
+# cxx11_feature_check([feature feature] [REQUIRED [feature feature]])
+# If no arguments are provided, then checks all available features
+# Features appeacing before REQUIRED are optional.
+# If arguments are provided and those features are available, sets 
+# the variable HAS_CXX11_FEATURENAME, where FEATURENAME is the input in capital letters.
+# Fails if required feature are not available
+#
+# For possible features, please print out the result from the first function.
 #
 # Original script by Rolf Eike Beer
 # Modifications by Andreas Weis
