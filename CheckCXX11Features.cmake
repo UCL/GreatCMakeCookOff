@@ -89,44 +89,48 @@ function(cxx11_find_all_features outvar)
   set(${outvar} ${OUTPUT_VARIABLES} PARENT_SCOPE)
 endfunction()
 
+# Parses input and separates into arguments before REQUIRED and after REQUIRED.
+# Arguments before REQUIRED are OPTIONALS.
+# Arguments after REQUIRED are REQUIRED.
+# If no arguments, then sets output OPTIONALS to ALLFEATURES.
+function(parse_input_features ALLFEATURES OPTIONALS ERRORS REQUIRED)
+
+  if("${ARGN}" STREQUAL "")
+    set(${OPTIONALS} ${ALLFEATURES} PARENT_SCOPE)
+    set(${REQUIRED} "" PARENT_SCOPE)
+  else()
+    set(REQUIRED_FEATURES)
+    set(OPTIONAL_FEATURES)
+    set(UNKNOWN_FEATURES)
+    set(result_type OPTIONAL_FEATURES)
+    foreach(feature ${ARGN})
+      if(${feature} STREQUAL "REQUIRED")
+        set(result_type REQUIRED_FEATURES)
+      else()
+        list(FIND ALLFEATURES ${feature} feature_was_found)
+
+        if(feature_was_found EQUAL "-1")
+          list(APPEND UNKNOWN_FEATURES ${feature})
+        else()
+          list(APPEND ${result_type} ${feature})
+        endif()
+
+      endif(${feature} STREQUAL "REQUIRED")
+    endforeach()
+
+    set(${OPTIONALS} ${OPTIONAL_FEATURES} PARENT_SCOPE)
+    set(${REQUIRED} ${REQUIRED_FEATURES} PARENT_SCOPE)
+    set(${ERRORS} ${UNKNOWN_FEATURES} PARENT_SCOPE)
+  endif("${ARGN}" STREQUAL "")
+endfunction(parse_input_features)
+
+
 function(cxx11_feature_check)
 
   # find all features
   cxx11_find_all_features(ALL_CPP11_FEATURES)
 
-  if("${ARGN}" STREQUAL "")
-    set(OPTIONAL_FEATURES ${ALL_CPP11_FEATURES})
-    set(REQUIRED_FEATURES)
-  else()
-    list(FIND ${ARGN} "REQUIRED" REQUIRED_INDEX)
-    if(${REQUIRED_INDEX} EQUAL -1)
-      set(OPTIONAL_FEATURES ${ARGN})
-      set(REQUIRED_FEATURES)
-    else()
-      set(OPTIONAL_FEATURES)
-      foreach(feature_index RANGE 0 ${REQUIRED_INDEX})
-        list(GET ${ARGN} ${feature_index} feature)
-        list(FIND ${feature} ${ALL_CPP11_FEATURES} feature_was_found)
-        if(${feature_was_found} EQUAL -1)
-          message(FATAL_ERROR "[c++11] Requested feature ${feature} does not exist.")
-        endif(${feature_was_found} EQUAL -1)
-        list(APPEND OPTIONAL_FEATURES ${feature})
-      endforeach()
 
-      set(REQUIRED_FEATURES)
-      list(LENGTH ${ARGN} arglength)
-      foreach(feature_index RANGE ${REQUIRED_INDEX} ${arglength})
-        list(GET ${ARGN} ${feature_index} feature)
-        list(FIND ${feature} ${ALL_CPP11_FEATURES} feature_was_found)
-        if(${feature_was_found} EQUAL -1)
-          message(FATAL_ERROR "[c++11] Requested feature ${feature} does not exist.")
-        endif(${feature_was_found} EQUAL -1)
-        list(APPEND OPTIONAL_FEATURES ${feature})
-      endforeach()
-    endif()
-  endif("${ARGN}" STREQUAL "")
-
-  message(FATAL_ERROR "OPTIONALS: ${OPTIONAL_FEATURES}")
 
 endfunction(cxx11_feature_check)
 
