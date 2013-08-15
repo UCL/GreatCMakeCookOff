@@ -1,5 +1,4 @@
 # Checks for C++11 features
-#  CXX11_FEATURE_LIST - a list containing all supported features
 #  HAS_CXX11_AUTO               - auto keyword
 #  HAS_CXX11_NULLPTR            - nullptr
 #  HAS_CXX11_LAMBDA             - lambdas
@@ -18,15 +17,17 @@
 # Further Modifications by RSDT@UCL
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 
+set(CPP11_FEATURE_CHECK_DIR ${CMAKE_CURRENT_LIST_DIR}/cpp11)
+
 MACRO(cxx11_check_single_feature FEATURE_NAME FEATURE_NUMBER RESULT_VAR)
 	IF (NOT DEFINED ${RESULT_VAR})
     SET(_bindir "${CMAKE_BINARY_DIR}/cxx11_feature_tests/cxx11_${FEATURE_NAME}")
 
 		IF (${FEATURE_NUMBER})
-			SET(_SRCFILE_BASE ${CMAKE_CURRENT_LIST_DIR}/cpp11/${FEATURE_NAME}-N${FEATURE_NUMBER})
+      SET(_SRCFILE_BASE ${CPP11_FEATURE_CHECK_DIR}/${FEATURE_NAME}-N${FEATURE_NUMBER})
 			SET(_LOG_NAME "\"${FEATURE_NAME}\" (N${FEATURE_NUMBER})")
 		ELSE (${FEATURE_NUMBER})
-			SET(_SRCFILE_BASE ${CMAKE_CURRENT_LIST_DIR}/cpp11/${FEATURE_NAME})
+      SET(_SRCFILE_BASE ${CPP11_FEATURE_CHECK_DIR}/${FEATURE_NAME})
 			SET(_LOG_NAME "\"${FEATURE_NAME}\"")
 		ENDIF (${FEATURE_NUMBER})
 		MESSAGE(STATUS "Checking C++11 support for ${_LOG_NAME}")
@@ -69,7 +70,6 @@ MACRO(cxx11_check_single_feature FEATURE_NAME FEATURE_NUMBER RESULT_VAR)
 
 		IF (${RESULT_VAR})
 			MESSAGE(STATUS "Checking C++11 support for ${_LOG_NAME} -- works")
-			LIST(APPEND CXX11_FEATURE_LIST ${RESULT_VAR})
 		ELSE (${RESULT_VAR})
 			MESSAGE(STATUS "Checking C++11 support for ${_LOG_NAME} -- not supported")
 		ENDIF (${RESULT_VAR})
@@ -79,14 +79,14 @@ ENDMACRO(cxx11_check_single_feature)
 
 # Find list of all features
 function(cxx11_find_all_features outvar)
-  FILE(GLOB ALL_CP11_FEATURE_FILES "${CMAKE_CURRENT_LIST_DIR}/cpp11/*.cpp")
-  set(${outvar})
+  FILE(GLOB ALL_CPP11_FEATURE_FILES "${CPP11_FEATURE_CHECK_DIR}/*.cpp")
+  set(OUTPUT_VARIABLES)
   foreach(filename ${ALL_CPP11_FEATURE_FILES})
     get_filename_component(filename ${filename} NAME_WE)
-    string(REGEX MATCH "^(.*)\-?.*" ${filename} filename)
-    list(APPEND ${outvar} ${CMAKE_MATCH_0})
+    string(REGEX REPLACE "-N[0-9]*" "" filename "${filename}")
+    set(OUTPUT_VARIABLES ${OUTPUT_VARIABLES} ${filename})
   endforeach()
-  unset(ALL_CPP11_FEATURE_FILES)
+  set(${outvar} ${OUTPUT_VARIABLES} PARENT_SCOPE)
 endfunction()
 
 function(cxx11_feature_check)
@@ -126,6 +126,8 @@ function(cxx11_feature_check)
     endif()
   endif("${ARGN}" STREQUAL "")
 
+  message(FATAL_ERROR "OPTIONALS: ${OPTIONAL_FEATURES}")
+
 endfunction(cxx11_feature_check)
 
 
@@ -154,6 +156,3 @@ endfunction(cxx11_feature_check)
 # CXX11_CHECK_FEATURE("variadic_templates" 2555 HAS_CXX11_VARIADIC_TEMPLATES)
 # CXX11_CHECK_FEATURE("sizeof_member"      2253 HAS_CXX11_SIZEOF_MEMBER)
 # CXX11_CHECK_FEATURE("__func__"           2340 HAS_CXX11_FUNC)
-
-SET(CXX11_FEATURE_LIST ${CXX11_FEATURE_LIST} CACHE STRING "C++11 feature support list")
-MARK_AS_ADVANCED(FORCE CXX11_FEATURE_LIST)
