@@ -6,8 +6,8 @@ This is a repository of usefull and less than usefull cmake recipes.  It is dist
 [MIT License](http://opensource.org/licenses/MIT)
 
 
-FindEigen
-=========
+Adding [Eigen](http://eigen.tuxfamily.org/) to a project
+========================================================
 
 Looks for the Eigen installed on system. If not found, then uses external project to download it.
 Usage is as follows:
@@ -23,6 +23,49 @@ set(EXTERNAL_ROOT ${PROJECT_BINARY_DIR}/external)
 # Now look for cmake.
 find_package(Eigen)
 ```
+
+**NOTE:** After building the first time, run cmake again. It will find the eigen it downloaded
+previously, and it will stop checking for updates. 
+
+Adding [GTest](https://code.google.com/p/googletest/) to a project
+==================================================================
+
+For googly reasons, whether valid or 404, GTest prefers to be compiled for each an every project. 
+This script does two things:
+
+- it adds GTest as an external project
+- it provides a function to add gtests to ctest
+
+This implies that GTest is downloaded the first time that make runs. Furthermore, it will be
+checked each and every time that makes runs. So, make now requires a working internet connection.
+Unlike Eigen above, there is currently no option avoid checking for updates.
+
+The CMakeLists.txt file could look like this:
+
+```cmake
+option(tests          "Enable testing."                         on)
+
+if(tests) 
+  find_package(GTest)
+  enable_testing()
+endif(tests)
+```
+
+And adding a test comes down to
+
+```cmake
+if(tests)
+
+  add_gtest(testme testme.cc mylib)
+
+endif(tests)
+```
+
+- first argument: name of the test
+- second argument: list of source files
+- other arguments: additional libraries to add during linking
+
+The test do expect an explicit main function. See the test generated in ``tests/addgtest.cmake``.
 
 C++11
 =====

@@ -57,3 +57,5 @@ if(MSVC)
   # Unfortunately, it does disable warnings that may be of interest. Possibly. 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_VARIADIC_MAX=10 /wd4251")
 endif(MSVC)
+
+set(PROJECT_USES_CPP11 True CACHE INTERNAL "Uses c++11.")
