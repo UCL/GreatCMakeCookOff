@@ -67,6 +67,9 @@ endif(tests)
 
 The test do expect an explicit main function. See the test generated in ``tests/addgtest.cmake``.
 
+**NOTE:** When using c++11, it is recommended to first include the c++11 flag script
+``AddCPP11Flags.cmake`` (see below) so that the gtest can be compiled with ``GTEST_LANG_CXX11``. 
+
 C++11
 =====
 
