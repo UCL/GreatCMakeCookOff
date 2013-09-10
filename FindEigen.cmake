@@ -101,6 +101,7 @@ if(NOT EIGEN3_FOUND)
     if(HG_FOUND)
     
       message(STATUS "Eigen3 not found. Will attempt to download it.")
+      include(ExternalProject)
       ExternalProject_Add(
           eigen
           PREFIX ${EXTERNAL_ROOT}
