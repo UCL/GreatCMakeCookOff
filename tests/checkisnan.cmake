@@ -5,9 +5,10 @@ endif(NOT ISNAN_VARIATION)
 
 enable_language(CXX)
 file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/isnan.cc.in
-     "\@ISNAN_VARIATION\@\n"
+     "\@ISNAN_HEADERS\@\n"
      "#include <limits>\n"
      "#include <exception>\n"
+     "#define not_a_number(X) \@ISNAN_VARIATION\@(X)\n"
      "int main() {\n"
      "  if(not_a_number(0.5e0)) throw std::exception(); \n"
      "  if(not_a_number(2l)) throw std::exception(); \n"

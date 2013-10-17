@@ -138,15 +138,32 @@ endif(NOT ISNAN_VARIATION)
 configure_file(/path/to/config.h.in /path/to/config.h)
 ```
 
-The configuration file ``config.h.in`` should include a line near the top with
-``@ISNAN_VARIATION@``.  It will expand to:
+Two cmake variables are defined:
 
-```cpp
-#include <cmath>
-#define not_a_number(X) std::isnan(X)
-```
+- ISNAN_HEADERS will the header(s) relevant to the local ``isnan`` definition
+- ISNAN_VARIATIOPN is the fully qualified name to the local ``isnan`` definition
+
+They can be used as follows in a the configuration file ``config.h.in``:
+
+``cpp
+@ISNAN_HEADERS@
+
+#define not_a_number(X) @ISNAN_VARIATION@
+``
+
 One should then use the macro ``not_a_number`` in-place of any ``isnan`` flavour.
 
+In c++11, it is also possible to define a function that takes only arithmetic type, thus obviating
+the need for a macro:
+
+```cpp
+@ISNAN_HEADERS@
+#include <type_traits>
+
+template<class T>
+  typename std::enable_if<std::is_arithmetic<T>::value, bool> :: type 
+    not_a_number(T const &_in) { return @ISNAN_VARIATION@(_in); }
+```
 
 Testing CMake scripts
 =====================
