@@ -68,4 +68,5 @@ macro(add_gtest name source)
 
   add_test(cxx_${name} ${EXECUTABLE_OUTPUT_PATH}/test_${name}
               --gtest_output=xml:${CMAKE_BINARY_DIR}/test-results/test_${name}.xml)
+  set_tests_properties(cxx_${name} PROPERTIES LABELS "gtest")
 endmacro()
