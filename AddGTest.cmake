@@ -16,7 +16,6 @@ else(MINGW)
   find_package(Threads)
 endif(MINGW)
 
-
 # Add gtest
 if(NOT EXTERNAL_ROOT)
   set(EXTERNAL_ROOT ${PROJECT_BINARY_DIR}/external)
@@ -37,9 +36,9 @@ ExternalProject_Add(
     LOG_CONFIGURE ON
     LOG_BUILD ON)
 
-if(PROJECT_USES_CPP11)
+if(PROJECT_USES_CPP11 AND NOT MSVC)
   add_definitions(-DGTEST_LANG_CXX11)
-endif(PROJECT_USES_CPP11)
+endif(PROJECT_USES_CPP11 AND NOT MSVC)
 
 macro(add_gtest name source)
 
