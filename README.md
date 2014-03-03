@@ -14,7 +14,7 @@ Usage is as follows:
 
 ```cmake
 # Tell cmake to look into GreatCMakeCookOff for recipes
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/GreatCMakeCookOff) 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_files)
 
 # Optionally, tell cmake where to download eigen, if needed.
 # Defaults to value below.
@@ -26,6 +26,7 @@ find_package(Eigen)
 
 **NOTE:** After building the first time, run cmake again. It will find the eigen it downloaded
 previously, and it will stop checking for updates. 
+
 
 Adding [GTest](https://code.google.com/p/googletest/) to a project
 ==================================================================
@@ -82,6 +83,11 @@ Usage is given below.
 ```cmake
 # First need to enable c++
 enable_language(CXX)
+
+# Tell cmake to look into GreatCMakeCookOff for recipes
+list(APPEND CMAKE_MODULE_PATH Path/to/cookoff)
+# Adds aligned allocation
+include(AddCPP11Flags)
 
 # The following will print out all available features.
 cxx11_find_all_features(ALL_FEATURES)
@@ -174,3 +180,43 @@ file into a project which is then configured, built, and run using ``ctest``. Un
 keyword is provided, then a ``main.cc`` or ``main.c`` file should provided the cmake script.
 
 For examples, look at the tests in this package.
+
+Aligned Allocation 
+==================
+
+Not all platforms come with an aligned allocation, such as
+[posix_memalign](http://linux.die.net/man/3/posix_memalign), and they certainly are not standard. 
+This script attempts to find one of many aligned allocation routines. It defaults to its own if it
+cannot find one.
+
+Usage requires adding bits to the cmake file: 
+```cmake
+# Tell cmake to look into GreatCMakeCookOff for recipes
+list(APPEND CMAKE_MODULE_PATH Path/To/CookOff)
+# Adds aligned allocation
+include(AlignedAlloc)
+```
+
+Then, in a file under cmake
+[configure_file](http://www.cmake.org/cmake/help/v2.8.12/cmake.html#command:configure_file), 
+add:
+
+```cpp
+@ALIGNED_ALLOC_HEADER@
+
+namespace your_project {
+  //! Aligned allocation variation
+  inline void* aligned_alloc(size_t _size, size_t _alignment) {
+    @ALIGNED_ALLOC_VARIATION@; 
+  }
+}
+```
+
+Extra FindSomething 
+===================
+
+* [FFTW](http://www.fftw.org/)
+* [MKL](http://software.intel.com/en-us/intel-mkl)
+* [Julia](http://julialang.org/)
+* [Mako](http://www.makotemplates.org/). Installs it to ${PROJECT_BINARY_DIR}/external/python if it
+  is not found.
