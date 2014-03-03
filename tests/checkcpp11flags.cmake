@@ -1,1 +1,2 @@
-include(${cookoff_path}/AddCPP11Flags.cmake)
+list(APPEND CMAKE_MODULE_PATH ${cookoff_path})
+include(AddCPP11Flags)

@@ -52,7 +52,7 @@ function(cmake_test testname)
                                     --build-generator ${CMAKE_GENERATOR}
                                     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
                                     --build-project ${testname}
-                                    --build-options -Dcookoff_path=${CMAKE_SOURCE_DIR}/..
+                                    --build-options -Dcookoff_path=${CMAKE_SOURCE_DIR}
                                     ${ALL_OPTIONS})
 
 endfunction(cmake_test)

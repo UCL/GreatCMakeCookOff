@@ -1,4 +1,5 @@
-include(${cookoff_path}/CheckIsNaN.cmake)
+list(APPEND CMAKE_MODULE_PATH ${cookoff_path})
+include(CheckIsNaN)
 if(NOT ISNAN_VARIATION)
   message(STATUS "Could not find working isnan.")
 endif(NOT ISNAN_VARIATION)

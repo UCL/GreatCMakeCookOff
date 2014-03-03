@@ -1,7 +1,8 @@
 option(tests          "Enable testing."                         on)
 
 if(tests) 
-  include(${cookoff_path}/AddGTest.cmake)
+  list(APPEND CMAKE_MODULE_PATH ${cookoff_path})
+  include(AddGTest)
   enable_testing()
 endif(tests)
 
