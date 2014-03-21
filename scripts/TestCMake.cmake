@@ -23,7 +23,7 @@ function(cmake_test testname)
   set(FAKE_PROJECT_DIR ${CMAKE_CURRENT_BINARY_DIR}/${testname})
   set(BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/fake_project_builds/${testname})
 
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${testname}.cmake 
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${testname}.cmake
                  ${FAKE_PROJECT_DIR}/CMakeData.cmake @ONLY)
   message(STATUS "[${testname}] project in ${FAKE_PROJECT_DIR}")
 
@@ -39,14 +39,14 @@ function(cmake_test testname)
        "  file(GLOB ALLFILES \${PROJECT_SOURCE_DIR}/*.c \${PROJECT_SOURCE_DIR}/*.cc)\n"
        "  add_executable(${testname} \${ALLFILES})\n"
        "endif(NOT ${NOEXEC})\n")
-  
-  
+
+
   if(EXISTS ${BUILD_DIR})
     file(REMOVE_RECURSE ${BUILD_DIR})
   endif(EXISTS ${BUILD_DIR})
-  
+
   file(MAKE_DIRECTORY ${BUILD_DIR})
-  
+
   add_test(cmake_test_${testname}
              ${CMAKE_CTEST_COMMAND} --build-and-test ${FAKE_PROJECT_DIR} ${BUILD_DIR}
                                     --build-generator ${CMAKE_GENERATOR}

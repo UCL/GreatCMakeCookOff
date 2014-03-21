@@ -1,5 +1,6 @@
 enable_language(CXX)
-include(${cookoff_path}/CheckCXX11Features.cmake)
+list(APPEND CMAKE_MODULE_PATH ${cookoff_path}/scripts ${cookoff_path}/modules)
+include(CheckCXX11Features)
 cxx11_find_all_features(ALL_CPP11_FEATURES)
 LIST(LENGTH ALL_CPP11_FEATURES LIST_LENGTH)
 if(${LIST_LENGTH} EQUAL 0)

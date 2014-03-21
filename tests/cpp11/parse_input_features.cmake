@@ -2,7 +2,7 @@
 enable_language(CXX)
 
 # Include check feature.
-include(${cookoff_path}/CheckCXX11Features.cmake)
+include(${cookoff_path}/scripts/CheckCXX11Features.cmake)
 
 # Now call function with fake input
 set(ALL_FEATURES "first;second;third")

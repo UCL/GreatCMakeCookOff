@@ -1,12 +1,12 @@
 option(tests          "Enable testing."                         on)
 
-if(tests) 
-  list(APPEND CMAKE_MODULE_PATH ${cookoff_path})
+if(tests)
+  list(APPEND CMAKE_MODULE_PATH ${cookoff_path}/scripts ${cookoff_path}/modules)
   include(AddGTest)
   enable_testing()
 endif(tests)
 
-file(WRITE ${CMAKE_SOURCE_DIR}/mytest.cc 
+file(WRITE ${CMAKE_SOURCE_DIR}/mytest.cc
      "#include <gtest/gtest.h>\n\n"
      "class TestMe : public ::testing::Test {};\n\n"
      "TEST_F(TestMe, TestThis) {\n"
