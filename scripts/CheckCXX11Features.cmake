@@ -1,14 +1,14 @@
 # Checks for C++11 features
-# 
+#
 # USAGE: There are two functions
 #
-# cxx11_find_all_features(OUTPUT_VARIABLE) 
+# cxx11_find_all_features(OUTPUT_VARIABLE)
 # This function returns a variable with all possible features.
 #
 # cxx11_feature_check([feature feature] [REQUIRED [feature feature]])
 # If no arguments are provided, then checks all available features
 # Features appeacing before REQUIRED are optional.
-# If arguments are provided and those features are available, sets 
+# If arguments are provided and those features are available, sets
 # the variable HAS_CXX11_FEATURENAME, where FEATURENAME is the input in capital letters.
 # Fails if required feature are not available
 #
@@ -140,12 +140,12 @@ macro(_figure_out_cxx11_feature current_feature)
       list(REMOVE_ITEM ALL_FEATURE_FILES ${filename})
     endif()
   endforeach()
-  
+
   list(LENGTH ALL_FEATURE_FILES NFILES)
   if(NOT ${NFILES} EQUAL 1)
     message(FATAL_ERROR "[c++11] Expected to find only one feature. Found ${NFILES} -- ${ALL_FEATURE_FILES}.")
   endif(NOT ${NFILES} EQUAL 1)
-  
+
   # Now we know which file corresponds to option.
   get_filename_component(basename ${ALL_FEATURE_FILES} NAME_WE)
   # If has feature number, extract it
@@ -172,7 +172,7 @@ function(cxx11_feature_check)
 
   # MinGW has not implemented std::random_device fully yet. Unfortunately, this can only be detected
   # by running a program which tries to call std::random_device. However that generates an error that
-  # is *not* caught by CMake's try_run. 
+  # is *not* caught by CMake's try_run.
   if(MSYS)
     list(REMOVE_ITEM OPTIONALS "random_device")
     list(FIND REQUIRED "random_device" feature_was_found)
