@@ -5,3 +5,4 @@ cmake_test(local_include)
 cmake_test(self_lookup)
 
 add_subdirectory(cpp11)
+add_subdirectory(copy_files)

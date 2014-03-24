@@ -5,6 +5,25 @@ The Great CMake CookOff
 This is a repository of usefull and less than usefull cmake recipes.  It is distributed under the
 [MIT License](http://opensource.org/licenses/MIT)
 
+Adding this repository to a cmake
+=================================
+
+The files in this repository can be added individually or as a whole to a project, as long as the
+MIT copyright terms are followed. One possibility is to include this project as a [git
+submodule](http://git-scm.com/docs/git-submodule).
+
+However, the easiest method may well be to have this repository downloaded upon configuration of a
+project. In that case, the file
+[LookUp-GreatCMakeCookOff.cmake](https://github.com/UCL/GreatCMakeCookOff/tree/refactor/LookUp-GreatCMakeCookOff.cmake)
+should be downloaded and inserted into the target project. It can then be included in the target
+project's main `CMakeLists.txt` file:
+
+```cmake
+include(LookUp-GreatCMakeCookOff)
+```
+
+This will download the cook-off into the build directory right at configure time. Cook-off recipes
+can then be used anywhere below that.
 
 Adding [Eigen](http://eigen.tuxfamily.org/) to a project
 ========================================================
@@ -13,9 +32,6 @@ Looks for the Eigen installed on system. If not found, then uses external projec
 Usage is as follows:
 
 ```cmake
-# Tell cmake to look into GreatCMakeCookOff for recipes
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_files)
-
 # Optionally, tell cmake where to download eigen, if needed.
 # Defaults to value below.
 set(EXTERNAL_ROOT ${PROJECT_BINARY_DIR}/external)
@@ -25,13 +41,13 @@ find_package(Eigen)
 ```
 
 **NOTE:** After building the first time, run cmake again. It will find the eigen it downloaded
-previously, and it will stop checking for updates. 
+previously, and it will stop checking for updates.
 
 
 Adding [GTest](https://code.google.com/p/googletest/) to a project
 ==================================================================
 
-For googly reasons, whether valid or 404, GTest prefers to be compiled for each an every project. 
+For googly reasons, whether valid or 404, GTest prefers to be compiled for each an every project.
 This script does two things:
 
 - it adds GTest as an external project
@@ -46,7 +62,7 @@ The CMakeLists.txt file could look like this:
 ```cmake
 option(tests          "Enable testing."                         on)
 
-if(tests) 
+if(tests)
   find_package(GTest)
   enable_testing()
 endif(tests)
@@ -69,7 +85,7 @@ endif(tests)
 The test do expect an explicit main function. See the test generated in ``tests/addgtest.cmake``.
 
 **NOTE:** When using c++11, it is recommended to first include the c++11 flag script
-``AddCPP11Flags.cmake`` (see below) so that the gtest can be compiled with ``GTEST_LANG_CXX11``. 
+``AddCPP11Flags.cmake`` (see below) so that the gtest can be compiled with ``GTEST_LANG_CXX11``.
 
 C++11
 =====
@@ -167,7 +183,7 @@ the need for a macro:
 #include <type_traits>
 
 template<class T>
-  typename std::enable_if<std::is_arithmetic<T>::value, bool> :: type 
+  typename std::enable_if<std::is_arithmetic<T>::value, bool> :: type
     not_a_number(T const &_in) { return @ISNAN_VARIATION@(_in); }
 ```
 
@@ -181,24 +197,22 @@ keyword is provided, then a ``main.cc`` or ``main.c`` file should provided the c
 
 For examples, look at the tests in this package.
 
-Aligned Allocation 
+Aligned Allocation
 ==================
 
 Not all platforms come with an aligned allocation, such as
-[posix_memalign](http://linux.die.net/man/3/posix_memalign), and they certainly are not standard. 
+[posix_memalign](http://linux.die.net/man/3/posix_memalign), and they certainly are not standard.
 This script attempts to find one of many aligned allocation routines. It defaults to its own if it
 cannot find one.
 
-Usage requires adding bits to the cmake file: 
+Usage requires adding bits to the cmake file:
 ```cmake
-# Tell cmake to look into GreatCMakeCookOff for recipes
-list(APPEND CMAKE_MODULE_PATH Path/To/CookOff)
 # Adds aligned allocation
 include(AlignedAlloc)
 ```
 
 Then, in a file under cmake
-[configure_file](http://www.cmake.org/cmake/help/v2.8.12/cmake.html#command:configure_file), 
+[configure_file](http://www.cmake.org/cmake/help/v2.8.12/cmake.html#command:configure_file),
 add:
 
 ```cpp
@@ -207,12 +221,38 @@ add:
 namespace your_project {
   //! Aligned allocation variation
   inline void* aligned_alloc(size_t _size, size_t _alignment) {
-    @ALIGNED_ALLOC_VARIATION@; 
+    @ALIGNED_ALLOC_VARIATION@;
   }
 }
 ```
 
-Extra FindSomething 
+Target for copying files
+========================
+
+It is sometimes usefull to copy files form one place to another during the compilation stage. For
+instance, this makes it possible to create a python package inside the build directory and use it
+during testing. The process is to create a dummy target and add files to it:
+
+```cmake
+include(TargetCopyFiles)
+add_custom_target(mynewtarget)
+add_copy_file(mynewtarget thisfile DESTINATION this/directory)
+
+```
+
+A few options are available, as described below:
+
+|  add_copy_file(
+|     <target>                          -- target name
+|     [DESTINATION <destination>]       -- Directory where files will be copied
+|                                          Defaults to current binary directory
+|     [GLOB <glob>]                     -- A glob to find target files to copy
+|     [REPLACE <pattern> <replacement>] -- string(REGEX REPLACE) arguments on output filename
+|     [FILES <list of files>]           -- list of files to copy. Cannot be used with GLOB or ARGN.
+|     [<list of files>]                 -- list of files to copy. Cannot be used with GLOB or FILES.
+|  )
+
+Extra FindSomething
 ===================
 
 * [FFTW](http://www.fftw.org/)
@@ -220,3 +260,9 @@ Extra FindSomething
 * [Julia](http://julialang.org/)
 * [Mako](http://www.makotemplates.org/). Installs it to ${PROJECT_BINARY_DIR}/external/python if it
   is not found.
+* [CFitsIO](http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html)
+* [Numpy](www.numpy.org), also tests whether
+    - `PyArray_ENABLEFLAGS` exists
+    - `NPY_ARRAY_C_CONTIGUOUS` vs `NPY_C_CONTIGUOUS` macros
+    - `npy_long_double` exists and is different from `npy_double`
+    - `npy_bool` exists and is different from `npy_ubyte`
