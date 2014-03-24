@@ -34,7 +34,6 @@ function(add_copy_files FILECOPIER_TARGET)
   else()
     set(copy_target ${FILECOPIER_TARGET})
   endif()
-    message(STATUS "[copier] ${copy_target}")
 
   if(NOT "${FILECOPIER_REPLACE}" STREQUAL "")
     list(LENGTH FILECOPIER_REPLACE replace_length)
