@@ -22,7 +22,7 @@ function(cmake_test testname)
        "if(NOT ${CMAKETEST_NOEXEC})\n"
        "  file(GLOB ALLFILES \${PROJECT_SOURCE_DIR}/*.c \${PROJECT_SOURCE_DIR}/*.cc)\n"
        "  add_executable(${testname} \${ALLFILES})\n"
-       "endif(NOT ${NOEXEC})\n")
+       "endif(NOT ${CMAKETEST_NOEXEC})\n")
 
 
   if(EXISTS ${BUILD_DIR})
@@ -40,3 +40,33 @@ function(cmake_test testname)
                                     ${CMAKETEST_UNPARSED_ARGUMENTS})
 
 endfunction(cmake_test)
+
+function(assert_recurse)
+    set(oneValueArgs FAIL)
+    cmake_parse_arguments(ASSERT_RECURSE "" "${oneValueArgs}" "" ${ARGN} )
+
+    if(NORECURSE)
+        return()
+    endif()
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -DNORECURSE=TRUE ${PROJECT_SOURCE_DIR}
+                ${ASSERT_RECURSE_UNPARSED_ARGUMENTS}
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        RESULT_VARIABLE DID_RERUN
+        OUTPUT_VARIABLE OUTPUT
+        ERROR_VARIABLE ERROR
+    )
+    if(NOT ASSERT_RECURSE_FAIL)
+      if(NOT DID_RERUN EQUAL 0)
+          message(STATUS "Output:\n${OUTPUT}")
+          message(STATUS "Error:\n${ERROR}")
+          message(FATAL_ERROR "Could not rerun ${DID_RERUN}")
+      endif()
+    else()
+      if(DID_RERUN EQUAL 0)
+          message(STATUS "Output:\n${OUTPUT}")
+          message(STATUS "Error:\n${ERROR}")
+          message(FATAL_ERROR "Expected rerun to fail")
+      endif()
+    endif()
+endfunction()
