@@ -29,6 +29,6 @@ function(get_gitref)
     set(GIT_HASH "NA")
   endif()
 
-  set(${PROJECT_NAME}_VERSION ${VERSION} PARENT_SCOPE)
+  set(${PROJECT_NAME}_GITREF ${GIT_HASH} PARENT_SCOPE)
 
 endfunction()
