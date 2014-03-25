@@ -8,7 +8,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 include(LookUp-GreatCMakeCookOff)
 
 find_package(Julia)
-include(CheckIsNan)
+include(CheckIsNaN)
 if(NOT NORECURSE)
     # Rerun without failing
     execute_process(

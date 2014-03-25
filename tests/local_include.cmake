@@ -1,7 +1,7 @@
 find_package(GreatCMakeCookOff NO_MODULE PATHS ${cookoff_path} REQUIRED)
 initialize_cookoff()
 find_package(Julia)
-include(CheckIsNan)
+include(CheckIsNaN)
 include(TestCMake)
 
 assert_recurse(-Dcookoff_path=${cookoff_path})
