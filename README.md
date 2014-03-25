@@ -242,15 +242,32 @@ add_copy_file(mynewtarget thisfile DESTINATION this/directory)
 
 A few options are available, as described below:
 
-|  add_copy_file(
-|     <target>                          -- target name
-|     [DESTINATION <destination>]       -- Directory where files will be copied
-|                                          Defaults to current binary directory
-|     [GLOB <glob>]                     -- A glob to find target files to copy
-|     [REPLACE <pattern> <replacement>] -- string(REGEX REPLACE) arguments on output filename
-|     [FILES <list of files>]           -- list of files to copy. Cannot be used with GLOB or ARGN.
-|     [<list of files>]                 -- list of files to copy. Cannot be used with GLOB or FILES.
-|  )
+```
+add_copy_file(
+   <target>                          -- target name
+   [DESTINATION <destination>]       -- Directory where files will be copied
+                                        Defaults to current binary directory
+   [GLOB <glob>]                     -- A glob to find target files to copy
+   [REPLACE <pattern> <replacement>] -- string(REGEX REPLACE) arguments on output filename
+   [FILES <list of files>]           -- list of files to copy. Cannot be used with GLOB or ARGN.
+   [<list of files>]                 -- list of files to copy. Cannot be used with GLOB or FILES.
+)
+```
+
+Getting version and git hash
+============================
+
+A function is provided that will set a project's version and git hash during the *configure* step of
+the cmake process.
+
+```CMake
+include(VersionAndGitRef)
+set_version(0.1)
+get_gitref()
+```
+
+It will set the `${PROJECT_NAME}_VERSION` and `${PROJECT_NAME}_GITREF` variables in the caller's
+scope.
 
 Extra FindSomething
 ===================
