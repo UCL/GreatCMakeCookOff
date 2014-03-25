@@ -124,8 +124,6 @@ if(NOT EIGEN3_FOUND)
     else()
           message(STATUS "Cannot find nor donwload eigen.")
     endif()
-
-    endif(HG_FOUND)
   elseif(Eigen_REQUIRED)
     message(FATAL_ERROR "Cannot find nor donwload eigen.")
   else()
