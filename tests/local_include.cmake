@@ -1,4 +1,4 @@
-find_package(GreatCMakeCookOff CONFIG PATHS ${cookoff_path} REQUIRED)
+find_package(GreatCMakeCookOff NO_MODULE PATHS ${cookoff_path} REQUIRED)
 initialize_cookoff()
 find_package(Julia)
 include(CheckIsNan)
