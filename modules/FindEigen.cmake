@@ -14,7 +14,7 @@
 # Copyright (c) 2008, 2009 Gael Guennebaud, <g.gael@free.fr>
 # Copyright (c) 2009 Benoit Jacob <jacob.benoit.1@gmail.com>
 # Redistribution and use is allowed according to the terms of the 2-clause BSD license.
-# Modified by RSDT@UCL 
+# Modified by RSDT@UCL
 
 if(NOT Eigen3_FIND_VERSION)
   if(NOT Eigen3_FIND_VERSION_MAJOR)
@@ -99,7 +99,7 @@ if(NOT EIGEN3_FOUND)
     endif(NOT EXTERNAL_ROOT)
     find_package(Hg)
     if(HG_FOUND)
-    
+
       message(STATUS "Eigen3 not found. Will attempt to download it.")
       include(ExternalProject)
       ExternalProject_Add(
@@ -108,7 +108,7 @@ if(NOT EIGEN3_FOUND)
           HG_REPOSITORY https://bitbucket.org/eigen/eigen/
           HG_TAG 3.2.0
           TIMEOUT 10
-          CMAKE_ARGS 
+          CMAKE_ARGS
             -DCMAKE_INSTALL_PREFIX=${EXTERNAL_ROOT}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
             -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
@@ -121,11 +121,15 @@ if(NOT EIGEN3_FOUND)
           LOG_CONFIGURE ON
           LOG_BUILD ON)
       set(EIGEN3_INCLUDE_DIR ${EXTERNAL_ROOT}/include/eigen3)
-  
+
     else(HG_FOUND)
-   
-      message(FATAL_ERROR "Hg not found, and eigen not found.\nNeed one or the other.")
-   
+
+      if(Eigen_REQUIRED)
+          message(FATAL_ERROR "Cannot find nor donwload eigen.")
+      else()
+          message(STATUS "Cannot find nor donwload eigen.")
+      endif()
+
     endif(HG_FOUND)
   endif(CMAKE_VERSION VERSION_LESS 2.8.10)
 endif(NOT EIGEN3_FOUND)
