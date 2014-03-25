@@ -1,14 +1,30 @@
-if(NOT JULIA_FOUND)
-  find_program(JULIA_EXECUTABLE julia DOC "Julia executable")
-  if(NOT JULIA_EXECUTABLE) 
-    message(FATAL_ERROR "Julia executable not found")
+if(NOT Julia_FOUND)
+  find_program(Julia_EXECUTABLE julia DOC "Julia executable")
+  if(Julia_EXECUTABLE)
+      execute_process(
+          COMMAND ${Julia_EXECUTABLE} -E "Pkg.dir()"
+          OUTPUT_VARIABLE Julia_INSTALL_DIR
+          RESULT_VARIABLE RESULT
+      )
+      if(RESULT EQUAL 0)
+          string(REGEX REPLACE "\"" "" Julia_INSTALL_DIR ${Julia_INSTALL_DIR})
+          set(Julia_INSTALL_DIR ${Julia_INSTALL_DIR}
+              CACHE PATH "Path where Julia packages should be installed.")
+      endif()
+      execute_process(
+          COMMAND ${Julia_EXECUTABLE} --version
+          OUTPUT_VARIABLE Julia_VERSION_STRING
+          RESULT_VARIABLE RESULT
+      )
+      if(RESULT EQUAL 0)
+        string(REGEX REPLACE ".*([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1"
+            Julia_VERSION_STRING ${Julia_VERSION_STRING})
+      endif()
   endif()
-  message(STATUS "[julia] ${JULIA_EXECUTABLE}")
-  exec_program( ${JULIA_EXECUTABLE} ARGS -e "\"println(Pkg.dir())\"" OUTPUT_VARIABLE JULIA_INSTALL)
-  message(STATUS "[julia] package directory: ${JULIA_INSTALL}")
-  if(NOT JULIA_INSTALL) 
-    message(FATAL_ERROR "Could not determine julia package directory")
-  endif()
-  set(JULIA_INSTALL ${JULIA_INSTALL} CACHE PATH "Path where Julia packages should be installed.")
-  set(JULIA_FOUND TRUE CACHE INTERNAL "Whethe Julia was found")
+
+  include(FindPackageHandleStandardArgs)
+  find_package_handle_standard_args(Julia
+      REQUIRED_VARS Julia_EXECUTABLE Julia_INSTALL_DIR
+      VERSION_VAR Julia_VERSION_STRING
+  )
 endif()
