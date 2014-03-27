@@ -1,4 +1,4 @@
-find_package(git)
+find_package(Git)
 
 # Set version variable
 # If git is found and this is a git workdir, then figure out build id
