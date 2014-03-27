@@ -1,5 +1,5 @@
 # CMake arguments for gtest.
-set(GTEST_CMAKE_ARGS 
+set(GTEST_CMAKE_ARGS
       -DBUILD_SHARED_LIBS=OFF
       -Dgtest_force_shared_crt=ON
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
@@ -47,7 +47,7 @@ macro(add_gtest name source)
   # Better, but only works on CMake 2.8.6?
   # get_target_property(THISTEST_INCLUDE test_${name} INCLUDE_DIRECTORIES)
   # set_target_properties(test_${name} PROPERTIES INCLUDE_DIRECTORIES
-  #                       "${source_dir}/include;${THISTEST_INCLUDE}") 
+  #                       "${source_dir}/include;${THISTEST_INCLUDE}")
 
   add_executable(test_${name} ${source})
   ExternalProject_Get_Property(googletest binary_dir)
