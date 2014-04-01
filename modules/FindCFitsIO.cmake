@@ -5,16 +5,20 @@
 # - CFitsIO_INCLUDE_DIR is the path to the include directory
 # - CFitsIO_VERSION_STRING is the version of the library
 
-find_library(
-  CFitsIO_LIBRARY cfitsio
-  DOC "Path to the cfitsio library"
-)
-find_path(
-  CFitsIO_INCLUDE_DIR fitsio.h
-  PATH_SUFFIXES include include/cfitsio
-  DOC "Path to the cfitsio include directory"
-)
-if(NOT "${CFitsIO_INCLUDE_DIR}" MATCHES "\\-NOTFOUND")
+if(NOT CFitsIO_LIBRARY)
+    find_library(
+      CFitsIO_LIBRARY cfitsio
+      DOC "Path to the cfitsio library"
+    )
+endif()
+if(NOT CFitsIO_INCLUDE_DIR)
+    find_path(
+      CFitsIO_INCLUDE_DIR fitsio.h
+      PATH_SUFFIXES include include/cfitsio
+      DOC "Path to the cfitsio include directory"
+    )
+endif()
+if(CFitsIO_INCLUDE_DIR)
   file(
     STRINGS ${CFitsIO_INCLUDE_DIR}/fitsio.h
     CFitsIO_VERSION_STRING
