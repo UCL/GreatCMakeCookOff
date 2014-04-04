@@ -102,7 +102,7 @@ enable_language(CXX)
 
 # Tell cmake to look into GreatCMakeCookOff for recipes
 list(APPEND CMAKE_MODULE_PATH Path/to/cookoff)
-# Adds aligned allocation
+# Adds flags to compiler to launch it into c++11 land
 include(AddCPP11Flags)
 
 # The following will print out all available features.
@@ -269,17 +269,109 @@ get_gitref()
 It will set the `${PROJECT_NAME}_VERSION` and `${PROJECT_NAME}_GITREF` variables in the caller's
 scope.
 
-Extra FindSomething
-===================
+Adding to path-like environment variables
+=========================================
 
-* [FFTW](http://www.fftw.org/)
-* [MKL](http://software.intel.com/en-us/intel-mkl)
-* [Julia](http://julialang.org/)
-* [Mako](http://www.makotemplates.org/). Installs it to ${PROJECT_BINARY_DIR}/external/python if it
-  is not found.
-* [CFitsIO](http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html)
-* [Numpy](www.numpy.org), also tests whether
-    - `PyArray_ENABLEFLAGS` exists
-    - `NPY_ARRAY_C_CONTIGUOUS` vs `NPY_C_CONTIGUOUS` macros
-    - `npy_long_double` exists and is different from `npy_double`
-    - `npy_bool` exists and is different from `npy_ubyte`
+```CMake
+include(Utility)
+add_to_envvar(
+  VARIABLE  -- Name of the environment variable
+  PATH      -- Path to add
+  [PREPEND] -- If path, adds at begining of list
+  [OS somevariable] -- Only add path if the variable is defined.
+                       Could be WIN32, or APPLE, or UNIX of anything else.
+)
+```
+
+Find or install a package -- a.k.a lookup
+=========================================
+Adds the ability to "look-up" a package
+
+This objective is to define a way to either find a package with find_package and/or,
+depending on choices and circumstances, download and install that package.
+
+The user should only have to include this file and add to their cmake files:
+
+~~~cmake
+include(PackageLookup)
+lookup_package(<name>    # Name for find_package and lookup recipe files
+   [QUIET]               # Whether to avoid making noise about the whole process
+   [REQUIRED]            # Fails if package can neither be found nor installed
+   [DOWNLOAD_BY_DEFAULT] # Always dowload, build, and install package locally. Does not look for
+                         # pre-installed packages. This ensures the external project is always
+                         # compiled specifically for this project.
+   [ARGUMENTS <list>]    # Arguments specific to the look up recipe.
+                         # They will be available inside the recipe under the variable
+                         # ${name}_ARGUMENTS. Lookup recipes also have access to EXTERNAL_ROOT,
+                         # a variable specifying a standard location for external projects in the
+                         # build tree
+   [...]                 # Arguments passed on to `find_package`.
+)
+~~~~
+
+This will first attempt to call `find_package(name [...])` (with `QUIET` and without `REQUIRED`). If
+the package is not found, then it will attempt to find a lookup recipe for the package. This recipe
+should configure an external project that will install the missing package during the building
+process.
+
+All external lookup targets are dependees of the custom cmake target `lookup_dependencies`. It is
+recommended that targets that depend on the external packages should be made to depend on
+`lookup_dependencies`. This is made a bit easier via the macro:
+
+```CMake
+# Makes sure TARGET is built after the looked up projects.
+depends_on_lookups(TARGET)
+```
+
+The name should match that of an existing `find_package(<name>)` file. The lookup_package function
+depends on files in directories in the cmake prefixes paths that have
+the name of the package:
+
+- ${CMAKE_MODULE_PATH}/${package}/${package}-lookup.cmake
+- ${CMAKE_MODULE_PATH}/${package}/LookUp${package}.cmake
+- ${CMAKE_MODULE_PATH}/${package}/lookup.cmake
+- ${CMAKE_MODULE_PATH}/${package}-lookup.cmake
+- ${CMAKE_MODULE_PATH}/LookUp${package}.cmake
+- ${CMAKE_MODULE_PATH}/${package}-lookup.cmake
+- ${CMAKE_LOOKUP_PATH}/${package}-lookup.cmake
+- ${CMAKE_LOOKUP_PATH}/LookUp${package}.cmake
+
+These files are included when the function lookup_package is called.
+The files will generally have the structure:
+
+~~~cmake
+# Parses arguments specific to the lookup recipe
+# Optional step. Below, only a URL single-valued argument is specified.
+if(package_ARGUMENTS)
+    cmake_parse_arguments(package "" "URL" "" ${package_ARGUMENTS})
+else()
+    set(package_URL https://gaggledoo.doogaggle.com)
+endif()
+# The external project name `<package>` must match the package name exactly
+ExternalProject_Add(package
+  URL ${URL_
+)
+# Reincludes cmake so newly installed external can be found via find_package.
+# Optional step.
+add_recursive_cmake_step(...)
+~~~
+
+This pattern will first attempt to find the package on the system. If it is not found, an external
+project to create it is added, with an extra step to rerun cmake and find the newly installed
+package.
+
+If a package is not found on the first call to configure, and then subsequently installed during the
+make process, it can be interesting to have the package found on a second automatic pass of
+configure. This is what the function `add_recursive_cmake_step` does. It adds a call to cmake as the
+last step of downloading, building, and *installing* an external project.
+
+~~~~cmake
+# Adds a custom step to the external project that calls cmake recusively
+# This makes it possible for the newly built package to be installed.
+add_recursive_cmake_step(<name> # Still the same package name
+   <${name}_FOUND> # Variable set to true if package is found
+   [...]           # Passed on to ExternalProject_Add_Step
+                   # in general, it will be `DEPENDEES install`,
+                   # making this step the last.
+)
+~~~
