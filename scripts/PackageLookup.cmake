@@ -87,6 +87,10 @@ list(APPEND CMAKE_PREFIX_PATH ${EXTERNAL_ROOT})
 include(Utility)
 add_to_envvar(PKG_CONFIG_PATH "${EXTERNAL_ROOT}/lib/pkgconfig" PREPEND OS UNIX)
 add_to_envvar(PKG_CONFIG_PATH "${EXTERNAL_ROOT}/lib64/pkgconfig" PREPEND OS UNIX)
+add_to_envvar(LD_LIBRARY_PATH "${EXTERNAL_ROOT}/lib" PREPEND OS UNIX)
+add_to_envvar(LD_LIBRARY_PATH "${EXTERNAL_ROOT}/lib64" PREPEND OS UNIX)
+add_to_envvar(DYLD_LIBRARY_PATH "${EXTERNAL_ROOT}/lib" PREPEND OS APPLE)
+add_to_envvar(DYLD_LIBRARY_PATH "${EXTERNAL_ROOT}/lib64" PREPEND OS APPLE)
 
 # Adds a target for all external projects, so they can be made prior to others.
 if(NOT TARGET lookup_dependencies)
