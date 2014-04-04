@@ -1,0 +1,22 @@
+# Adds to a variaty of environment variables
+function(add_to_envvar VARIABLE PATH)
+    include(CMakeParseArguments)
+    cmake_parse_arguments(envvar "PREPEND" "OS" "" ${ARGN})
+    if(envvar_OS AND NOT ${${envvar_OS}})
+        return()
+    endif()
+    if("$ENV{${VARIABLE}}" STREQUAL "")
+        set(separator "")
+    elseif(WIN32)
+        set(separator ";")
+    else()
+        set(separator ":")
+    endif()
+    if(envvar_PREPEND)
+        set(ENV{${VARIABLE}} "${PATH}${separator}$ENV{${VARIABLE}}")
+    else()
+        set(ENV{${VARIABLE}} "$ENV{${VARIABLE}}${separator}${PATH}")
+    endif()
+endfunction()
+
+
