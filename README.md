@@ -375,3 +375,19 @@ add_recursive_cmake_step(<name> # Still the same package name
                    # making this step the last.
 )
 ~~~
+
+Extra FindSomething
+===================
+
+* [FFTW](http://www.fftw.org/)
+* [MKL](http://software.intel.com/en-us/intel-mkl)
+* [Julia](http://julialang.org/)
+* [Mako](http://www.makotemplates.org/). Installs it to ${PROJECT_BINARY_DIR}/external/python if it
+  is not found.
+* [CFitsIO](http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html)
+* [Numpy](www.numpy.org), also tests whether
+    - `PyArray_ENABLEFLAGS` exists
+    - `NPY_ARRAY_C_CONTIGUOUS` vs `NPY_C_CONTIGUOUS` macros
+    - `npy_long_double` exists and is different from `npy_double`
+    - `npy_bool` exists and is different from `npy_ubyte`
+* CoherentPython: Looks for a *consistent* set of python interpreter and libraries.
