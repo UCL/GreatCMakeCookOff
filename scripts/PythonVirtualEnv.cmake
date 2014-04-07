@@ -10,7 +10,7 @@
 # For debugging ease on unixes, a link to the virtual environment is created in the main build
 # directory, called `localpython`.
 find_package(PythonInterp)
-include(utilities)
+include(Utilities)
 include(PythonPackage)
 
 function(_add_to_a_path THISFILE PATH)

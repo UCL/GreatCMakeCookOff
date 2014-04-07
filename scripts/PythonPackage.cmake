@@ -14,7 +14,7 @@
 
 # First check for python executable
 include(FindPackageHandleStandardArgs)
-include(utilities)
+include(Utilities)
 find_package(PythonInterp REQUIRED)
 include(CMakeParseArguments)
 
