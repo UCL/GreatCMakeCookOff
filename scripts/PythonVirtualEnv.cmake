@@ -73,9 +73,18 @@ endif()
 function(add_package_to_virtualenv PACKAGE)
     find_python_package(${PACKAGE} LOCAL)
     if(NOT ${PACKAGE}_FOUND)
-       execute_process(
-           COMMAND ${PROJECT_BINARY_DIR}/localpython -m pip install --upgrade ${PACKAGE}
-       )
-       find_python_package(${PACKAGE} LOCAL)
-   endif()
+        execute_process(
+            COMMAND ${_LOCAL_PYTHON_EXECUTABLE} -m pip install --upgrade ${PACKAGE}
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE output
+            ERROR_VARIABLE error
+        )
+        if(${result} EQUAL 0)
+            find_python_package(${PACKAGE} LOCAL)
+        else()
+            message("${error}")
+            message("${output}")
+            message(FATAL_ERROR "Could not install ${PACKAGE} -- ${result}")
+        endif()
+    endif()
 endfunction()
