@@ -30,11 +30,13 @@ if(NOT GreatCMakeCookOff_FOUND)
       OUTPUT_QUIET
     )
   endif()
+  if(NOT COOKOFF_GITREPO)
+      set(COOKOFF_GITREPO https://github.com/UCL/GreatCMakeCookOff.git)
+  endif()
   execute_process(
-    COMMAND ${GIT_EXECUTABLE} clone
-         https://github.com/UCL/GreatCMakeCookOff.git
+    COMMAND ${GIT_EXECUTABLE} clone "${COOKOFF_GITREPO}"
          -b refactor
-         ${COOKOFF_DOWNLOAD_DIR}
+         "${COOKOFF_DOWNLOAD_DIR}"
     RESULT_VARIABLE CLONING_COOKOFF
     OUTPUT_QUIET
     ERROR_VARIABLE CLONING_ERROR
