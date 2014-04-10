@@ -31,26 +31,39 @@ function(add_to_ld_path PATH)
     _add_to_a_path("${PROJECT_BINARY_DIR}/ldpaths" "${PATH}")
 endfunction()
 
-function(_create_virtualenv)
+function(_create_virtualenv call)
     execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} -m virtualenv
-            --system-site-packages ${VIRTUALENV_DIRECTORY}
+	COMMAND ${call} --system-site-packages ${VIRTUALENV_DIRECTORY}
         RESULT_VARIABLE RESULT
         ERROR_VARIABLE ERROR
         OUTPUT_VARIABLE OUTPUT
     )
-    if(NOT RESULT EQUAL 0)
+    if(NOT "${RESULT}" STREQUAL "0")
+        message(STATUS "${RESULT}")
         message(STATUS "${OUTPUT}")
         message(STATUS "${ERROR}")
         message(FATAL_ERROR "Could not create virtual environment")
     endif()
 endfunction()
 
-find_python_package(virtualenv REQUIRED)
+# First check if we have venv in the same directory as python.
+# Canopy makes things more difficult.
+get_filename_component(python_bin "${PYTHON_EXECUTABLE}" PATH)
+find_program(venv_EXECUTABLE venv PATHS "${python_bin}" NO_DEFAULT_PATH)
+find_python_package(venv)
+find_python_package(virtualenv)
+
 set(VIRTUALENV_DIRECTORY ${CMAKE_BINARY_DIR}/external/virtualenv
     CACHE INTERNAL "Path to virtualenv" )
-
-_create_virtualenv()
+if(venv_EXECUTABLE)
+  _create_virtualenv("${venv_EXECUTABLE}")
+elseif(venv_FOUND)
+  _create_virtualenv("${PYTHON_EXECUTABLE} -m venv")
+elseif(virtualenv_FOUND)
+  _create_virtualenv("${PYTHON_EXECUTABLE} -m virtualenv")
+else()
+  message(FATAL_ERROR "Could find neither venv nor virtualenv")
+endif()
 
 set(_LOCAL_PYTHON_EXECUTABLE "${VIRTUALENV_DIRECTORY}/bin/python")
 # Adds a bash script to call python with all the right paths set
@@ -73,13 +86,27 @@ endif()
 function(add_package_to_virtualenv PACKAGE)
     find_python_package(${PACKAGE} LOCAL)
     if(NOT ${PACKAGE}_FOUND)
-        execute_process(
-            COMMAND ${_LOCAL_PYTHON_EXECUTABLE} -m pip install --upgrade ${PACKAGE}
-            RESULT_VARIABLE result
-            OUTPUT_VARIABLE output
-            ERROR_VARIABLE error
-        )
-        if(${result} EQUAL 0)
+        # First check if we have venv in the same directory as python.
+        # Canopy makes things more difficult.
+        get_filename_component(python_bin "${_LOCAL_PYTHON_EXECUTABLE}" PATH)
+        find_program(local_pip_EXECUTABLE pip PATHS "${python_bin}" NO_DEFAULT_PATH)
+        if(local_pip_EXECUTABLE)
+            execute_process(
+                COMMAND
+                    ${local_pip_EXECUTABLE} install --upgrade ${PACKAGE}
+                RESULT_VARIABLE result
+                OUTPUT_VARIABLE output
+                ERROR_VARIABLE error
+            )
+        else()
+            execute_process(
+                COMMAND ${_LOCAL_PYTHON_EXECUTABLE} -m pip install --upgrade ${PACKAGE}
+                RESULT_VARIABLE result
+                OUTPUT_VARIABLE output
+                ERROR_VARIABLE error
+            )
+        endif()
+        if("${result}" STREQUAL "0")
             find_python_package(${PACKAGE} LOCAL)
         else()
             message("${error}")

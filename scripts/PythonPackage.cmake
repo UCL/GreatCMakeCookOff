@@ -55,13 +55,13 @@ function(find_python_package PACKAGE)
 
     execute_process(
         COMMAND ${LOCALPYTHON} -c
-            "import ${PACKAGE};print(${PACKAGE}.__version__)"
+            "import ${PACKAGE};print(getattr(${PACKAGE}, '__version__', ''))"
         WORKING_DIRECTORY "${PYPACK_WORKING_DIRECTORY}"
         RESULT_VARIABLE PACKAGE_WAS_FOUND
         ERROR_VARIABLE ERROR
         OUTPUT_VARIABLE OUTPUT
     )
-    if(PACKAGE_WAS_FOUND EQUAL 0)
+    if("${PACKAGE_WAS_FOUND}" STREQUAL "0")
         string(STRIP "${OUTPUT}" string_version)
         set(arguments
             "import ${PACKAGE}"
@@ -75,7 +75,7 @@ function(find_python_package PACKAGE)
             ERROR_VARIABLE ERROR
             OUTPUT_VARIABLE OUTPUT
         )
-        if(LOCATION_WAS_FOUND EQUAL 0)
+        if("${LOCATION_WAS_FOUND}" STREQUAL "0")
             set(${PACKAGE}_LOCATION ${OUTPUT})
         endif()
     endif()
