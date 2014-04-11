@@ -31,9 +31,24 @@ function(add_to_ld_path PATH)
     _add_to_a_path("${PROJECT_BINARY_DIR}/ldpaths" "${PATH}")
 endfunction()
 
-function(_create_virtualenv call)
-    execute_process(
-	COMMAND ${call} --system-site-packages ${VIRTUALENV_DIRECTORY}
+function(_create_virtualenv_from_exec call)
+    execute_process(COMMAND
+        ${call} --system-site-packages ${VIRTUALENV_DIRECTORY}
+        RESULT_VARIABLE RESULT
+        ERROR_VARIABLE ERROR
+        OUTPUT_VARIABLE OUTPUT
+    )
+    if(NOT "${RESULT}" STREQUAL "0")
+        message(STATUS "${RESULT}")
+        message(STATUS "${OUTPUT}")
+        message(STATUS "${ERROR}")
+        message(FATAL_ERROR "Could not create virtual environment")
+    endif()
+endfunction()
+function(_create_virtualenv_from_package PACKAGE)
+    execute_process(COMMAND
+        ${PYTHON_EXECUTABLE} -m ${PACKAGE}
+            --system-site-packages ${VIRTUALENV_DIRECTORY}
         RESULT_VARIABLE RESULT
         ERROR_VARIABLE ERROR
         OUTPUT_VARIABLE OUTPUT
@@ -50,17 +65,17 @@ endfunction()
 # Canopy makes things more difficult.
 get_filename_component(python_bin "${PYTHON_EXECUTABLE}" PATH)
 find_program(venv_EXECUTABLE venv PATHS "${python_bin}" NO_DEFAULT_PATH)
-find_python_package(venv)
-find_python_package(virtualenv)
+find_python_package(venv QUIET)
+find_python_package(virtualenv QUIET)
 
 set(VIRTUALENV_DIRECTORY ${CMAKE_BINARY_DIR}/external/virtualenv
     CACHE INTERNAL "Path to virtualenv" )
 if(venv_EXECUTABLE)
-  _create_virtualenv("${venv_EXECUTABLE}")
+  _create_virtualenv_from_exec("${venv_EXECUTABLE}")
 elseif(venv_FOUND)
-  _create_virtualenv("${PYTHON_EXECUTABLE} -m venv")
+  _create_virtualenv_from_package("venv")
 elseif(virtualenv_FOUND)
-  _create_virtualenv("${PYTHON_EXECUTABLE} -m virtualenv")
+  _create_virtualenv_from_package("virtualenv")
 else()
   message(FATAL_ERROR "Could find neither venv nor virtualenv")
 endif()
