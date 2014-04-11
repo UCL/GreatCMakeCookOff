@@ -60,7 +60,7 @@ macro(_get_sane_name name OUTVAR)
 endmacro()
 # Looks for a lookup package file and includes it.
 macro(lookup_package package)
-    set(solitos "DOWNLOAD_BY_DEFAULT;REQUIRED;QUIET;")
+    set(solitos "DOWNLOAD_BY_DEFAULT;REQUIRED;QUIET;KEEP")
     set(multiplos "ARGUMENTS;COMPONENTS")
     cmake_parse_arguments(${package} "${solitos}" "" "${multiplos}" ${ARGN})
 
@@ -104,7 +104,7 @@ macro(lookup_package package)
         set(${package}_FOUND ${${PACKAGE}_FOUND})
     endif()
     # If package is not found, then look for a recipe to download and build it
-    if(NOT ${package}_FOUND)
+    if(NOT ${package}_FOUND OR ${package}_LOOKUP_BUILD)
         _find_lookup_recipe(${package} ${package}_LOOKUP_RECIPE)
         if(NOT ${package}_LOOKUP_RECIPE_FILE)
             # Checks if package is required
@@ -123,6 +123,13 @@ macro(lookup_package package)
                    " and install a local version of ${package}")
             endif()
             set(CURRENT_LOOKUP_DIRECTORY "${${package}_LOOKUP_RECIPE_DIR}")
+            if(${package}_KEEP)
+                set(${package}_LOOKUP_BUILD TRUE CACHE BOOL
+                    "Whether package is obtained from a lookup build")
+            else()
+                set(${package}_LOOKUP_BUILD FALSE CACHE BOOL
+                    "Whether package is obtained from a lookup build")
+            endif()
             include(${${package}_LOOKUP_RECIPE_FILE})
             unset(CURRENT_LOOKUP_DIRECTORY)
             add_dependencies(lookup_dependencies ${package})
