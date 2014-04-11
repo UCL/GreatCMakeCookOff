@@ -25,6 +25,11 @@ include(LookUp-GreatCMakeCookOff)
 This will download the cook-off into the build directory right at configure time. Cook-off recipes
 can then be used anywhere below that.
 
+Another option is to point `CMake` towards the location on disk where a repo of the cook-off can be
+found, or more explicitely, where the file `GreatCMakeCookOffConfig.cmake` can be found. This is
+done with `cmake -DGreatCMakeCookOff_DIR=/path/to/cookoff/cmake ..`. Please note that this trick works
+for any `CMake` project that defines `SomethingConfig.cmake` files.
+
 Adding [Eigen](http://eigen.tuxfamily.org/) to a project
 ========================================================
 
