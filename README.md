@@ -278,7 +278,7 @@ Adding to path-like environment variables
 =========================================
 
 ```CMake
-include(Utility)
+include(Utilities)
 add_to_envvar(
   VARIABLE  -- Name of the environment variable
   PATH      -- Path to add

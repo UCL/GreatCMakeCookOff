@@ -1,16 +1,5 @@
 # Checks for python package
-#
-# find_python_package(<NAME>
-#   [REQUIRED] -- will fail build if package not found
-#   [VERSION version] -- minimum version
-#   [EXACT] -- must find exact version
-#   [QUIET] -- silence is golden
-# )
-#
-# Sets ${NAME}_FOUND, as well as ${NAME}_LOCATION containing
-# the directory where the module resides, and ${NAME}_VERSION_STRING
-# the version of the package.
-
+# See https://github.com/UCL/GreatCMakeCookOff/wiki for information
 
 # First check for python executable
 include(FindPackageHandleStandardArgs)

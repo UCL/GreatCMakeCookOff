@@ -1,15 +1,5 @@
 # Adds a target which simply copies files from one place to another.
-# 
-# USAGE:
-# add_copy_file(
-#    <target>                          -- target name
-#    [DESTINATION <destination>]       -- Directory where files will be copied
-#                                         Defaults to current binary directory
-#    [GLOB <glob>]                     -- A glob to find target files to copy
-#    [REPLACE <pattern> <replacement>] -- string(REGEX REPLACE) arguments on output filename
-#    [FILES <list of files>]           -- list of files to copy. Cannot be used with GLOB or ARGN.
-#    [<list of files>]                 -- list of files to copy. Cannot be used with GLOB or FILES.
-# )
+# See https://github.com/UCL/GreatCMakeCookOff/wiki for information
 include(CMakeParseArguments)
 
 function(add_copy_files FILECOPIER_TARGET)

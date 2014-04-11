@@ -1,14 +1,5 @@
 # Creates a python virtual environment in the build directory
-# This python environment can be accessed via `LOCAL_PYTHON_EXECUTABLE`
-# Furthermore, invoking pip_install(something LOCAL) will make sure to install in the local
-# environment, leaving the system untouched.
-# Finally, a special function `add_to_python_path` can be used to add paths to the local
-# environment. In practice, it creates a file "pypaths" in the build directory, where each line is
-# an additional directory.
-# Similarly, a `add_to_ld_path` will add paths to an "ldpaths" file. These paths will be added to
-# `LD_LIBRARY_PATH` (and `DYLD_LIBRARY_PATH`) when executing the local python script.
-# For debugging ease on unixes, a link to the virtual environment is created in the main build
-# directory, called `localpython`.
+# See https://github.com/UCL/GreatCMakeCookOff/wiki for information
 find_package(PythonInterp)
 include(Utilities)
 include(PythonPackage)
