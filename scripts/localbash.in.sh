@@ -22,4 +22,7 @@ if [ -e @PROJECT_BINARY_DIR@/pypaths ]; then
     add_to_pypath $line
   done < @PROJECT_BINARY_DIR@/pypaths
 fi
+export PYTHONPATH=$PYTHONPATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH
 @EXECUTABLE@ "$@"
