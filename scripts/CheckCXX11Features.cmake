@@ -163,7 +163,7 @@ macro(_figure_out_cxx11_feature current_feature)
   endif()
   # Then call macro
   string(TOUPPER ${current_feature} UPPER_OPTIONAL)
-  set(VARNAME HAS_CXX11_${UPPER_OPTIONAL})
+  string(REGEX REPLACE "/" "_" VARNAME "HAS_CXX11_${UPPER_OPTIONAL}")
   cxx11_check_single_feature(${current_feature} "${number}" ${VARNAME})
 endmacro(_figure_out_cxx11_feature)
 
