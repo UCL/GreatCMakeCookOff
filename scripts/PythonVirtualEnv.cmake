@@ -16,15 +16,15 @@ function(_add_to_a_path THISFILE PATH)
     endif()
 endfunction()
 function(add_to_python_path PATH)
-    _add_to_a_path("${PROJECT_BINARY_DIR}/pypaths" "${PATH}")
+    _add_to_a_path("${PROJECT_BINARY_DIR}/paths/pypaths.pth" "${PATH}")
 endfunction()
 function(add_to_ld_path PATH)
-    _add_to_a_path("${PROJECT_BINARY_DIR}/ldpaths" "${PATH}")
+    _add_to_a_path("${PROJECT_BINARY_DIR}/paths/ldpaths" "${PATH}")
 endfunction()
 
 function(_create_virtualenv_from_exec call)
     execute_process(COMMAND
-        ${call} --system-site-packages ${VIRTUALENV_DIRECTORY}
+        ${call} ${VIRTUALENV_DIRECTORY}
         RESULT_VARIABLE RESULT
         ERROR_VARIABLE ERROR
         OUTPUT_VARIABLE OUTPUT
@@ -38,8 +38,7 @@ function(_create_virtualenv_from_exec call)
 endfunction()
 function(_create_virtualenv_from_package PACKAGE)
     execute_process(COMMAND
-        ${PYTHON_EXECUTABLE} -m ${PACKAGE}
-            --system-site-packages ${VIRTUALENV_DIRECTORY}
+        ${PYTHON_EXECUTABLE} -m ${PACKAGE} ${VIRTUALENV_DIRECTORY}
         RESULT_VARIABLE RESULT
         ERROR_VARIABLE ERROR
         OUTPUT_VARIABLE OUTPUT
@@ -87,7 +86,40 @@ if(UNIX)
         DESTINATION ${PROJECT_BINARY_DIR}
         FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     )
+else()
+    message(FATAL_ERROR "VirtualEnv for cmake stuff "
+       "not implemented on non-UNIX systems")
 endif()
+# Add current python paths to a path.pth file
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c
+       "from sys import path;print(';'.join([u for u in path if len(u)]))"
+    ${PROJECT_BINARY_DIR}/CMakeFiles/pypaths.py
+    OUTPUT_VARIABLE output
+)
+foreach(pypath ${output})
+    file(APPEND "${PROJECT_BINARY_DIR}/paths/system.pth" "${pypath}\n")
+endforeach()
+# Makes sure the path.pth file is picked up
+execute_process(COMMAND
+    ${_LOCAL_PYTHON_EXECUTABLE} -c "import site; print(site.__file__)"
+    OUTPUT_VARIABLE sitedir
+    ERROR_VARIABLE error
+    RESULT_VARIABLE result
+)
+if("${result}" STREQUAL "0")
+    string(STRIP sitedir "${sitedir}")
+    get_filename_component(sitedir "${sitedir}" PATH)
+    file(WRITE "${sitedir}/sitecustomize.py"
+        "from site import addsitedir\n"
+        "addsitedir('${PROJECT_BINARY_DIR}/paths')\n"
+    )
+else()
+    message("error: ${error}")
+    message("out: ${sitedir}")
+    message(FATAL_ERROR "script failed")
+endif()
+
 
 function(add_package_to_virtualenv PACKAGE)
     find_python_package(${PACKAGE} LOCAL)
