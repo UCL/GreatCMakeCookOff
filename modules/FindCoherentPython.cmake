@@ -27,49 +27,55 @@ endif()
 # relevant paths to relevant cmake variables so that
 # find_package(PythonLibs) actually works
 if(NOT CMAKE_CROSS_COMPILING)
-    function(call_python OUTPUT)
-       # First tries adding prefix
-       execute_process(
-         COMMAND ${PYTHON_EXECUTABLE} -c "${ARGN}"
-         RESULT_VARIABLE result
-         OUTPUT_VARIABLE output
-       )
-       if(result EQUAL 0)
-           string(STRIP "${output}" output)
-           set(${OUTPUT} "${output}" PARENT_SCOPE)
-       else()
-           unset(${OUTPUT} PARENT_SCOPE)
-       endif()
-    endfunction()
-    # First tries adding prefix
-    call_python(PYTHON_INTERP_PREFIX "import sys; print(sys.prefix)")
-    if(DEFINED PYTHON_INTERP_PREFIX)
-        list(INSERT CMAKE_PREFIX_PATH 0 ${PYTHON_INTERP_PREFIX})
-        if("${PYTHON_INTERP_PREFIX}" MATCHES ".*/Frameworks/.*")
-            string(REGEX REPLACE
-                "(.*/Frameworks)/.*" "\\1"
-                framework_path
-                "${PYTHON_INTERP_PREFIX}"
-            )
-            list(INSERT CMAKE_FRAMEWORK_PATH 0 "${framework_path}")
+    include(CallPython)
+    # Figures out prefix from sys.prefix variable
+    # Add relevant path to relevant variables, including MACOSX framework.
+    macro(add_to_framework_paths)
+        call_python(PYTHON_INTERP_PREFIX "import sys; print(sys.prefix)")
+        if(DEFINED PYTHON_INTERP_PREFIX)
+            list(INSERT CMAKE_PREFIX_PATH 0 ${PYTHON_INTERP_PREFIX})
+            if("${PYTHON_INTERP_PREFIX}" MATCHES ".*/Frameworks/.*")
+                string(REGEX REPLACE
+                    "(.*/Frameworks)/.*" "\\1"
+                    framework_path
+                    "${PYTHON_INTERP_PREFIX}"
+                )
+                list(INSERT CMAKE_FRAMEWORK_PATH 0 "${framework_path}")
+            endif()
         endif()
-    endif()
-    # Then tries adding sysconfig.get_python_inc output
-    call_python(python_include
-	"from distutils.sysconfig import get_python_inc"
-        "print(get_python_inc())"
-    )
-    if(DEFINED python_include)
-        set(PYTHON_INCLUDE_DIR "${python_include}" PATH)
-    endif()
-    # And tries adding sysconfig.get_python_lib output
-    call_python(python_lib
-	"from distutils.sysconfig import get_python_lib"
-        "print(get_python_lib())"
-    )
-    if(DEFINED python_lib)
-        list(INSERT 0 CMAKE_LIBRARY_PATH "${python_lib}")
-    endif()
+    endmacro()
+    # Figures out paths from distutils' sysconfig module
+    # Started off for canopy and virtualenv
+    macro(paths_from_distutils_sysconfig)
+        call_python(python_include
+        "from distutils.sysconfig import get_python_inc"
+            "print(get_python_inc())"
+        )
+        if(DEFINED python_include AND EXISTS "${python_include}")
+            set(PYTHON_INCLUDE_DIR "${python_include}" PATH)
+        endif()
+        # And tries adding sysconfig.get_python_lib output
+        # Good for canopy, but not virtualenv.
+        call_python(python_lib
+        "from distutils.sysconfig import get_python_lib"
+            "print(get_python_lib())"
+        )
+        if(DEFINED python_lib AND EXISTS "${python_lib}")
+            list(INSERT CMAKE_LIBRARY_PATH 0 "${python_lib}")
+        endif()
+        # And tries get_config_var('LIBDIR').
+        # Good for virtualenv but not canopy.
+        call_python(python_lib
+        "from distutils.sysconfig import get_config_var"
+        "print(get_config_var('LIBDIR'))"
+        )
+        if(DEFINED python_lib AND EXISTS "${python_lib}")
+            list(INSERT CMAKE_LIBRARY_PATH 0 "${python_lib}")
+        endif()
+    endmacro()
+
+    add_to_framework_paths()
+    paths_from_distutils_sysconfig()
 endif()
 
 find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT ${required} ${quiet})
