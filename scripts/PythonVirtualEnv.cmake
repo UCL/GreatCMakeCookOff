@@ -3,24 +3,12 @@
 find_package(PythonInterp)
 include(Utilities)
 include(PythonPackage)
+include(EnvironmentScript)
 
-function(_add_to_a_path THISFILE PATH)
-    if(NOT EXISTS "${THISFILE}")
-        file(WRITE "${THISFILE}" "${PATH}\n")
-        return()
-    endif()
-    file(STRINGS "${THISFILE}" ALLPATHS)
-    list(FIND ALLPATHS "${PATH}" INDEX)
-    if(INDEX EQUAL -1)
-        file(APPEND "${THISFILE}" "${PATH}\n")
-    endif()
-endfunction()
 function(add_to_python_path PATH)
     _add_to_a_path("${PROJECT_BINARY_DIR}/paths/pypaths.pth" "${PATH}")
 endfunction()
-function(add_to_ld_path PATH)
-    _add_to_a_path("${PROJECT_BINARY_DIR}/paths/ldpaths" "${PATH}")
-endfunction()
+
 
 function(_create_virtualenv_from_exec call)
     execute_process(COMMAND
@@ -73,23 +61,12 @@ endif()
 set(_LOCAL_PYTHON_EXECUTABLE "${VIRTUALENV_DIRECTORY}/bin/python")
 # Adds a bash script to call python with all the right paths set
 # Makes it easy to debug and test
-if(UNIX)
-    set(LOCAL_PYTHON_EXECUTABLE "${PROJECT_BINARY_DIR}/localpython.sh")
-    find_program(BASH_EXECUTABLE bash)
-    find_program(ENV_EXECUTABLE env)
-    set(EXECUTABLE "${_LOCAL_PYTHON_EXECUTABLE}")
-    configure_file("${CMAKE_CURRENT_LIST_DIR}/localbash.in.sh"
-        "${PROJECT_BINARY_DIR}/CMakeFiles/localpython.sh"
-        @ONLY
-    )
-    file(COPY "${PROJECT_BINARY_DIR}/CMakeFiles/localpython.sh"
-        DESTINATION ${PROJECT_BINARY_DIR}
-        FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-    )
-else()
-    message(FATAL_ERROR "VirtualEnv for cmake stuff "
-       "not implemented on non-UNIX systems")
-endif()
+set(LOCAL_PYTHON_EXECUTABLE "${PROJECT_BINARY_DIR}/localpython.sh")
+create_environment_script(
+    EXECUTABLE "${_LOCAL_PYTHON_EXECUTABLE}"
+    PATH "${PROJECT_BINARY_DIR}/localpython.sh"
+)
+
 # Add current python paths to a path.pth file
 execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c

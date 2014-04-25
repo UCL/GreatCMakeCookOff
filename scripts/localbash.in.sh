@@ -12,6 +12,14 @@ if [ -e @PROJECT_BINARY_DIR@/paths/ldpaths ]; then
     add_to_ld $line
   done < @PROJECT_BINARY_DIR@/paths/ldpaths
 fi
+
+if [ -n "@env_WORKING_DIRECTORY@" ]; then
+    cd @env_WORKING_DIRECTORY@
+fi
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH
-@EXECUTABLE@ "$@"
+if [ -n "@env_EXECUTABLE" ]; then
+    @env_EXECUTABLE@ "$@"
+else
+    eval $@
+fi
