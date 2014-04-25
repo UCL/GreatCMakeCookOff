@@ -1,7 +1,7 @@
 include(CheckCXXCompilerFlag)
 
-# On older cmake versions + newer compilers,
-# the given version of CheckCXXCompilerFlags does not quite work.
+# On older cmake versions + newer compilers,
+# the given version of CheckCXXCompilerFlags does not quite work.
 if(CMAKE_VERSION VERSION_LESS 2.8.9)
   macro (CHECK_CXX_COMPILER_FLAG _FLAG _RESULT)
      set(SAFE_CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS}")
