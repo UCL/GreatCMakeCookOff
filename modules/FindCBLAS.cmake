@@ -7,10 +7,10 @@ if("${BLAS_LIBRARIES}" MATCHES "mkl" AND "${BLAS_LIBRARIES}" MATCHES "thread")
 endif()
 
 # Figures out atlas if necessary
-if(NOT BLAS_LIBRARIES AND BLAS_atlas_LIBRARY)
+if(BLAS_atlas_LIBRARY)
     get_filename_component(atlas_dir "${BLAS_atlas_LIBRARY}" PATH)
     get_filename_component(atlas_ext "${BLAS_atlas_LIBRARY}" EXT)
-    find_library(BLAS_atlas_cblas_LIBRARY NAMES libcblas${atlas_ext} 
+    find_library(BLAS_atlas_cblas_LIBRARY NAMES libcblas${atlas_ext}
         HINTS "${atlas_dir}"
     )
     if(BLAS_atlas_cblas_LIBRARY)
