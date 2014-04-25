@@ -4,8 +4,9 @@
 # First check for python executable
 include(FindPackageHandleStandardArgs)
 include(Utilities)
-find_package(PythonInterp REQUIRED)
 include(CMakeParseArguments)
+
+find_package(PythonInterp REQUIRED)
 
 function(_python_executable OUTVAR)
     cmake_parse_arguments(PYEXEC "LOCAL" "PYTHON_EXECUTABLE" "" ${ARGN})
