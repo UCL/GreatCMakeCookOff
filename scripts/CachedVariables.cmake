@@ -1,0 +1,11 @@
+# Creates list of cached variables as command-line arguments
+function(cached_variables OUTVAR PATTERN)
+      get_cmake_property(variables CACHE_VARIABLES)
+      set(result)
+      foreach(variable ${variables})
+          if(${variable} AND "${variable}" MATCHES "${PATTERN}")
+              list(APPEND result "-D${variable}=${${variable}}")
+          endif()
+      endforeach()
+      set(${OUTVAR} ${result} PARENT_SCOPE)
+endfunction()

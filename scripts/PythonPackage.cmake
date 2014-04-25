@@ -1,22 +1,12 @@
 # Checks for python package
-#
-# find_python_package(<NAME>
-#   [REQUIRED] -- will fail build if package not found
-#   [VERSION version] -- minimum version
-#   [EXACT] -- must find exact version
-#   [QUIET] -- silence is golden
-# )
-#
-# Sets ${NAME}_FOUND, as well as ${NAME}_LOCATION containing
-# the directory where the module resides, and ${NAME}_VERSION_STRING
-# the version of the package.
-
+# See https://github.com/UCL/GreatCMakeCookOff/wiki for information
 
 # First check for python executable
 include(FindPackageHandleStandardArgs)
 include(Utilities)
-find_package(PythonInterp REQUIRED)
 include(CMakeParseArguments)
+
+find_package(PythonInterp REQUIRED)
 
 function(_python_executable OUTVAR)
     cmake_parse_arguments(PYEXEC "LOCAL" "PYTHON_EXECUTABLE" "" ${ARGN})
@@ -55,13 +45,13 @@ function(find_python_package PACKAGE)
 
     execute_process(
         COMMAND ${LOCALPYTHON} -c
-            "import ${PACKAGE};print(${PACKAGE}.__version__)"
+            "import ${PACKAGE};print(getattr(${PACKAGE}, '__version__', ''))"
         WORKING_DIRECTORY "${PYPACK_WORKING_DIRECTORY}"
         RESULT_VARIABLE PACKAGE_WAS_FOUND
         ERROR_VARIABLE ERROR
         OUTPUT_VARIABLE OUTPUT
     )
-    if(PACKAGE_WAS_FOUND EQUAL 0)
+    if("${PACKAGE_WAS_FOUND}" STREQUAL "0")
         string(STRIP "${OUTPUT}" string_version)
         set(arguments
             "import ${PACKAGE}"
@@ -75,7 +65,7 @@ function(find_python_package PACKAGE)
             ERROR_VARIABLE ERROR
             OUTPUT_VARIABLE OUTPUT
         )
-        if(LOCATION_WAS_FOUND EQUAL 0)
+        if("${LOCATION_WAS_FOUND}" STREQUAL "0")
             set(${PACKAGE}_LOCATION ${OUTPUT})
         endif()
     endif()
