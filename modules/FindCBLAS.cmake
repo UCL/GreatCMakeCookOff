@@ -1,3 +1,14 @@
+# First attempts using pkg-config. It is not unlikely to work and should be
+# quite reliable on linuxes.
+include(FindPkgConfig)
+pkg_search_module(CBLAS cblas)
+if(NOT CBLAS_FOUND AND PKG_CONFIG_FOUND)
+	pkg_search_module(ATLAS atlas)
+else()
+	set(BLAS_LIBRARIES ${CBLAS_LIBRARIES})
+	set(BLAS_INCLUDE_DIR ${CBLAS_INCLUDE_DIRS})
+endif()
+
 # Corrects for deficiencies in cmake find_package(BLAS)
 find_package(BLAS QUIET)
 
@@ -27,13 +38,15 @@ endif()
 function(include_directories_from_library_paths OUTVAR)
     set(results)
     foreach(path ${ARGN})
-        string(REGEX REPLACE "(.*)/lib/.*" "\\1/include" current "${path}")
+		string(REGEX REPLACE "(.*)/lib(64)?/.*" "\\1/include" current "${path}")
         if(NOT "${current}" STREQUAL "/include" AND IS_DIRECTORY "${current}")
             list(APPEND results "${current}")
         endif()
     endforeach()
-    list(REMOVE_DUPLICATES results)
-    set(${OUTVAR} ${results} PARENT_SCOPE)
+	if(NOT "${results}" STREQUAL "")
+        list(REMOVE_DUPLICATES results)
+        set(${OUTVAR} ${results} PARENT_SCOPE)
+	endif()
 endfunction()
 # find_package blas does not look for cblas.h
 if(NOT BLAS_INCLUDE_DIR AND BLAS_LIBRARIES)
