@@ -10,6 +10,10 @@
 #  FFTW3_LONGDOUBLE_FOUND - Set if FFTW3 exists in double precision format.
 
 if(NOT FFTW3_FOUND)
+  if(FFTW3_INCLUDE_DIR AND FFTW3_LIBRARIES)
+    set(FFTW3_FOUND)
+    return()
+  endif()
 
   if(fftw3_FIND_COMPONENTS)
       set(FFTW3_FIND_COMPONENTS ${fftw3_FIND_COMPONENTS})
