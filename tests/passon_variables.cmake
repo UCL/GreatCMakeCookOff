@@ -10,7 +10,7 @@ set(othervarone 3 CACHE PATH "something" FORCE)
 passon_variables(thispackage
   FILENAME "${CMAKE_CURRENT_BINARY_DIR}/thispackage.cmake"
   PUBLIC
-  ".*var_.*"
+  PATTERNS ".*var_.*"
 )
 
 file(WRITE "${CMAKE_BINARY_DIR}/test.cmake"
