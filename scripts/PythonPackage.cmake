@@ -28,6 +28,10 @@ endfunction()
 
 function(find_python_package PACKAGE)
     string(TOUPPER "${PACKAGE}" PACKAGE_UPPER)
+    if(${PACKAGE_UPPER}_FOUND)
+      set(${PACKAGE}_FOUND ${${PACKAGE_UPPER}_FOUND} PARENT_SCOPE)
+      return()
+    endif()
     cmake_parse_arguments(${PACKAGE}_FIND
         "REQUIRED;EXACT" "VERSION" "" ${ARGN})
     cmake_parse_arguments(PYPACK
@@ -77,10 +81,14 @@ function(find_python_package PACKAGE)
     if(NOT "${PACKAGE}" STREQUAL "${PACKAGE_UPPER}")
         set(${PACKAGE}_FOUND ${${PACKAGE_UPPER}_FOUND} PARENT_SCOPE)
     endif()
+    set(${PACKAGE_UPPER}_FOUND "${${PACKAGE_UPPER}_FOUND}" CACHE INTERNAL "")
     if(${PACKAGE_UPPER}_FOUND)
-        set(${PACKAGE}_LOCATION "${${PACKAGE}_LOCATION}" PARENT_SCOPE)
-        set(${PACKAGE}_VERSION_STRING "${string_version}" PARENT_SCOPE)
+        set(${PACKAGE}_LOCATION "${${PACKAGE}_LOCATION}"
+            CACHE PATH "Location of ${PACKAGE}")
+        set(${PACKAGE}_VERSION_STRING "${string_version}" 
+            CACHE STRING "Version of ${PACKAGE}")
     else()
-        set(${PACKAGE}_LOCATION "${PACKAGE}_LOCATION-NOTFOUND" PARENT_SCOPE)
+        set(${PACKAGE}_LOCATION "${${PACKAGE}_LOCATION}"
+            CACHE PATH "Location of ${PACKAGE}")
     endif()
 endfunction()
