@@ -4,6 +4,7 @@ cmake_test(addgtest NOEXEC SOURCE --test-command ${CMAKE_MAKE_PROGRAM} test)
 cmake_test(local_include)
 cmake_test(self_lookup)
 cmake_test(cached_variables)
+cmake_test(passon_variables)
 
 add_subdirectory(cpp11)
 add_subdirectory(copy_files)
