@@ -43,8 +43,10 @@ function(find_python_package PACKAGE)
     endif()
     if(PYPACK_QUIET)
         set(${PACKAGE}_FIND_QUIETLY TRUE)
+        set(${PACKAGE_UPPER}_FIND_QUIETLY TRUE)
     else()
         set(${PACKAGE}_FIND_QUIETLY FALSE)
+        set(${PACKAGE_UPPER}_FIND_QUIETLY FALSE)
     endif()
 
     execute_process(
@@ -85,7 +87,7 @@ function(find_python_package PACKAGE)
     if(${PACKAGE_UPPER}_FOUND)
         set(${PACKAGE}_LOCATION "${${PACKAGE}_LOCATION}"
             CACHE PATH "Location of ${PACKAGE}")
-        set(${PACKAGE}_VERSION_STRING "${string_version}" 
+        set(${PACKAGE}_VERSION_STRING "${string_version}"
             CACHE STRING "Version of ${PACKAGE}")
     else()
         set(${PACKAGE}_LOCATION "${${PACKAGE}_LOCATION}"
