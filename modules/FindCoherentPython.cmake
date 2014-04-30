@@ -60,8 +60,14 @@ if(NOT CMAKE_CROSS_COMPILING)
         "from distutils.sysconfig import get_python_lib"
             "print(get_python_lib())"
         )
-        if(DEFINED python_lib AND EXISTS "${python_lib}")
-            list(INSERT CMAKE_LIBRARY_PATH 0 "${python_lib}")
+        if(DEFINED python_lib)
+            if(EXISTS "${python_lib}")
+                list(INSERT CMAKE_LIBRARY_PATH 0 "${python_lib}")
+            endif()
+            if(EXISTS "${python_lib}/../config")
+                # CASA seems to put stuff here
+                list(INSERT CMAKE_LIBRARY_PATH 0 "${python_lib}/../config")
+            endif()
         endif()
         # And tries get_config_var('LIBDIR').
         # Good for virtualenv but not canopy.
