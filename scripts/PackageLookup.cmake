@@ -60,7 +60,7 @@ macro(_get_sane_name name OUTVAR)
 endmacro()
 # Looks for a lookup package file and includes it.
 macro(lookup_package package)
-    set(solitos "DOWNLOAD_BY_DEFAULT;REQUIRED;QUIET;KEEP")
+    set(solitos "DOWNLOAD_BY_DEFAULT;REQUIRED;QUIET;KEEP;NOFIND")
     set(multiplos "ARGUMENTS;COMPONENTS")
     cmake_parse_arguments(${package} "${solitos}" "" "${multiplos}" ${ARGN})
 
@@ -74,10 +74,16 @@ macro(lookup_package package)
     _get_sane_name(${package} SANENAME)
     if(${SANENAME}_RECURSIVE)
         set(recursive TRUE)
+        if(${package}_NOFIND)
+            set(${package}_FOUND TRUE CACHE BOOL "")
+        endif()
     endif()
     # First try and find package (unless downloading by default)
     set(dolook TRUE)
     if(${package}_DOWNLOAD_BY_DEFAULT AND NOT recursive)
+        set(dolook FALSE)
+    endif()
+    if(${package}_NOFIND)
         set(dolook FALSE)
     endif()
     # Figure out whether to add REQUIRED and QUIET keywords
@@ -158,7 +164,7 @@ macro(add_recursive_cmake_step name)
     # Once the package has been found and configured,
     # the locations and such should not change, so
     # there is no need for a recursive cmake step.
-    if(NOT ${${found_var}})
+    if(NOT DEFINED ${found_var} OR NOT ${${found_var}})
         _get_sane_name(${recurse_name} SANENAME)
         set(cmake_arguments -DCMAKE_PROGRAM_PATH:PATH=${EXTERNAL_ROOT}/bin
                             -DCMAKE_LIBRARY_PATH:PATH=${EXTERNAL_ROOT}/lib
