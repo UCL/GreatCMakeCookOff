@@ -6,6 +6,7 @@ cmake_test(self_lookup)
 cmake_test(cached_variables)
 cmake_test(passon_variables)
 cmake_test(python_package)
+cmake_test(lookup_eigen SOURCE)
 
 add_subdirectory(cpp11)
 add_subdirectory(copy_files)
