@@ -153,30 +153,38 @@ macro(add_recursive_cmake_step name)
     if(recursive_FOUND_VAR)
         set(found_var ${recursive_FOUND_VAR})
     endif()
-    _get_sane_name(${recurse_name} SANENAME)
-    set(cmake_arguments -DCMAKE_PROGRAM_PATH:PATH=${EXTERNAL_ROOT}/bin
-                        -DCMAKE_LIBRARY_PATH:PATH=${EXTERNAL_ROOT}/lib
-                        -DCMAKE_INCLUDE_PATH:PATH=${EXTERNAL_ROOT}/include
-                        -DCMAKE_PREFIX_PATH:PATH=${EXTERNAL_ROOT}
-                        -D${SANENAME}_RECURSIVE:BOOL=TRUE
-                        --no-warn-unused-cli)
-    if(NOT recursive_NOCHECK)
-        set(cmake_arguments ${cmake_arguments} -D${SANENAME}_REQUIREDONRECURSE:INTERNAL=TRUE)
+
+    # Only add recurse step if package not found already.
+    # Once the package has been found and configured,
+    # the locations and such should not change, so
+    # there is no need for a recursive cmake step.
+    if(NOT ${${found_var}})
+        _get_sane_name(${recurse_name} SANENAME)
+        set(cmake_arguments -DCMAKE_PROGRAM_PATH:PATH=${EXTERNAL_ROOT}/bin
+                            -DCMAKE_LIBRARY_PATH:PATH=${EXTERNAL_ROOT}/lib
+                            -DCMAKE_INCLUDE_PATH:PATH=${EXTERNAL_ROOT}/include
+                            -DCMAKE_PREFIX_PATH:PATH=${EXTERNAL_ROOT}
+                            -D${SANENAME}_RECURSIVE:BOOL=TRUE
+                            --no-warn-unused-cli)
+        if(NOT recursive_NOCHECK)
+            set(cmake_arguments ${cmake_arguments}
+                -D${SANENAME}_REQUIREDONRECURSE:INTERNAL=TRUE)
+        endif()
+        ExternalProject_Add_Step(
+            ${name} reCMake
+            COMMAND ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} ${cmake_arguments}
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            ${recursive_UNPARSED_ARGUMENTS}
+        )
+        if(${${SANENAME}_REQUIREDONRECURSE})
+            if(NOT ${found_var} OR "${${found_var}}" STREQUAL "")
+                unset(${SANENAME}_REQUIREDONRECURSE CACHE)
+                message(FATAL_ERROR "[${name}] Could not be downloaded and installed")
+            endif()
+        endif()
+        # Sets a variable saying we are building this source externally
+        set(${name}_BUILT_AS_EXTERNAL_PROJECT TRUE)
     endif()
-    ExternalProject_Add_Step(
-      ${name} reCMake
-      COMMAND ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} ${cmake_arguments}
-      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-      ${recursive_UNPARSED_ARGUMENTS}
-    )
-    if(${${SANENAME}_REQUIREDONRECURSE})
-      if(NOT ${found_var} OR "${${found_var}}" STREQUAL "")
-          unset(${SANENAME}_REQUIREDONRECURSE CACHE)
-          message(FATAL_ERROR "[${name}] Could not be downloaded and installed")
-      endif()
-    endif()
-    # Sets a variable saying we are building this source externally
-    set(${name}_BUILT_AS_EXTERNAL_PROJECT TRUE)
 endmacro()
 
 # Avoids anoying cmake warning, by actually using the variables.
