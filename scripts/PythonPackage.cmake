@@ -72,7 +72,7 @@ function(find_python_package PACKAGE)
             OUTPUT_VARIABLE OUTPUT
         )
         if("${LOCATION_WAS_FOUND}" STREQUAL "0")
-            set(${PACKAGE}_LOCATION ${OUTPUT})
+            string(STRIP "${OUTPUT}" ${PACKAGE}_LOCATION)
         endif()
     endif()
     find_package_handle_standard_args(${PACKAGE}
