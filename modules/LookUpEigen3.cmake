@@ -6,7 +6,6 @@ if(Eigen3_ARGUMENTS)
         ${Eigen3_ARGUMENTS}
     )
 endif()
-set(arguments)
 
 if(NOT Eigen3_HG_REPOSITORY)
     set(Eigen3_HG_REPOSITORY https://bitbucket.org/eigen/eigen/)
@@ -49,7 +48,7 @@ else()
 endif()
 list(APPEND arguments TIMEOUT ${Eigen3_TIMEOUT})
 
-# write subset of variables to cache for sopt to use
+# write subset of variables to cache for eigen3 to use
 include(PassonVariables)
 passon_variables(Eigen3
     FILENAME "${EXTERNAL_ROOT}/src/Eigen3Variables.cmake"
