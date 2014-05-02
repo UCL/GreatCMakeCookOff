@@ -11,7 +11,12 @@
 
 if(NOT FFTW3_FOUND)
   if(FFTW3_INCLUDE_DIR AND FFTW3_LIBRARIES)
-    set(FFTW3_FOUND)
+    set(FFTW3_FOUND TRUE)
+    foreach(component ${FFTW3_FIND_COMPONENTS})
+      if("${FFTW3_${component}_LIBRARY}" STREQUAL "")
+          set(FFTW3_${component}_LIBRARY "${FFTW3_LIBRARIES}")
+      endif()
+    endforeach()
     return()
   endif()
 
@@ -61,7 +66,10 @@ if(NOT FFTW3_FOUND)
       )
     endif()
     if(RUN_RESULT EQUAL 0)
-      string(REGEX REPLACE ".*([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1" VERSION_STRING ${OUTPUT})
+      string(REGEX REPLACE
+          ".*([0-9]+\\.[0-9]+\\.[0-9]+).*"
+          "\\1" VERSION_STRING "${OUTPUT}"
+      )
       set(${OUTVAR} ${VERSION_STRING} PARENT_SCOPE)
     endif()
   endfunction()
