@@ -18,7 +18,7 @@ if [ -n "@env_WORKING_DIRECTORY@" ]; then
 fi
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH
-if [ -n "@env_EXECUTABLE" ]; then
+if [ -n "@env_EXECUTABLE@" ]; then
     @env_EXECUTABLE@ "$@"
 else
     eval $@
