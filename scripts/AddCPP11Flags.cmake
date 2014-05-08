@@ -1,7 +1,7 @@
 include(CheckCXXCompilerFlag)
 
-# On older cmake versions + newer compilers, 
-# the given version of CheckCXXCompilerFlags does not quite work.
+# On older cmake versions + newer compilers,
+# the given version of CheckCXXCompilerFlags does not quite work.
 if(CMAKE_VERSION VERSION_LESS 2.8.9)
   macro (CHECK_CXX_COMPILER_FLAG _FLAG _RESULT)
      set(SAFE_CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS}")
@@ -29,7 +29,7 @@ endif(CMAKE_VERSION VERSION_LESS 2.8.9)
 
 check_cxx_compiler_flag(-std=c++11 has_std_cpp11)
 check_cxx_compiler_flag(-std=c++0x has_std_cpp0x)
-if(MINGW) 
+if(MINGW)
   check_cxx_compiler_flag(-std=gnu++11 has_std_gnupp11)
   check_cxx_compiler_flag(-std=gnu++0x has_std_gnupp0x)
 endif(MINGW)
@@ -37,7 +37,7 @@ if(has_std_gnupp11)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
 elseif(has_std_gnupp0x)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
-elseif(has_std_cpp11) 
+elseif(has_std_cpp11)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(has_std_cpp0x)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
@@ -48,13 +48,13 @@ if(has_stdlib_libcpp)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif(has_stdlib_libcpp)
 
-if(MSVC) 
+if(MSVC)
   set(MSWINDOBE TRUE)
   add_definitions(/EHsc)
   # Wd4251 stops MSCrapWare from issuing meaningless warnings. Seems Microsoft engineers don't grok
   # dynamic libraries yet. Or templates. Or both acting alone or together. In any case, issuing
   # warning sure is easier on them than fixing  their OS.
-  # Unfortunately, it does disable warnings that may be of interest. Possibly. 
+  # Unfortunately, it does disable warnings that may be of interest. Possibly.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_VARIADIC_MAX=10 /wd4251")
 endif(MSVC)
 

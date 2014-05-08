@@ -5,6 +5,30 @@ The Great CMake CookOff
 This is a repository of usefull and less than usefull cmake recipes.  It is distributed under the
 [MIT License](http://opensource.org/licenses/MIT)
 
+Adding this repository to a cmake
+=================================
+
+The files in this repository can be added individually or as a whole to a project, as long as the
+MIT copyright terms are followed. One possibility is to include this project as a [git
+submodule](http://git-scm.com/docs/git-submodule).
+
+However, the easiest method may well be to have this repository downloaded upon configuration of a
+project. In that case, the file
+[LookUp-GreatCMakeCookOff.cmake](https://github.com/UCL/GreatCMakeCookOff/tree/refactor/LookUp-GreatCMakeCookOff.cmake)
+should be downloaded and inserted into the target project. It can then be included in the target
+project's main `CMakeLists.txt` file:
+
+```cmake
+include(LookUp-GreatCMakeCookOff)
+```
+
+This will download the cook-off into the build directory right at configure time. Cook-off recipes
+can then be used anywhere below that.
+
+Another option is to point `CMake` towards the location on disk where a repo of the cook-off can be
+found, or more explicitely, where the file `GreatCMakeCookOffConfig.cmake` can be found. This is
+done with `cmake -DGreatCMakeCookOff_DIR=/path/to/cookoff/cmake ..`. Please note that this trick works
+for any `CMake` project that defines `SomethingConfig.cmake` files.
 
 Adding [Eigen](http://eigen.tuxfamily.org/) to a project
 ========================================================
@@ -13,9 +37,6 @@ Looks for the Eigen installed on system. If not found, then uses external projec
 Usage is as follows:
 
 ```cmake
-# Tell cmake to look into GreatCMakeCookOff for recipes
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_files)
-
 # Optionally, tell cmake where to download eigen, if needed.
 # Defaults to value below.
 set(EXTERNAL_ROOT ${PROJECT_BINARY_DIR}/external)
@@ -25,13 +46,13 @@ find_package(Eigen)
 ```
 
 **NOTE:** After building the first time, run cmake again. It will find the eigen it downloaded
-previously, and it will stop checking for updates. 
+previously, and it will stop checking for updates.
 
 
 Adding [GTest](https://code.google.com/p/googletest/) to a project
 ==================================================================
 
-For googly reasons, whether valid or 404, GTest prefers to be compiled for each an every project. 
+For googly reasons, whether valid or 404, GTest prefers to be compiled for each an every project.
 This script does two things:
 
 - it adds GTest as an external project
@@ -46,7 +67,7 @@ The CMakeLists.txt file could look like this:
 ```cmake
 option(tests          "Enable testing."                         on)
 
-if(tests) 
+if(tests)
   find_package(GTest)
   enable_testing()
 endif(tests)
@@ -69,7 +90,7 @@ endif(tests)
 The test do expect an explicit main function. See the test generated in ``tests/addgtest.cmake``.
 
 **NOTE:** When using c++11, it is recommended to first include the c++11 flag script
-``AddCPP11Flags.cmake`` (see below) so that the gtest can be compiled with ``GTEST_LANG_CXX11``. 
+``AddCPP11Flags.cmake`` (see below) so that the gtest can be compiled with ``GTEST_LANG_CXX11``.
 
 C++11
 =====
@@ -86,7 +107,7 @@ enable_language(CXX)
 
 # Tell cmake to look into GreatCMakeCookOff for recipes
 list(APPEND CMAKE_MODULE_PATH Path/to/cookoff)
-# Adds aligned allocation
+# Adds flags to compiler to launch it into c++11 land
 include(AddCPP11Flags)
 
 # The following will print out all available features.
@@ -167,7 +188,7 @@ the need for a macro:
 #include <type_traits>
 
 template<class T>
-  typename std::enable_if<std::is_arithmetic<T>::value, bool> :: type 
+  typename std::enable_if<std::is_arithmetic<T>::value, bool> :: type
     not_a_number(T const &_in) { return @ISNAN_VARIATION@(_in); }
 ```
 
@@ -181,24 +202,22 @@ keyword is provided, then a ``main.cc`` or ``main.c`` file should provided the c
 
 For examples, look at the tests in this package.
 
-Aligned Allocation 
+Aligned Allocation
 ==================
 
 Not all platforms come with an aligned allocation, such as
-[posix_memalign](http://linux.die.net/man/3/posix_memalign), and they certainly are not standard. 
+[posix_memalign](http://linux.die.net/man/3/posix_memalign), and they certainly are not standard.
 This script attempts to find one of many aligned allocation routines. It defaults to its own if it
 cannot find one.
 
-Usage requires adding bits to the cmake file: 
+Usage requires adding bits to the cmake file:
 ```cmake
-# Tell cmake to look into GreatCMakeCookOff for recipes
-list(APPEND CMAKE_MODULE_PATH Path/To/CookOff)
 # Adds aligned allocation
 include(AlignedAlloc)
 ```
 
 Then, in a file under cmake
-[configure_file](http://www.cmake.org/cmake/help/v2.8.12/cmake.html#command:configure_file), 
+[configure_file](http://www.cmake.org/cmake/help/v2.8.12/cmake.html#command:configure_file),
 add:
 
 ```cpp
@@ -207,12 +226,162 @@ add:
 namespace your_project {
   //! Aligned allocation variation
   inline void* aligned_alloc(size_t _size, size_t _alignment) {
-    @ALIGNED_ALLOC_VARIATION@; 
+    @ALIGNED_ALLOC_VARIATION@;
   }
 }
 ```
 
-Extra FindSomething 
+Target for copying files
+========================
+
+It is sometimes usefull to copy files form one place to another during the compilation stage. For
+instance, this makes it possible to create a python package inside the build directory and use it
+during testing. The process is to create a dummy target and add files to it:
+
+```cmake
+include(TargetCopyFiles)
+add_custom_target(mynewtarget)
+add_copy_file(mynewtarget thisfile DESTINATION this/directory)
+
+```
+
+A few options are available, as described below:
+
+```
+add_copy_file(
+   <target>                          -- target name
+   [DESTINATION <destination>]       -- Directory where files will be copied
+                                        Defaults to current binary directory
+   [GLOB <glob>]                     -- A glob to find target files to copy
+   [REPLACE <pattern> <replacement>] -- string(REGEX REPLACE) arguments on output filename
+   [FILES <list of files>]           -- list of files to copy. Cannot be used with GLOB or ARGN.
+   [<list of files>]                 -- list of files to copy. Cannot be used with GLOB or FILES.
+)
+```
+
+Getting version and git hash
+============================
+
+A function is provided that will set a project's version and git hash during the *configure* step of
+the cmake process.
+
+```CMake
+include(VersionAndGitRef)
+set_version(0.1)
+get_gitref()
+```
+
+It will set the `${PROJECT_NAME}_VERSION` and `${PROJECT_NAME}_GITREF` variables in the caller's
+scope.
+
+Adding to path-like environment variables
+=========================================
+
+```CMake
+include(Utilities)
+add_to_envvar(
+  VARIABLE  -- Name of the environment variable
+  PATH      -- Path to add
+  [PREPEND] -- If path, adds at begining of list
+  [OS somevariable] -- Only add path if the variable is defined.
+                       Could be WIN32, or APPLE, or UNIX of anything else.
+)
+```
+
+Find or install a package -- a.k.a lookup
+=========================================
+Adds the ability to "look-up" a package
+
+This objective is to define a way to either find a package with find_package and/or,
+depending on choices and circumstances, download and install that package.
+
+The user should only have to include this file and add to their cmake files:
+
+~~~cmake
+include(PackageLookup)
+lookup_package(<name>    # Name for find_package and lookup recipe files
+   [QUIET]               # Whether to avoid making noise about the whole process
+   [REQUIRED]            # Fails if package can neither be found nor installed
+   [DOWNLOAD_BY_DEFAULT] # Always dowload, build, and install package locally. Does not look for
+                         # pre-installed packages. This ensures the external project is always
+                         # compiled specifically for this project.
+   [ARGUMENTS <list>]    # Arguments specific to the look up recipe.
+                         # They will be available inside the recipe under the variable
+                         # ${name}_ARGUMENTS. Lookup recipes also have access to EXTERNAL_ROOT,
+                         # a variable specifying a standard location for external projects in the
+                         # build tree
+   [...]                 # Arguments passed on to `find_package`.
+)
+~~~~
+
+This will first attempt to call `find_package(name [...])` (with `QUIET` and without `REQUIRED`). If
+the package is not found, then it will attempt to find a lookup recipe for the package. This recipe
+should configure an external project that will install the missing package during the building
+process.
+
+All external lookup targets are dependees of the custom cmake target `lookup_dependencies`. It is
+recommended that targets that depend on the external packages should be made to depend on
+`lookup_dependencies`. This is made a bit easier via the macro:
+
+```CMake
+# Makes sure TARGET is built after the looked up projects.
+depends_on_lookups(TARGET)
+```
+
+The name should match that of an existing `find_package(<name>)` file. The lookup_package function
+depends on files in directories in the cmake prefixes paths that have
+the name of the package:
+
+- ${CMAKE_MODULE_PATH}/${package}/${package}-lookup.cmake
+- ${CMAKE_MODULE_PATH}/${package}/LookUp${package}.cmake
+- ${CMAKE_MODULE_PATH}/${package}/lookup.cmake
+- ${CMAKE_MODULE_PATH}/${package}-lookup.cmake
+- ${CMAKE_MODULE_PATH}/LookUp${package}.cmake
+- ${CMAKE_MODULE_PATH}/${package}-lookup.cmake
+- ${CMAKE_LOOKUP_PATH}/${package}-lookup.cmake
+- ${CMAKE_LOOKUP_PATH}/LookUp${package}.cmake
+
+These files are included when the function lookup_package is called.
+The files will generally have the structure:
+
+~~~cmake
+# Parses arguments specific to the lookup recipe
+# Optional step. Below, only a URL single-valued argument is specified.
+if(package_ARGUMENTS)
+    cmake_parse_arguments(package "" "URL" "" ${package_ARGUMENTS})
+else()
+    set(package_URL https://gaggledoo.doogaggle.com)
+endif()
+# The external project name `<package>` must match the package name exactly
+ExternalProject_Add(package
+  URL ${URL_
+)
+# Reincludes cmake so newly installed external can be found via find_package.
+# Optional step.
+add_recursive_cmake_step(...)
+~~~
+
+This pattern will first attempt to find the package on the system. If it is not found, an external
+project to create it is added, with an extra step to rerun cmake and find the newly installed
+package.
+
+If a package is not found on the first call to configure, and then subsequently installed during the
+make process, it can be interesting to have the package found on a second automatic pass of
+configure. This is what the function `add_recursive_cmake_step` does. It adds a call to cmake as the
+last step of downloading, building, and *installing* an external project.
+
+~~~~cmake
+# Adds a custom step to the external project that calls cmake recusively
+# This makes it possible for the newly built package to be installed.
+add_recursive_cmake_step(<name> # Still the same package name
+   <${name}_FOUND> # Variable set to true if package is found
+   [...]           # Passed on to ExternalProject_Add_Step
+                   # in general, it will be `DEPENDEES install`,
+                   # making this step the last.
+)
+~~~
+
+Extra FindSomething
 ===================
 
 * [FFTW](http://www.fftw.org/)
@@ -220,3 +389,10 @@ Extra FindSomething
 * [Julia](http://julialang.org/)
 * [Mako](http://www.makotemplates.org/). Installs it to ${PROJECT_BINARY_DIR}/external/python if it
   is not found.
+* [CFitsIO](http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html)
+* [Numpy](www.numpy.org), also tests whether
+    - `PyArray_ENABLEFLAGS` exists
+    - `NPY_ARRAY_C_CONTIGUOUS` vs `NPY_C_CONTIGUOUS` macros
+    - `npy_long_double` exists and is different from `npy_double`
+    - `npy_bool` exists and is different from `npy_ubyte`
+* CoherentPython: Looks for a *consistent* set of python interpreter and libraries.

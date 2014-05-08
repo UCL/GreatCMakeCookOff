@@ -14,7 +14,7 @@
 # Copyright (c) 2008, 2009 Gael Guennebaud, <g.gael@free.fr>
 # Copyright (c) 2009 Benoit Jacob <jacob.benoit.1@gmail.com>
 # Redistribution and use is allowed according to the terms of the 2-clause BSD license.
-# Modified by RSDT@UCL 
+# Modified by RSDT@UCL
 
 if(NOT Eigen3_FIND_VERSION)
   if(NOT Eigen3_FIND_VERSION_MAJOR)
@@ -67,16 +67,11 @@ if (EIGEN3_INCLUDE_DIR)
 
 else (EIGEN3_INCLUDE_DIR)
 
-  find_path(EIGEN3_INCLUDE_DIR NAMES signature_of_eigen3_matrix_library
-      PATHS
-      $ENV{HOME}/usr/include
-      ${CMAKE_INSTALL_PREFIX}/include
-      ${KDE4_INCLUDE_DIR}
-      /usr/include
-      /usr/local/include
-      ${EXTERNAL_ROOT}/include
+  find_path(EIGEN3_INCLUDE_DIR
+      NAMES signature_of_eigen3_matrix_library
+      PATHS ${KDE4_INCLUDE_DIR}
       PATH_SUFFIXES eigen3 eigen
-    )
+  )
 
   if(EIGEN3_INCLUDE_DIR)
     _eigen3_check_version()
@@ -88,44 +83,3 @@ else (EIGEN3_INCLUDE_DIR)
   mark_as_advanced(EIGEN3_INCLUDE_DIR)
 
 endif(EIGEN3_INCLUDE_DIR)
-
-if(NOT EIGEN3_FOUND)
-  if(CMAKE_VERSION VERSION_LESS 2.8.10)
-    # Doesn't have Hg download prior to 2.8.10
-    message(FATAL_ERROR "Please install eigen.")
-  else(CMAKE_VERSION VERSION_LESS 2.8.10)
-    if(NOT EXTERNAL_ROOT)
-      set(EXTERNAL_ROOT ${CMAKE_BINARY_DIR}/external)
-    endif(NOT EXTERNAL_ROOT)
-    find_package(Hg)
-    if(HG_FOUND)
-    
-      message(STATUS "Eigen3 not found. Will attempt to download it.")
-      include(ExternalProject)
-      ExternalProject_Add(
-          eigen
-          PREFIX ${EXTERNAL_ROOT}
-          HG_REPOSITORY https://bitbucket.org/eigen/eigen/
-          HG_TAG 3.2.0
-          TIMEOUT 10
-          CMAKE_ARGS 
-            -DCMAKE_INSTALL_PREFIX=${EXTERNAL_ROOT}
-            -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-            -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-            -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
-            -DCMAKE_CXX_FLAGS_RELWITHDEBINFO=${CMAKE_CXX_FLAGS_RELWIDTHDEBINFO}
-            -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
-            -DCMAKE_CXX_FLAGS_MINSIZEREL=${CMAKE_CXX_FLAGS_MINSIZEREL}
-          # Wrap download, configure and build steps in a script to log output
-          LOG_DOWNLOAD ON
-          LOG_CONFIGURE ON
-          LOG_BUILD ON)
-      set(EIGEN3_INCLUDE_DIR ${EXTERNAL_ROOT}/include/eigen3)
-  
-    else(HG_FOUND)
-   
-      message(FATAL_ERROR "Hg not found, and eigen not found.\nNeed one or the other.")
-   
-    endif(HG_FOUND)
-  endif(CMAKE_VERSION VERSION_LESS 2.8.10)
-endif(NOT EIGEN3_FOUND)

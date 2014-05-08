@@ -1,14 +1,14 @@
 # Checks for C++11 features
-# 
+#
 # USAGE: There are two functions
 #
-# cxx11_find_all_features(OUTPUT_VARIABLE) 
+# cxx11_find_all_features(OUTPUT_VARIABLE)
 # This function returns a variable with all possible features.
 #
 # cxx11_feature_check([feature feature] [REQUIRED [feature feature]])
 # If no arguments are provided, then checks all available features
 # Features appeacing before REQUIRED are optional.
-# If arguments are provided and those features are available, sets 
+# If arguments are provided and those features are available, sets
 # the variable HAS_CXX11_FEATURENAME, where FEATURENAME is the input in capital letters.
 # Fails if required feature are not available
 #
@@ -91,6 +91,14 @@ function(cxx11_find_all_features outvar)
     string(REGEX REPLACE "-N[0-9]*" "" filename "${filename}")
     set(OUTPUT_VARIABLES ${OUTPUT_VARIABLES} ${filename})
   endforeach()
+  FILE(GLOB obsolete "${CPP11_FEATURE_CHECK_DIR}/obsolete/*.cpp")
+  foreach(filename ${obsolete})
+    get_filename_component(filename ${filename} NAME_WE)
+    string(REGEX REPLACE "_fail_compile" "" filename "${filename}")
+    string(REGEX REPLACE "_fail" "" filename "${filename}")
+    string(REGEX REPLACE "-N[0-9]*" "" filename "${filename}")
+    set(OUTPUT_VARIABLES ${OUTPUT_VARIABLES} "obsolete/${filename}")
+  endforeach()
   list(REMOVE_DUPLICATES OUTPUT_VARIABLES)
   set(${outvar} ${OUTPUT_VARIABLES} PARENT_SCOPE)
 endfunction()
@@ -140,12 +148,12 @@ macro(_figure_out_cxx11_feature current_feature)
       list(REMOVE_ITEM ALL_FEATURE_FILES ${filename})
     endif()
   endforeach()
-  
+
   list(LENGTH ALL_FEATURE_FILES NFILES)
   if(NOT ${NFILES} EQUAL 1)
     message(FATAL_ERROR "[c++11] Expected to find only one feature. Found ${NFILES} -- ${ALL_FEATURE_FILES}.")
   endif(NOT ${NFILES} EQUAL 1)
-  
+
   # Now we know which file corresponds to option.
   get_filename_component(basename ${ALL_FEATURE_FILES} NAME_WE)
   # If has feature number, extract it
@@ -155,7 +163,7 @@ macro(_figure_out_cxx11_feature current_feature)
   endif()
   # Then call macro
   string(TOUPPER ${current_feature} UPPER_OPTIONAL)
-  set(VARNAME HAS_CXX11_${UPPER_OPTIONAL})
+  string(REGEX REPLACE "/" "_" VARNAME "HAS_CXX11_${UPPER_OPTIONAL}")
   cxx11_check_single_feature(${current_feature} "${number}" ${VARNAME})
 endmacro(_figure_out_cxx11_feature)
 
@@ -172,7 +180,7 @@ function(cxx11_feature_check)
 
   # MinGW has not implemented std::random_device fully yet. Unfortunately, this can only be detected
   # by running a program which tries to call std::random_device. However that generates an error that
-  # is *not* caught by CMake's try_run. 
+  # is *not* caught by CMake's try_run.
   if(MSYS)
     list(REMOVE_ITEM OPTIONALS "random_device")
     list(FIND REQUIRED "random_device" feature_was_found)
