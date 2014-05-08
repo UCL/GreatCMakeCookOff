@@ -1,5 +1,9 @@
 # Creates a python virtual environment in the build directory
 # See https://github.com/UCL/GreatCMakeCookOff/wiki for information
+if(VIRTUALENV_WAS_CREATED)
+  return()
+endif()
+
 find_package(PythonInterp)
 include(Utilities)
 include(PythonPackage)
@@ -46,7 +50,7 @@ find_program(venv_EXECUTABLE venv PATHS "${python_bin}" NO_DEFAULT_PATH)
 find_python_package(venv QUIET)
 find_python_package(virtualenv QUIET)
 
-set(VIRTUALENV_DIRECTORY ${CMAKE_BINARY_DIR}/external/virtualenv
+set(VIRTUALENV_DIRECTORY "${CMAKE_BINARY_DIR}/external/virtualenv"
     CACHE INTERNAL "Path to virtualenv" )
 if(venv_EXECUTABLE)
   _create_virtualenv_from_exec("${venv_EXECUTABLE}")
@@ -97,6 +101,7 @@ else()
     message(FATAL_ERROR "script failed")
 endif()
 
+set(VIRTUALENV_WAS_CREATED TRUE CACHE INTERNAL "Virtualenv has been created")
 
 function(add_package_to_virtualenv PACKAGE)
     find_python_package(${PACKAGE} LOCAL)
