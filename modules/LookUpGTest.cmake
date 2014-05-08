@@ -36,7 +36,7 @@ endif()
 
 ExternalProject_Add(
     GTest
-    PREFIX ${EXTERNAL_ROOT}
+    PREFIX "${EXTERNAL_ROOT}"
     ${arguments}
     # Force separate output paths for debug and release builds to allow easy
     # identification of correct lib in subsequent TARGET_LINK_LIBRARIES commands
@@ -44,6 +44,7 @@ ExternalProject_Add(
         -C "${EXTERNAL_ROOT}/src/GTestVariables.cmake"
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         ${cmake_args}
+
     # Wrap download, configure and build steps in a script to log output
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
