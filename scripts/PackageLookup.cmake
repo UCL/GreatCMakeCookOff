@@ -166,19 +166,23 @@ macro(add_recursive_cmake_step name)
     # there is no need for a recursive cmake step.
     if(NOT DEFINED ${found_var} OR NOT ${${found_var}})
         _get_sane_name(${recurse_name} SANENAME)
-        set(cmake_arguments -DCMAKE_PROGRAM_PATH:PATH=${EXTERNAL_ROOT}/bin
-                            -DCMAKE_LIBRARY_PATH:PATH=${EXTERNAL_ROOT}/lib
-                            -DCMAKE_INCLUDE_PATH:PATH=${EXTERNAL_ROOT}/include
-                            -DCMAKE_PREFIX_PATH:PATH=${EXTERNAL_ROOT}
-                            -D${SANENAME}_RECURSIVE:BOOL=TRUE
-                            --no-warn-unused-cli)
+        set(cmakefile "${PROJECT_BINARY_DIR}/CMakeFiles/external")
+        set(cmakefile "${cmakefile}/${name}_recursive.cmake")
+        file(WRITE "${cmakefile}"
+            "set(CMAKE_PROGRAM_PATH \"${EXTERNAL_ROOT}/bin\" CACHE PATH \"\")\n"
+            "set(CMAKE_LIBRARY_PATH \"${EXTERNAL_ROOT}/lib\" CACHE PATH \"\")\n"
+            "set(CMAKE_INCLUDE_PATH \"${EXTERNAL_ROOT}/include\" CACHE PATH \"\")\n"
+            "set(CMAKE_PREFIX_PATH \"${EXTERNAL_ROOT}\" CACHE PATH \"\")\n"
+            "set(${SANENAME}_RECURSIVE TRUE CACHE INTERNAL \"\")\n"
+        )
         if(NOT recursive_NOCHECK)
-            set(cmake_arguments ${cmake_arguments}
-                -D${SANENAME}_REQUIREDONRECURSE:INTERNAL=TRUE)
+            file(APPEND "${cmakefile}"
+                "set(${SANENAME}_REQUIREDONRECURSE TRUE CACHE INTERNAL \"\")\n"
+            )
         endif()
         ExternalProject_Add_Step(
             ${name} reCMake
-            COMMAND ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} ${cmake_arguments}
+            COMMAND ${CMAKE_COMMAND} -C "${cmakefile}" --no-varn-unused-cli "${CMAKE_SOURCE_DIR}"
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             ${recursive_UNPARSED_ARGUMENTS}
         )
