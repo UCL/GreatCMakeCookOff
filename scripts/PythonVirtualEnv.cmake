@@ -1,9 +1,5 @@
 # Creates a python virtual environment in the build directory
 # See https://github.com/UCL/GreatCMakeCookOff/wiki for information
-if(VIRTUALENV_WAS_CREATED)
-  return()
-endif()
-
 find_package(PythonInterp)
 include(Utilities)
 include(PythonPackage)
@@ -14,94 +10,103 @@ function(add_to_python_path PATH)
 endfunction()
 
 
-function(_create_virtualenv_from_exec call)
-    execute_process(COMMAND
-        ${call} ${VIRTUALENV_DIRECTORY}
-        RESULT_VARIABLE RESULT
-        ERROR_VARIABLE ERROR
-        OUTPUT_VARIABLE OUTPUT
-    )
-    if(NOT "${RESULT}" STREQUAL "0")
-        message(STATUS "${RESULT}")
-        message(STATUS "${OUTPUT}")
-        message(STATUS "${ERROR}")
-        message(FATAL_ERROR "Could not create virtual environment")
+if(NOT VIRTUALENV_WAS_CREATED)
+    function(_create_virtualenv_from_exec call)
+        execute_process(COMMAND
+            ${call} ${VIRTUALENV_DIRECTORY}
+            RESULT_VARIABLE RESULT
+            ERROR_VARIABLE ERROR
+            OUTPUT_VARIABLE OUTPUT
+        )
+        if(NOT "${RESULT}" STREQUAL "0")
+            message(STATUS "${RESULT}")
+            message(STATUS "${OUTPUT}")
+            message(STATUS "${ERROR}")
+            message(FATAL_ERROR "Could not create virtual environment")
+        endif()
+    endfunction()
+    function(_create_virtualenv_from_package PACKAGE)
+        execute_process(COMMAND
+            ${PYTHON_EXECUTABLE} -m ${PACKAGE} ${VIRTUALENV_DIRECTORY}
+            RESULT_VARIABLE RESULT
+            ERROR_VARIABLE ERROR
+            OUTPUT_VARIABLE OUTPUT
+        )
+        if(NOT "${RESULT}" STREQUAL "0")
+            message(STATUS "${RESULT}")
+            message(STATUS "${OUTPUT}")
+            message(STATUS "${ERROR}")
+            message(FATAL_ERROR "Could not create virtual environment")
+        endif()
+    endfunction()
+ 
+    # First check if we have venv in the same directory as python.
+    # Canopy makes things more difficult.
+    get_filename_component(python_bin "${PYTHON_EXECUTABLE}" PATH)
+    find_program(venv_EXECUTABLE venv PATHS "${python_bin}" NO_DEFAULT_PATH)
+    find_python_package(venv QUIET)
+    find_python_package(virtualenv QUIET)
+ 
+    set(VIRTUALENV_DIRECTORY "${CMAKE_BINARY_DIR}/external/virtualenv"
+        CACHE INTERNAL "Path to virtualenv" )
+    if(venv_EXECUTABLE)
+      _create_virtualenv_from_exec("${venv_EXECUTABLE}")
+    elseif(venv_FOUND)
+      _create_virtualenv_from_package("venv")
+    elseif(virtualenv_FOUND)
+      _create_virtualenv_from_package("virtualenv")
+    else()
+      message(FATAL_ERROR "Could find neither venv nor virtualenv")
     endif()
-endfunction()
-function(_create_virtualenv_from_package PACKAGE)
+ 
+    set(_LOCAL_PYTHON_EXECUTABLE
+        "${VIRTUALENV_DIRECTORY}/bin/python"
+        CACHE PATH
+        "Path to python executable in build virtual environment"
+    )
+    # Adds a bash script to call python with all the right paths set
+    # Makes it easy to debug and test
+    set(LOCAL_PYTHON_EXECUTABLE 
+        "${PROJECT_BINARY_DIR}/localpython.sh"
+        CACHE PATH "Path to proxy for executing python script in build dir"
+    )
+    create_environment_script(
+        EXECUTABLE "${_LOCAL_PYTHON_EXECUTABLE}"
+        PATH "${PROJECT_BINARY_DIR}/localpython.sh"
+    )
+ 
+    # Add current python paths to a path.pth file
+    execute_process(
+        COMMAND ${PYTHON_EXECUTABLE} -c
+           "from sys import path;print(';'.join([u for u in path if len(u)]))"
+        ${PROJECT_BINARY_DIR}/CMakeFiles/pypaths.py
+        OUTPUT_VARIABLE output
+    )
+    foreach(pypath ${output})
+        file(APPEND "${PROJECT_BINARY_DIR}/paths/system.pth" "${pypath}\n")
+    endforeach()
+    # Makes sure the path.pth file is picked up
     execute_process(COMMAND
-        ${PYTHON_EXECUTABLE} -m ${PACKAGE} ${VIRTUALENV_DIRECTORY}
-        RESULT_VARIABLE RESULT
-        ERROR_VARIABLE ERROR
-        OUTPUT_VARIABLE OUTPUT
+        ${_LOCAL_PYTHON_EXECUTABLE} -c "import site; print(site.__file__)"
+        OUTPUT_VARIABLE sitedir
+        ERROR_VARIABLE error
+        RESULT_VARIABLE result
     )
-    if(NOT "${RESULT}" STREQUAL "0")
-        message(STATUS "${RESULT}")
-        message(STATUS "${OUTPUT}")
-        message(STATUS "${ERROR}")
-        message(FATAL_ERROR "Could not create virtual environment")
+    if("${result}" STREQUAL "0")
+        string(STRIP sitedir "${sitedir}")
+        get_filename_component(sitedir "${sitedir}" PATH)
+        file(WRITE "${sitedir}/sitecustomize.py"
+            "from site import addsitedir\n"
+            "addsitedir('${PROJECT_BINARY_DIR}/paths')\n"
+        )
+    else()
+        message("error: ${error}")
+        message("out: ${sitedir}")
+        message(FATAL_ERROR "script failed")
     endif()
-endfunction()
-
-# First check if we have venv in the same directory as python.
-# Canopy makes things more difficult.
-get_filename_component(python_bin "${PYTHON_EXECUTABLE}" PATH)
-find_program(venv_EXECUTABLE venv PATHS "${python_bin}" NO_DEFAULT_PATH)
-find_python_package(venv QUIET)
-find_python_package(virtualenv QUIET)
-
-set(VIRTUALENV_DIRECTORY "${CMAKE_BINARY_DIR}/external/virtualenv"
-    CACHE INTERNAL "Path to virtualenv" )
-if(venv_EXECUTABLE)
-  _create_virtualenv_from_exec("${venv_EXECUTABLE}")
-elseif(venv_FOUND)
-  _create_virtualenv_from_package("venv")
-elseif(virtualenv_FOUND)
-  _create_virtualenv_from_package("virtualenv")
-else()
-  message(FATAL_ERROR "Could find neither venv nor virtualenv")
+ 
+    set(VIRTUALENV_WAS_CREATED TRUE CACHE INTERNAL "Virtualenv has been created")
 endif()
-
-set(_LOCAL_PYTHON_EXECUTABLE "${VIRTUALENV_DIRECTORY}/bin/python")
-# Adds a bash script to call python with all the right paths set
-# Makes it easy to debug and test
-set(LOCAL_PYTHON_EXECUTABLE "${PROJECT_BINARY_DIR}/localpython.sh")
-create_environment_script(
-    EXECUTABLE "${_LOCAL_PYTHON_EXECUTABLE}"
-    PATH "${PROJECT_BINARY_DIR}/localpython.sh"
-)
-
-# Add current python paths to a path.pth file
-execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c
-       "from sys import path;print(';'.join([u for u in path if len(u)]))"
-    ${PROJECT_BINARY_DIR}/CMakeFiles/pypaths.py
-    OUTPUT_VARIABLE output
-)
-foreach(pypath ${output})
-    file(APPEND "${PROJECT_BINARY_DIR}/paths/system.pth" "${pypath}\n")
-endforeach()
-# Makes sure the path.pth file is picked up
-execute_process(COMMAND
-    ${_LOCAL_PYTHON_EXECUTABLE} -c "import site; print(site.__file__)"
-    OUTPUT_VARIABLE sitedir
-    ERROR_VARIABLE error
-    RESULT_VARIABLE result
-)
-if("${result}" STREQUAL "0")
-    string(STRIP sitedir "${sitedir}")
-    get_filename_component(sitedir "${sitedir}" PATH)
-    file(WRITE "${sitedir}/sitecustomize.py"
-        "from site import addsitedir\n"
-        "addsitedir('${PROJECT_BINARY_DIR}/paths')\n"
-    )
-else()
-    message("error: ${error}")
-    message("out: ${sitedir}")
-    message(FATAL_ERROR "script failed")
-endif()
-
-set(VIRTUALENV_WAS_CREATED TRUE CACHE INTERNAL "Virtualenv has been created")
 
 function(add_package_to_virtualenv PACKAGE)
     find_python_package(${PACKAGE} LOCAL)
