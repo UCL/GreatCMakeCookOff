@@ -1,5 +1,8 @@
 # Finds python interpreter and library.
 # Tries to make sure one fits the other
+if(PYTHON_INCLUDE_DIR AND PYTHON_LIBRARIES)
+    return()
+endif()
 unset(required)
 if(CoherentPython_FIND_REQUIRED)
     set(required REQUIRED)
@@ -52,7 +55,7 @@ if(NOT CMAKE_CROSS_COMPILING)
             "print(get_python_inc())"
         )
         if(DEFINED python_include AND EXISTS "${python_include}")
-            set(PYTHON_INCLUDE_DIR "${python_include}" PATH)
+            set(PYTHON_INCLUDE_DIR "${python_include}")
         endif()
         # And tries adding sysconfig.get_python_lib output
         # Good for canopy, but not virtualenv.
@@ -85,3 +88,6 @@ if(NOT CMAKE_CROSS_COMPILING)
 endif()
 
 find_package(PythonLibs ${PYTHON_VERSION_STRING} EXACT ${required} ${quiet})
+if(NOT PYTHON_INCLUDE_DIRS)
+    message(FATAL_ERROR "Could not find python include directory")
+endif()
