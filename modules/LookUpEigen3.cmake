@@ -41,6 +41,7 @@ passon_variables(Eigen3
         "CMAKE_C_.*"
         "CMAKE_CXX_.*"
         "BLAS_.*" "FFTW3_.*"
+        ".*_INCLUDE_DIRS?"
     ALSOADD
         "\nset(CMAKE_INSTALL_PREFIX \"${EXTERNAL_ROOT}\" CACHE STRING \"\")\n"
 )
