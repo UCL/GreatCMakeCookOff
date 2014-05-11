@@ -48,6 +48,10 @@ function(find_python_package PACKAGE)
         set(${PACKAGE}_FIND_QUIETLY FALSE)
         set(${PACKAGE_UPPER}_FIND_QUIETLY FALSE)
     endif()
+    # Unset prior variables
+    unset(${PACKAGE}_LOCATION CACHE)
+    unset(${PACKAGE}_FOUND CACHE)
+    unset(${PACKAGE_UPPER}_FOUND CACHE)
 
     execute_process(
         COMMAND ${LOCALPYTHON} -c
