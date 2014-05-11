@@ -9,20 +9,23 @@
 #  NUMPY_VERSION_MAJOR       - the major version number of NumPy
 #  NUMPY_VERSION_MINOR       - the minor version number of NumPy
 #  NUMPY_VERSION_PATCH       - the patch version number of NumPy
-#  NUMPY_VERSION_DECIMAL     - e.g. version 1.6.1 is 10601
 #  NUMPY_INCLUDE_DIRS        - path to the NumPy include files
 
 # Modified from script by Continuum Analytics, Inc.
-
-# Finding NumPy involves calling the Python interpreter
-if(NumPy_FIND_REQUIRED)
-    find_package(PythonInterp REQUIRED)
-else()
-    find_package(PythonInterp)
+if(NUMPY_INCLUDE_DIRS) # Don't look twice
+    string(REGEX REPLACE "\\." ";" _NUMPY_VERSION_LIST ${NUMPY_VERSION})
+    list(GET _NUMPY_VERSION_LIST 0 NUMPY_VERSION_MAJOR)
+    list(GET _NUMPY_VERSION_LIST 1 NUMPY_VERSION_MINOR)
+    list(GET _NUMPY_VERSION_LIST 2 NUMPY_VERSION_PATCH)
+    return()
 endif()
 
-if(NOT PYTHONINTERP_FOUND)
-    set(NUMPY_FOUND FALSE)
+# Finding NumPy involves calling the Python interpreter
+find_package(CoherentPython)
+if(NOT PYTHON_EXECUTABLE)
+    if(NumPy_FIND_REQUIRED)
+        message(FATAL_ERROR "Could not find python interpreter.")
+    endif()
     return()
 endif()
 
@@ -62,32 +65,45 @@ endif()
 string(REGEX REPLACE "\\\\" "/" NUMPY_INCLUDE_DIRS ${NUMPY_INCLUDE_DIRS})
 
 # Get the major and minor version numbers
+string(STRIP "${NUMPY_VERSION}" NUMPY_VERSION)
 string(REGEX REPLACE "\\." ";" _NUMPY_VERSION_LIST ${NUMPY_VERSION})
 list(GET _NUMPY_VERSION_LIST 0 NUMPY_VERSION_MAJOR)
 list(GET _NUMPY_VERSION_LIST 1 NUMPY_VERSION_MINOR)
 list(GET _NUMPY_VERSION_LIST 2 NUMPY_VERSION_PATCH)
-string(REGEX MATCH "[0-9]*" NUMPY_VERSION_PATCH ${NUMPY_VERSION_PATCH})
-math(EXPR NUMPY_VERSION_DECIMAL
-    "(${NUMPY_VERSION_MAJOR} * 10000) + (${NUMPY_VERSION_MINOR} * 100) + ${NUMPY_VERSION_PATCH}")
 
-find_package_message(NUMPY
-    "Found NumPy: version \"${NUMPY_VERSION}\" ${NUMPY_INCLUDE_DIRS}"
-    "${NUMPY_INCLUDE_DIRS}${NUMPY_VERSION}")
+include(FindPackageHandleStandardArgs)
+# handle the QUIETLY and REQUIRED arguments and set FFTW3_FOUND to TRUE
+# if all listed variables are TRUE
+find_package_handle_standard_args(NumpyLibrary
+    REQUIRED_VARS
+        NUMPY_INCLUDE_DIRS
+        NUMPY_VERSION_MAJOR
+        NUMPY_VERSION_MINOR
+    VERSION_VAR NUMPY_VERSION
+)
 
-set(NUMPY_FOUND TRUE)
+if(NUMPYLIBRARY_FOUND)
+    set(NUMPYLIBRARY_FOUND TRUE CACHE BOOL "Numpy library was found")
+    set(NumpyLibrary_FOUND TRUE CACHE BOOL "Numpy library was found")
+    set(NUMPY_INCLUDE_DIRS 
+        "${NUMPY_INCLUDE_DIRS}" CACHE
+        PATH "Path to numpy includes"
+    )
+    set(NUMPY_VERSION "${NUMPY_VERSION}" CACHE INTERNAL "Numpy version")
+else()
+    return()
+endif()
 
 ## Now check some features of numpy c api
 ## This is RSDT stuff
-function(numpy_feature_test OUTVARNAME testfilename testname)
-  if (NUMPY_INCLUDES) # only if numpy found.
-
+macro(numpy_feature_test OUTVARNAME testfilename testname)
     ## try to compile and run
     ## Using Release flags because MSCrapware fails otherwise.
     try_compile(
       ${OUTVARNAME}
       ${CMAKE_BINARY_DIR}
       ${CMAKE_CURRENT_LIST_DIR}/numpy/${testfilename}
-      COMPILE_DEFINITIONS -I${PYTHON_INCLUDE_DIRS}  -I${NUMPY_INCLUDES}
+      COMPILE_DEFINITIONS -I${PYTHON_INCLUDE_DIRS}  -I${NUMPY_INCLUDE_DIRS}
                           -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
       CMAKE_FLAGS -DLINK_LIBRARIES:STRING=${PYTHON_LIBRARIES}
                   -DCMAKE_CXX_FLAGS_DEBUG:STRING="${CMAKE_CXX_FLAGS_RELEASE}"
@@ -96,15 +112,17 @@ function(numpy_feature_test OUTVARNAME testfilename testname)
       OUTPUT_VARIABLE NUMPY_TESTCOMPILE
     )
     ## display results
-    if (NOT NUMPY_FIND_QUIETLY)
-      message (STATUS "[NumPy] ${testname} = ${${OUTVARNAME}}")
-    endif (NOT NUMPY_FIND_QUIETLY)
-    set(${OUTVARNAME} ${${OUTVARNAME}} PARENT_SCOPE)
-  endif()
-endfunction()
+    if(NOT Numpy_FIND_QUIETLY)
+        message (STATUS "[NumPy] ${testname} = ${${OUTVARNAME}}")
+    endif()
+    set(${OUTVARNAME} ${${OUTVARNAME}}
+        CACHE BOOL
+        "Numpy feature check: ${testname}"
+    )
+endmacro()
 
-numpy_feature_test(NUMPY_NPY_LONG_DOUBLE test_numpy_long_double.c "Long double exists")
-numpy_feature_test(NUMPY_NPY_BOOL test_numpy_ubyte.c "Bool is a separate type")
+numpy_feature_test(NUMPY_NPY_LONG_DOUBLE test_numpy_long_double.cc "Long double exists")
+numpy_feature_test(NUMPY_NPY_BOOL test_numpy_ubyte.cc "Bool is a separate type")
 numpy_feature_test(NUMPY_NPY_ARRAY test_numpy_is_noarray.c "NPY_ARRAY_* macros exist")
 numpy_feature_test( NUMPY_NPY_ENABLEFLAGS test_numpy_has_enableflags.c
                     "PyArray_ENABLEFLAGS exists" )
