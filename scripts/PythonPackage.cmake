@@ -20,8 +20,10 @@ function(_python_executable OUTVAR)
         set(${OUTVAR} ${LOCAL_PYTHON_EXECUTABLE} PARENT_SCOPE)
     elseif(PYEXEC_PYTHON_EXECUTABLE)
         set(${OUTVAR} ${PYEXEC_PYTHON_EXECUTABLE} PARENT_SCOPE)
-    else()
+    elseif(NOT LOCAL_PYTHON_EXECUTABLE)
         set(${OUTVAR} ${PYTHON_EXECUTABLE} PARENT_SCOPE)
+    elseif(EXISTS "${LOCAL_PYTHON_EXECUTABLE}")
+        set(${OUTVAR} ${LOCAL_PYTHON_EXECUTABLE} PARENT_SCOPE)
     endif()
     set(${OUTVAR}_UNPARSED_ARGUMENTS ${PYEXEC_UNPARSED_ARGUMENTS} PARENT_SCOPE)
 endfunction()
@@ -29,17 +31,20 @@ endfunction()
 function(find_python_package PACKAGE)
     string(TOUPPER "${PACKAGE}" PACKAGE_UPPER)
     if(${PACKAGE_UPPER}_FOUND)
-      set(${PACKAGE}_FOUND ${${PACKAGE_UPPER}_FOUND} PARENT_SCOPE)
-      return()
+        set(${PACKAGE}_FOUND ${${PACKAGE_UPPER}_FOUND} PARENT_SCOPE)
+        return()
     endif()
     cmake_parse_arguments(${PACKAGE}_FIND
         "REQUIRED;EXACT" "VERSION" "" ${ARGN})
     cmake_parse_arguments(PYPACK
-        "QUIET" "WORKING_DIRECTORY" ""
+        "QUIET" "WORKING_DIRECTORY;ERROR_MESSAGE" ""
         ${${PACKAGE}_FIND_UNPARSED_ARGUMENTS})
     _python_executable(LOCALPYTHON ${PYPACK_UNPARSED_ARGUMENTS})
     if(NOT PYPACK_WORKING_DIRECTORY)
         set(PYPACK_WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+    endif()
+    if(NOT PYPACK_ERROR_MESSAGE)
+        set(PYPACK_ERROR_MESSAGE "Python module ${PACKAGE} could not be found.")
     endif()
     if(PYPACK_QUIET)
         set(${PACKAGE}_FIND_QUIETLY TRUE)
@@ -82,7 +87,7 @@ function(find_python_package PACKAGE)
     find_package_handle_standard_args(${PACKAGE}
         REQUIRED_VARS ${PACKAGE}_LOCATION
         VERSION_VAR string_version
-        FAIL_MESSAGE "Python module ${PACKAGE} could not be found."
+        FAIL_MESSAGE "${PYPACK_ERROR_MESSAGE}"
     )
     if(NOT "${PACKAGE}" STREQUAL "${PACKAGE_UPPER}")
         set(${PACKAGE}_FOUND ${${PACKAGE_UPPER}_FOUND} PARENT_SCOPE)
