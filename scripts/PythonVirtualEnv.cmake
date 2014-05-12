@@ -5,11 +5,6 @@ include(Utilities)
 include(PythonPackage)
 include(EnvironmentScript)
 
-function(add_to_python_path PATH)
-    _add_to_a_path("${PROJECT_BINARY_DIR}/paths/pypaths.pth" "${PATH}")
-endfunction()
-
-
 if(NOT VIRTUALENV_WAS_CREATED)
     function(_create_virtualenv_from_exec call)
         execute_process(COMMAND
@@ -39,14 +34,14 @@ if(NOT VIRTUALENV_WAS_CREATED)
             message(FATAL_ERROR "Could not create virtual environment")
         endif()
     endfunction()
- 
+
     # First check if we have venv in the same directory as python.
     # Canopy makes things more difficult.
     get_filename_component(python_bin "${PYTHON_EXECUTABLE}" PATH)
     find_program(venv_EXECUTABLE venv PATHS "${python_bin}" NO_DEFAULT_PATH)
     find_python_package(venv QUIET)
     find_python_package(virtualenv QUIET)
- 
+
     set(VIRTUALENV_DIRECTORY "${CMAKE_BINARY_DIR}/external/virtualenv"
         CACHE INTERNAL "Path to virtualenv" )
     if(venv_EXECUTABLE)
@@ -58,7 +53,7 @@ if(NOT VIRTUALENV_WAS_CREATED)
     else()
       message(FATAL_ERROR "Could find neither venv nor virtualenv")
     endif()
- 
+
     set(_LOCAL_PYTHON_EXECUTABLE
         "${VIRTUALENV_DIRECTORY}/bin/python"
         CACHE PATH
@@ -66,7 +61,7 @@ if(NOT VIRTUALENV_WAS_CREATED)
     )
     # Adds a bash script to call python with all the right paths set
     # Makes it easy to debug and test
-    set(LOCAL_PYTHON_EXECUTABLE 
+    set(LOCAL_PYTHON_EXECUTABLE
         "${PROJECT_BINARY_DIR}/localpython.sh"
         CACHE PATH "Path to proxy for executing python script in build dir"
     )
@@ -74,7 +69,7 @@ if(NOT VIRTUALENV_WAS_CREATED)
         EXECUTABLE "${_LOCAL_PYTHON_EXECUTABLE}"
         PATH "${PROJECT_BINARY_DIR}/localpython.sh"
     )
- 
+
     # Add current python paths to a path.pth file
     execute_process(
         COMMAND ${PYTHON_EXECUTABLE} -c
@@ -104,7 +99,7 @@ if(NOT VIRTUALENV_WAS_CREATED)
         message("out: ${sitedir}")
         message(FATAL_ERROR "script failed")
     endif()
- 
+
     set(VIRTUALENV_WAS_CREATED TRUE CACHE INTERNAL "Virtualenv has been created")
 endif()
 

@@ -14,6 +14,9 @@ endfunction()
 function(add_to_ld_path PATH)
     _add_to_a_path("${PROJECT_BINARY_DIR}/paths/ldpaths" "${PATH}")
 endfunction()
+function(add_to_python_path PATH)
+    _add_to_a_path("${PROJECT_BINARY_DIR}/paths/pypaths.pth" "${PATH}")
+endfunction()
 
 if(NOT UNIX)
     function(create_environment_script caller location)
@@ -32,13 +35,16 @@ find_program(ENV_EXECUTABLE env)
 include(CMakeParseArguments)
 
 function(create_environment_script)
-    cmake_parse_arguments(env "" "PATH;EXECUTABLE;WORKING_DIRECTORY"
+    cmake_parse_arguments(env "PYTHON" "PATH;EXECUTABLE;WORKING_DIRECTORY"
         "" ${ARGN})
     if(NOT env_PATH)
         set(env_PATH "${CMAKE_CURRENT_BINARY_DIR}/envscript.sh")
     endif()
     if(NOT env_EXECUTABLE)
         set(env_EXECUTABLE "")
+    endif()
+    if(NOT env_PYTHON)
+        set(env_PYTHON "")
     endif()
 
     get_filename_component(filename "${env_PATH}" NAME)
