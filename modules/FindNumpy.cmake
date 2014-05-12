@@ -85,7 +85,7 @@ find_package_handle_standard_args(NumpyLibrary
 if(NUMPYLIBRARY_FOUND)
     set(NUMPYLIBRARY_FOUND TRUE CACHE BOOL "Numpy library was found")
     set(NumpyLibrary_FOUND TRUE CACHE BOOL "Numpy library was found")
-    set(NUMPY_INCLUDE_DIRS 
+    set(NUMPY_INCLUDE_DIRS
         "${NUMPY_INCLUDE_DIRS}" CACHE
         PATH "Path to numpy includes"
     )
@@ -94,35 +94,36 @@ else()
     return()
 endif()
 
-## Now check some features of numpy c api
-## This is RSDT stuff
-macro(numpy_feature_test OUTVARNAME testfilename testname)
-    ## try to compile and run
-    ## Using Release flags because MSCrapware fails otherwise.
-    try_compile(
-      ${OUTVARNAME}
-      ${CMAKE_BINARY_DIR}
-      ${CMAKE_CURRENT_LIST_DIR}/numpy/${testfilename}
-      COMPILE_DEFINITIONS -I${PYTHON_INCLUDE_DIRS}  -I${NUMPY_INCLUDE_DIRS}
-                          -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
-      CMAKE_FLAGS -DLINK_LIBRARIES:STRING=${PYTHON_LIBRARIES}
-                  -DCMAKE_CXX_FLAGS_DEBUG:STRING="${CMAKE_CXX_FLAGS_RELEASE}"
-                  -DCMAKE_C_FLAGS_DEBUG:STRING="${CMAKE_C_FLAGS_RELEASE}"
-                  -DCMAKE_EXE_LINKER_FLAGS_DEBUG:STRING="${CMAKE_EXE_LINKER_FLAGS_RELEASE}"
-      OUTPUT_VARIABLE NUMPY_TESTCOMPILE
-    )
-    ## display results
-    if(NOT Numpy_FIND_QUIETLY)
-        message (STATUS "[NumPy] ${testname} = ${${OUTVARNAME}}")
-    endif()
-    set(${OUTVARNAME} ${${OUTVARNAME}}
-        CACHE BOOL
-        "Numpy feature check: ${testname}"
-    )
-endmacro()
+if(NOT no_numpy_feature_tests)
+    ## Now check some features of numpy c api
+    macro(numpy_feature_test OUTVARNAME testfilename testname)
+        ## try to compile and run
+        ## Using Release flags because MSCrapware fails otherwise.
+        try_compile(
+          ${OUTVARNAME}
+          ${CMAKE_BINARY_DIR}
+          ${CMAKE_CURRENT_LIST_DIR}/numpy/${testfilename}
+          COMPILE_DEFINITIONS -I${PYTHON_INCLUDE_DIRS}  -I${NUMPY_INCLUDE_DIRS}
+                              -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
+          CMAKE_FLAGS -DLINK_LIBRARIES:STRING=${PYTHON_LIBRARIES}
+                      -DCMAKE_CXX_FLAGS_DEBUG:STRING="${CMAKE_CXX_FLAGS_RELEASE}"
+                      -DCMAKE_C_FLAGS_DEBUG:STRING="${CMAKE_C_FLAGS_RELEASE}"
+                      -DCMAKE_EXE_LINKER_FLAGS_DEBUG:STRING="${CMAKE_EXE_LINKER_FLAGS_RELEASE}"
+          OUTPUT_VARIABLE NUMPY_TESTCOMPILE
+        )
+        ## display results
+        if(NOT Numpy_FIND_QUIETLY)
+            message (STATUS "[NumPy] ${testname} = ${${OUTVARNAME}}")
+        endif()
+        set(${OUTVARNAME} ${${OUTVARNAME}}
+            CACHE BOOL
+            "Numpy feature check: ${testname}"
+        )
+    endmacro()
 
-numpy_feature_test(NUMPY_NPY_LONG_DOUBLE test_numpy_long_double.cc "Long double exists")
-numpy_feature_test(NUMPY_NPY_BOOL test_numpy_ubyte.cc "Bool is a separate type")
-numpy_feature_test(NUMPY_NPY_ARRAY test_numpy_is_noarray.c "NPY_ARRAY_* macros exist")
-numpy_feature_test( NUMPY_NPY_ENABLEFLAGS test_numpy_has_enableflags.c
-                    "PyArray_ENABLEFLAGS exists" )
+    numpy_feature_test(NUMPY_NPY_LONG_DOUBLE test_numpy_long_double.cc "Long double exists")
+    numpy_feature_test(NUMPY_NPY_BOOL test_numpy_ubyte.cc "Bool is a separate type")
+    numpy_feature_test(NUMPY_NPY_ARRAY test_numpy_is_noarray.c "NPY_ARRAY_* macros exist")
+    numpy_feature_test( NUMPY_NPY_ENABLEFLAGS test_numpy_has_enableflags.c
+                        "PyArray_ENABLEFLAGS exists" )
+endif()
