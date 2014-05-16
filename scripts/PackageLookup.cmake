@@ -169,6 +169,14 @@ endmacro()
 
 # Looks for a lookup package file and includes it.
 macro(lookup_package package)
+
+    # include potential post lookup script
+    if(${package}_BUILT_AS_EXTERNAL_PROJECT)
+        if(EXISTS "${EXTERNAL_ROOT}/post_lookup/${package}.cmake")
+            include("${EXTERNAL_ROOT}/post_lookup/${package}.cmake")
+        endif()
+    endif()
+
     string(TOUPPER "${package}" PACKAGE)
     cmake_parse_arguments(${package}
         "DOWNLOAD_BY_DEFAULT;REQUIRED;QUIET;KEEP;NOFIND;CHECK_EXTERNAL"
@@ -198,8 +206,12 @@ macro(lookup_package package)
     # If package is not found, then look for a recipe to download and build it
     if(NOT ${package}_FOUND OR ${package}_LOOKUP_BUILD)
         _perform_actual_lookup(${package})
+        # Sets a variable saying we are building this source externally
+        set(${package}_BUILT_AS_EXTERNAL_PROJECT TRUE CACHE INTERNAL
+            "${package} is the result of a local install")
     endif()
 endmacro()
+
 
 # Makes target depend on external dependencies
 macro(depends_on_lookups TARGET)
@@ -250,10 +262,34 @@ macro(add_recursive_cmake_step name)
                 message(FATAL_ERROR "[${name}] Could not be downloaded and installed")
             endif()
         endif()
-        # Sets a variable saying we are building this source externally
-        set(${name}_BUILT_AS_EXTERNAL_PROJECT TRUE)
     endif()
+
 endmacro()
+
+# A script that is executed once a package has been built locally
+# This function should be called from the lookup recipe
+function(write_lookup_hook hook package)
+    cmake_parse_arguments(_wpls${package} "APPEND" "" "" ${ARGN})
+    # checks the hook argument for correctness
+    string(TOUPPER "${hook}" hook)
+    set(hooks POST_LOOKUP)
+    list(FIND hooks "${hook}" correct_hook)
+    if(correct_hook EQUAL -1)
+        message(FATAL_ERROR "Hook argument(${hook}) should be one of ${hooks}.")
+    endif()
+
+    # Sets filename. That's the only difference between hooks, in practice.
+    if("${hook}" STREQUAL "POST_LOOKUP")
+        set(filename "${EXTERNAL_ROOT}/post_lookup/${package}.cmake")
+    endif()
+
+    # Then write or append to file.
+    if(_wpls${package}_APPEND)
+        file(APPEND "${filename}" ${_wpls${package}_UNPARSED_ARGUMENTS})
+    else()
+        file(WRITE "${filename}" ${_wpls${package}_UNPARSED_ARGUMENTS})
+    endif()
+endfunction()
 
 # Avoids anoying cmake warning, by actually using the variables.
 # The will be if the appropriate find_* is used. But won't be otherwise.
