@@ -7,7 +7,10 @@ if(NOT EXTERNAL_ROOT)
   set(EXTERNAL_ROOT ${CMAKE_BINARY_DIR}/external)
 endif(NOT EXTERNAL_ROOT)
 # Makes sure external projects are found by cmake
-list(APPEND CMAKE_PREFIX_PATH ${EXTERNAL_ROOT})
+list(FIND CMAKE_PREFIX_PATH "${EXTERNAL_ROOT}" has_external_root)
+if(has_external_root EQUAL -1)
+    list(APPEND CMAKE_PREFIX_PATH "${EXTERNAL_ROOT}")
+endif()
 
 include(Utilities)
 add_to_envvar(PKG_CONFIG_PATH "${EXTERNAL_ROOT}/lib/pkgconfig" PREPEND OS UNIX)
@@ -68,8 +71,6 @@ macro(_set_root_path PATH TYPE)
     endforeach()
     set(_save_root_path "${CMAKE_FIND_ROOT_PATH}")
     set(CMAKE_FIND_ROOT_PATH "${PATH}")
-    foreach(save MODE_PACKAGE MODE_INCLUDE MODE_PROGRAM MODE_LIBRARY)
-    endforeach()
 endmacro()
 
 # Unchanges the root path
@@ -80,19 +81,8 @@ macro(_unset_root_path)
     set(CMAKE_FIND_ROOT_PATH "${_save_root_path}")
 endmacro()
 
-# Looks for a lookup package file and includes it.
-macro(lookup_package package)
+macro(_find_package_for_lookup package REQUIRED QUIET DOWNLOAD CHECK)
     string(TOUPPER "${package}" PACKAGE)
-    set(solitos "DOWNLOAD_BY_DEFAULT;REQUIRED;QUIET;KEEP;NOFIND;CHECK_EXTERNAL")
-    set(multiplos "ARGUMENTS;COMPONENTS")
-    cmake_parse_arguments(${package} "${solitos}" "" "${multiplos}" ${ARGN})
-
-    # Reappends components
-    if(${package}_COMPONENTS)
-        list(APPEND ${package}_UNPARSED_ARGUMENTS COMPONENTS)
-        list(APPEND ${package}_UNPARSED_ARGUMENTS ${${package}_COMPONENTS})
-    endif()
-    # Check whether recursive
     unset(recursive)
     _get_sane_name(${package} SANENAME)
     if(${SANENAME}_RECURSIVE)
@@ -103,8 +93,8 @@ macro(lookup_package package)
     endif()
     # First try and find package (unless downloading by default)
     set(dolook TRUE)
-    if(${package}_DOWNLOAD_BY_DEFAULT AND NOT recursive)
-        if(${package}_CHECK_EXTERNAL)
+    if(DOWNLOAD AND NOT recursive)
+        if(CHECK)
             set(do_rootchange TRUE)
         endif()
         set(dolook FALSE)
@@ -114,11 +104,11 @@ macro(lookup_package package)
     endif()
     # Figure out whether to add REQUIRED and QUIET keywords
     set(required "")
-    if(recursive AND ${package}_REQUIRED)
+    if(recursive AND REQUIRED)
         set(required REQUIRED)
     endif()
     set(quiet "")
-    if(${package}_QIET)
+    if(QIET)
         set(quiet QUIET)
     elseif(NOT recursive)
         set(quiet QUIET)
@@ -127,7 +117,7 @@ macro(lookup_package package)
         if(do_rootchange)
             _set_root_path("${EXTERNAL_ROOT}" ONLY)
         endif()
-        find_package(${package} ${${package}_UNPARSED_ARGUMENTS}
+        find_package(${package} ${ARGN}
             ${required} ${quiet}
         )
         if(do_rootchange)
@@ -139,6 +129,66 @@ macro(lookup_package package)
             endif()
         endif()
     endif()
+endmacro()
+
+macro(_perform_actual_lookup package)
+    _find_lookup_recipe(${package} ${package}_LOOKUP_RECIPE)
+    if(NOT ${package}_LOOKUP_RECIPE_FILE)
+        # Checks if package is required
+        set(msg "Could not find recipe to lookup "
+                "${package} -- ${${package}_RECIPE_DIR}")
+        if(${package}_REQUIRED)
+            message(FATAL_ERROR ${msg})
+        elseif(NOT ${package}_QUIET)
+            message(STATUS ${msg})
+        endif()
+    else()
+        if(NOT ${package}_QUIET AND NOT ${package}_DOWNLOAD_BY_DEFAULT)
+            message(STATUS "Will attempt to download and install ${package}")
+        elseif(NOT ${package}_QUIET)
+            message(STATUS "Will download, build,"
+               " and install a local version of ${package}")
+        endif()
+        set(CURRENT_LOOKUP_DIRECTORY "${${package}_LOOKUP_RECIPE_DIR}")
+        if(${package}_KEEP)
+            set(${package}_LOOKUP_BUILD TRUE CACHE BOOL
+                "Whether package is obtained from a lookup build"
+                FORCE
+            )
+        else()
+            set(${package}_LOOKUP_BUILD FALSE CACHE BOOL
+                "Whether package is obtained from a lookup build"
+                FORCE
+            )
+        endif()
+        include(${${package}_LOOKUP_RECIPE_FILE})
+        unset(CURRENT_LOOKUP_DIRECTORY)
+        add_dependencies(lookup_dependencies ${package})
+    endif()
+endmacro()
+
+# Looks for a lookup package file and includes it.
+macro(lookup_package package)
+    string(TOUPPER "${package}" PACKAGE)
+    cmake_parse_arguments(${package}
+        "DOWNLOAD_BY_DEFAULT;REQUIRED;QUIET;KEEP;NOFIND;CHECK_EXTERNAL"
+        ""
+        "ARGUMENTS;COMPONENTS"
+        ${ARGN}
+    )
+
+    # Reappends components
+    if(${package}_COMPONENTS)
+        list(APPEND ${package}_UNPARSED_ARGUMENTS COMPONENTS)
+        list(APPEND ${package}_UNPARSED_ARGUMENTS ${${package}_COMPONENTS})
+    endif()
+    # First try and locate package
+    _find_package_for_lookup(${package}
+        "${${package}_REQUIRED}" "${${package}_QUIET}"
+        "${${package}_DOWNLOAD_BY_DEFAULT}" "${${package}_CHECK_EXACT}"
+        ${${package}_UNPARSED_ARGUMENTS}
+    )
+
     # Sets lower and upper case versions.
     # Otherwise some package will be registered as not found.
     # This is a problem with changing cmake practices.
@@ -147,35 +197,7 @@ macro(lookup_package package)
     endif()
     # If package is not found, then look for a recipe to download and build it
     if(NOT ${package}_FOUND OR ${package}_LOOKUP_BUILD)
-        _find_lookup_recipe(${package} ${package}_LOOKUP_RECIPE)
-        if(NOT ${package}_LOOKUP_RECIPE_FILE)
-            # Checks if package is required
-            set(msg "Could not find recipe to lookup "
-                    "${package} -- ${${package}_RECIPE_DIR}")
-            if(${package}_REQUIRED)
-                message(FATAL_ERROR ${msg})
-            elseif(NOT ${package}_QUIET)
-                message(STATUS ${msg})
-            endif()
-        else()
-            if(NOT ${package}_QUIET AND NOT ${package}_DOWNLOAD_BY_DEFAULT)
-                message(STATUS "Will attempt to download and install ${package}")
-            elseif(NOT ${package}_QUIET)
-                message(STATUS "Will download, build,"
-                   " and install a local version of ${package}")
-            endif()
-            set(CURRENT_LOOKUP_DIRECTORY "${${package}_LOOKUP_RECIPE_DIR}")
-            if(${package}_KEEP)
-                set(${package}_LOOKUP_BUILD TRUE CACHE BOOL
-                    "Whether package is obtained from a lookup build")
-            else()
-                set(${package}_LOOKUP_BUILD FALSE CACHE BOOL
-                    "Whether package is obtained from a lookup build")
-            endif()
-            include(${${package}_LOOKUP_RECIPE_FILE})
-            unset(CURRENT_LOOKUP_DIRECTORY)
-            add_dependencies(lookup_dependencies ${package})
-        endif()
+        _perform_actual_lookup(${package})
     endif()
 endmacro()
 
