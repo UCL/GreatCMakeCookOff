@@ -43,6 +43,7 @@ function(create_environment_script)
     if(NOT env_EXECUTABLE)
         set(env_EXECUTABLE "")
     endif()
+    # used in the configured script: if set, modifies python path
     if(NOT env_PYTHON)
         set(env_PYTHON "")
     endif()
