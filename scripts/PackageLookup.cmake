@@ -4,7 +4,7 @@
 
 # Sets location where external project are included
 if(NOT EXTERNAL_ROOT)
-  set(EXTERNAL_ROOT ${CMAKE_BINARY_DIR}/external)
+  set(EXTERNAL_ROOT "${CMAKE_BINARY_DIR}/external")
 endif(NOT EXTERNAL_ROOT)
 # Makes sure external projects are found by cmake
 list(FIND CMAKE_PREFIX_PATH "${EXTERNAL_ROOT}" has_external_root)
@@ -30,7 +30,7 @@ include(ExternalProject)
 
 function(_find_lookup_recipe package OUTVAR)
     foreach(path ${CMAKE_MODULE_PATH})
-      list(APPEND cmake_paths ${path}/${package})
+      list(APPEND cmake_paths "${path}/${package}")
     endforeach()
     set(LOOKUP_RECIPE LOOKUP_RECIPE-NOTFOUND)
     foreach(filename ${package}-lookup.cmake LookUp${package}.cmake)
