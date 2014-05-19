@@ -150,19 +150,12 @@ macro(_perform_actual_lookup package)
                " and install a local version of ${package}")
         endif()
         set(CURRENT_LOOKUP_DIRECTORY "${${package}_LOOKUP_RECIPE_DIR}")
-        if(${package}_KEEP)
-            set(${package}_LOOKUP_BUILD TRUE CACHE BOOL
-                "Whether package is obtained from a lookup build"
-                FORCE
-            )
-        else()
-            set(${package}_LOOKUP_BUILD FALSE CACHE BOOL
-                "Whether package is obtained from a lookup build"
-                FORCE
-            )
-        endif()
         include(${${package}_LOOKUP_RECIPE_FILE})
         unset(CURRENT_LOOKUP_DIRECTORY)
+        set(${package}_LOOKUP_BUILD ${${package}_KEEP} CACHE BOOL
+            "Whether package is obtained from a lookup build"
+            FORCE
+        )
         add_dependencies(lookup_dependencies ${package})
     endif()
 endmacro()
@@ -184,6 +177,12 @@ macro(lookup_package package)
         "ARGUMENTS;COMPONENTS"
         ${ARGN}
     )
+    # Set explicitly to TRUE or FALSE to simplify setting ${package}_LOOKUP_BUILD
+    if(${package}_KEEP)
+        set(${package}_KEEP TRUE)
+    else()
+        set(${package}_KEEP FALSE)
+    endif()
 
     # Reappends components
     if(${package}_COMPONENTS)
@@ -204,7 +203,7 @@ macro(lookup_package package)
         set(${package}_FOUND ${${PACKAGE}_FOUND})
     endif()
     # If package is not found, then look for a recipe to download and build it
-    if(NOT ${package}_FOUND OR ${package}_LOOKUP_BUILD)
+    if(NOT ${package}_FOUND OR ${package}_LOOKUP_BUILD OR ${package}_KEEP)
         _perform_actual_lookup(${package})
         # Sets a variable saying we are building this source externally
         set(${package}_BUILT_AS_EXTERNAL_PROJECT TRUE CACHE INTERNAL
