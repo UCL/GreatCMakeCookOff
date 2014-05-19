@@ -160,13 +160,33 @@ macro(_perform_actual_lookup package)
     endif()
 endmacro()
 
+# Returns name of given hook and package in hook_script variable
+function(get_lookup_hookscript_name hook package)
+    string(TOUPPER "${hook}" hook)
+    if("${hook}" STREQUAL "POST_LOOKUP")
+        set(filename "${EXTERNAL_ROOT}/hooks/post_lookup/${package}.cmake")
+    elseif("${hook}" STREQUAL "INSTALL")
+        set(filename "${EXTERNAL_ROOT}/hooks/install/${package}.cmake")
+    else()
+        set(hooks POST_LOOKUP INSTALL)
+        message(FATAL_ERROR "Hook argument(${hook}) should be one of ${hooks}.")
+    endif()
+    list(LENGTH ARGN nargs)
+    set(variable hook_script)
+    if(NOT nargs EQUAL 0)
+        list(GET ARGN 0 variable)
+    endif()
+    set(${variable} "${filename}" PARENT_SCOPE)
+endfunction()
+
 # Looks for a lookup package file and includes it.
 macro(lookup_package package)
 
-    # include potential post lookup script
+    # include potential hooks
     if(${package}_BUILT_AS_EXTERNAL_PROJECT)
-        if(EXISTS "${EXTERNAL_ROOT}/post_lookup/${package}.cmake")
-            include("${EXTERNAL_ROOT}/post_lookup/${package}.cmake")
+        get_lookup_hookscript_name(post_lookup ${package})
+        if(EXISTS "${hook_script}")
+            include("${hook_script}")
         endif()
     endif()
 
@@ -201,6 +221,12 @@ macro(lookup_package package)
     # This is a problem with changing cmake practices.
     if(${PACKAGE}_FOUND AND NOT "${package}" STREQUAL "${PACKAGE}")
         set(${package}_FOUND ${${PACKAGE}_FOUND})
+    endif()
+    if(${package}_FOUND AND ${package}_BUILT_AS_EXTERNAL_PROJECT)
+        get_lookup_hookscript_name(install ${package})
+        if(EXISTS "${hook_script}")
+            install(SCRIPT "${hook_script}")
+        endif()
     endif()
     # If package is not found, then look for a recipe to download and build it
     if(NOT ${package}_FOUND OR ${package}_LOOKUP_BUILD OR ${package}_KEEP)
@@ -268,25 +294,18 @@ endmacro()
 # A script that is executed once a package has been built locally
 # This function should be called from the lookup recipe
 function(write_lookup_hook hook package)
-    cmake_parse_arguments(_wpls${package} "APPEND" "" "" ${ARGN})
-    # checks the hook argument for correctness
-    string(TOUPPER "${hook}" hook)
-    set(hooks POST_LOOKUP)
-    list(FIND hooks "${hook}" correct_hook)
-    if(correct_hook EQUAL -1)
-        message(FATAL_ERROR "Hook argument(${hook}) should be one of ${hooks}.")
-    endif()
+    cmake_parse_arguments(_wpls${package} "APPEND" "SCRIPTNAME" "" ${ARGN})
 
     # Sets filename. That's the only difference between hooks, in practice.
-    if("${hook}" STREQUAL "POST_LOOKUP")
-        set(filename "${EXTERNAL_ROOT}/post_lookup/${package}.cmake")
-    endif()
-
+    get_lookup_hookscript_name(${hook} ${package})
     # Then write or append to file.
     if(_wpls${package}_APPEND)
-        file(APPEND "${filename}" ${_wpls${package}_UNPARSED_ARGUMENTS})
+        file(APPEND "${hook_script}" ${_wpls${package}_UNPARSED_ARGUMENTS})
     else()
-        file(WRITE "${filename}" ${_wpls${package}_UNPARSED_ARGUMENTS})
+        file(WRITE "${hook_script}" ${_wpls${package}_UNPARSED_ARGUMENTS})
+    endif()
+    if(_wpls${package}_SCRIPTNAME)
+        set(${_wpls${package}_SCRIPTNAME} "${hook_script}" PARENT_SCOPE)
     endif()
 endfunction()
 
