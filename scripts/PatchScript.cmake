@@ -2,6 +2,7 @@
 # This script does not fail on errors. It ensures that we can "apply" patches over and over again.
 include(CMakeParseArguments)
 find_program(PATCH_EXECUTABLE patch)
+find_program(BASH_EXECUTABLE bash)
 function(create_patch_script NAME OUTVAR)
     if(NOT PATCH_EXECUTABLE)
         message(FATAL_ERROR "Could not find the patch program")
@@ -20,19 +21,23 @@ function(create_patch_script NAME OUTVAR)
     endif()
 
     # Create patcher script
-    file(WRITE "${PROJECT_BINARY_DIR}/patches/${NAME}.cmake"
-        "execute_process(\n"
+    set(script_file "${PROJECT_BINARY_DIR}/CMakeFiles/patches/noperms/${NAME}.sh")
+    file(WRITE "${script_file}"
+        "#!${BASH_EXECUTABLE}\n"
+        "cd ${patcher_WORKING_DIRECTORY}\n"
     )
     foreach(filename ${patcher_UNPARSED_ARGUMENTS})
         get_filename_component(filename "${filename}" ABSOLUTE)
-        file(APPEND "${PROJECT_BINARY_DIR}/patches/${NAME}.cmake"
-            "   COMMAND ${PATCH_EXECUTABLE} -N ${patcher_CMDLINE} < ${filename}\n"
+        file(APPEND "${script_file}"
+            "${PATCH_EXECUTABLE} -N ${patcher_CMDLINE} < ${filename}\n"
         )
     endforeach()
-    file(APPEND "${PROJECT_BINARY_DIR}/patches/${NAME}.cmake"
-        "   WORKING_DIRECTORY ${patcher_WORKING_DIRECTORY}\n"
-        ")\n"
+    file(APPEND "${script_file}" "true\n")
+
+    file(COPY "${script_file}"
+        DESTINATION "${PROJECT_BINARY_DIR}/CMakeFiles/patches/"
+        FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     )
 
-    set(${OUTVAR} "${PROJECT_BINARY_DIR}/patches/${NAME}.cmake" PARENT_SCOPE)
+    set(${OUTVAR} "${PROJECT_BINARY_DIR}/CMakeFiles/patches/${NAME}.sh" PARENT_SCOPE)
 endfunction()
