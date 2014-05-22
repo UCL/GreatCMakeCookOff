@@ -308,7 +308,7 @@ function(write_lookup_hook hook package)
     # Then write or append to file.
     if(_wpls${package}_APPEND AND NOT _wpls${package}_CONFIGURE)
         file(APPEND "${hook_script}" ${_wpls${package}_UNPARSED_ARGUMENTS})
-    else(NOT _wpls${package}_CONFIGURE)
+    elseif(NOT _wpls${package}_CONFIGURE)
         file(WRITE "${hook_script}" ${_wpls${package}_UNPARSED_ARGUMENTS})
     else()
         configure_file("${_wpls${package}_CONFIGURE}" "${hook_script}" @ONLY)
