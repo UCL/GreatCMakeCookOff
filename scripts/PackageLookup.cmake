@@ -298,15 +298,20 @@ endmacro()
 # A script that is executed once a package has been built locally
 # This function should be called from the lookup recipe
 function(write_lookup_hook hook package)
-    cmake_parse_arguments(_wpls${package} "APPEND" "SCRIPTNAME" "" ${ARGN})
+    cmake_parse_arguments(_wpls${package} "APPEND" "SCRIPTNAME;CONFIGURE" "" ${ARGN})
+    if(_wpls${package}_APPEND AND _wpls${package}_CONFIGURE)
+        message(FATAL_ERROR "Only one of APPEND and CONFIGURE is valid")
+    endif()
 
     # Sets filename. That's the only difference between hooks, in practice.
     get_lookup_hookscript_name(${hook} ${package})
     # Then write or append to file.
-    if(_wpls${package}_APPEND)
+    if(_wpls${package}_APPEND AND NOT _wpls${package}_CONFIGURE)
         file(APPEND "${hook_script}" ${_wpls${package}_UNPARSED_ARGUMENTS})
-    else()
+    else(NOT _wpls${package}_CONFIGURE)
         file(WRITE "${hook_script}" ${_wpls${package}_UNPARSED_ARGUMENTS})
+    else()
+        configure_file("${_wpls${package}_CONFIGURE}" "${hook_script}" @ONLY)
     endif()
     if(_wpls${package}_SCRIPTNAME)
         set(${_wpls${package}_SCRIPTNAME} "${hook_script}" PARENT_SCOPE)
