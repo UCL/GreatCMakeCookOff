@@ -10,7 +10,7 @@ function(add_copy_files FILECOPIER_TARGET)
         "REPLACE;FILES"
         ${ARGN}
     )
- 
+
     if(NOT TARGET ${FILECOPIER_TARGET})
         add_custom_target(${FILECOPIER_TARGET})
     endif()
@@ -28,7 +28,7 @@ function(add_copy_files FILECOPIER_TARGET)
     else()
         file(GLOB input_sources ${FILECOPIER_GLOB})
     endif()
- 
+
     if(FILECOPIER_REPLACE)
         list(LENGTH FILECOPIER_REPLACE replace_length)
         if(NOT ${replace_length} EQUAL 2)
@@ -37,7 +37,7 @@ function(add_copy_files FILECOPIER_TARGET)
         list(GET FILECOPIER_REPLACE 0 PATTERN)
         list(GET FILECOPIER_REPLACE 1 REPLACEMENT)
     endif()
- 
+
     foreach(input ${input_sources})
         get_filename_component(output ${input} NAME)
         if(NOT "${FILECOPIER_REPLACE}" STREQUAL "")
@@ -45,9 +45,65 @@ function(add_copy_files FILECOPIER_TARGET)
         endif()
         set(output ${destination}/${output})
         get_filename_component(input "${input}" ABSOLUTE)
-       
+
         add_custom_command(
             TARGET ${FILECOPIER_TARGET}
+            PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${input} ${output}
+            DEPENDS ${input}
+        )
+    endforeach()
+endfunction()
+
+function(add_copy_directory dircopy_TARGET directory)
+    cmake_parse_arguments(dircopy "" "DESTINATION;RELATIVE" "EXCLUDE;GLOB" ${ARGN})
+
+    get_filename_component(directory "${directory}" ABSOLUTE)
+    if(NOT TARGET ${dircopy_TARGET})
+        add_custom_target(${dircopy_TARGET})
+    endif()
+    if(NOT dircopy_GLOB)
+        set(dircopy_GLOB "*")
+    endif()
+    if(NOT dircopy_EXCLUDE)
+        unset(dircopy_EXCLUDE)
+    endif()
+    if(NOT dircopy_DESTINATION)
+        set(dircopy_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+    else()
+        get_filename_component(dircopy_DESTINATION "${dircopy_DESTINATION}" ABSOLUTE)
+    endif()
+    if(NOT dircopy_RELATIVE)
+        set(dircopy_RELATIVE "${directory}")
+    else()
+        get_filename_component(dircopy_RELATIVE "${dircopy_RELATIVE}" ABSOLUTE)
+    endif()
+
+    # Figure out globs for files that could be copied
+    unset(in_globs)
+    foreach(pattern ${dircopy_GLOB})
+        list(APPEND in_globs "${directory}/${pattern}")
+    endforeach()
+    # Figure out globs for files that won't be copied
+    unset(exclude_globs)
+    foreach(pattern ${dircopy_EXCLUDE})
+        list(APPEND exclude_globs "${directory}/${pattern}")
+    endforeach()
+
+    # Figure out files to copy
+    file(GLOB_RECURSE in_files RELATIVE "${dircopy_RELATIVE}" ${in_globs})
+    if(NOT "${exclude_globs}" STREQUAL "")
+        file(GLOB_RECURSE exclude_files RELATIVE "${dircopy_RELATIVE}" ${exclude_globs})
+        list(REMOVE_ITEM in_files ${exclude_files})
+    endif()
+
+    # And do the copying
+    foreach(input ${in_files})
+        set(output "${dircopy_DESTINATION}/${input}")
+        set(input "${dircopy_RELATIVE}/${input}")
+
+        add_custom_command(
+            TARGET ${dircopy_TARGET}
             PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy ${input} ${output}
             DEPENDS ${input}
