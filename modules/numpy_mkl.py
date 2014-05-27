@@ -150,3 +150,11 @@ def get_mkl_dirs_and_libs_like_numpy():
         ldd_output = check_output(['ldd',lapack_lite_path],env=env)
         mkl_dirs,mkl_libs = parse_ldd_output(ldd_output)
     return set(mkl_dirs), set(mkl_libs)
+
+if __name__ == '__main__':
+    # Output that CMake can parse, or error
+    from sys import exit
+    directories, libraries = get_mkl_dirs_and_libs_like_numpy()
+    if not len(libraries): exit(1)
+    result = ";".join(libraries)
+    print(result)
