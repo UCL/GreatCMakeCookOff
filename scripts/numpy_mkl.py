@@ -18,6 +18,15 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 #THE SOFTWARE.
 
+def split_regex(lines, pattern):
+    """ Split lines into matches and lines that do not match """
+    haves, have_nots = [], []
+    for line in lines:
+        m = pattern.match(line)
+        if m is not None: haves.append(m)
+        else: have_nots.append(line)
+    return haves, have_nots
+
 def parse_ldd_output(output):
     """Search ldd output for MKL dependencies.
 
@@ -38,33 +47,32 @@ def parse_ldd_output(output):
     re_fname = compile(r"lib(mkl.*|iomp.*)\.(so|dylib)(\.[^ ]*)?")
     mkl_dirs = []
     mkl_libs = []
-    for l in output.splitlines():
-        m = re1.match(l)
-        if m:
-            fname = m.group(1)
-            m_fname = re_fname.match(fname)
-            if m_fname:
-                # can't do better than this since the full path is unknown...
-                mkl_libs.append("-l"+m_fname.group(1))
-                print "Warning: NumPy MKL dependency '"+fname+"' not found"
-            continue
-        m = re2.match(l)
-        if m:
-            fname = m.group(1)
-            path = m.group(2)
-            m_fname = re_fname.match(fname)
-            if m_fname:
-                mkl_libs.append(path)
-                mkl_dirs.append(dirname(path))
-            continue
-        m = re3.match(l)
-        if m:
-            path = m.group(1)
-            fname = basename(path)
-            m_fname = re_fname.match(fname)
-            if m_fname:
-                mkl_libs.append(path)
-                mkl_dirs.append(dirname(path))
+    re1_match, output_lines = split_regex(output.splitlines(), re1)
+    for m in re1_match:
+        fname = m.group(1)
+        m_fname = re_fname.match(fname)
+        if m_fname:
+            # can't do better than this since the full path is unknown...
+            mkl_libs.append("-l"+m_fname.group(1))
+            print "Warning: NumPy MKL dependency '"+fname+"' not found"
+
+    re2_match, output_lines = split_regex(output_lines, re2)
+    for m in re2_match:
+        fname = m.group(1)
+        path = m.group(2)
+        m_fname = re_fname.match(fname)
+        if m_fname:
+            mkl_libs.append(path)
+            mkl_dirs.append(dirname(path))
+
+    for m in split_regex(output_lines, re3)[0]:
+        path = m.group(1)
+        fname = basename(path)
+        m_fname = re_fname.match(fname)
+        if m_fname:
+            mkl_libs.append(path)
+            mkl_dirs.append(dirname(path))
+
     return set(mkl_dirs), set(mkl_libs)
 
 def parse_otool_output(output):
@@ -76,11 +84,6 @@ def parse_otool_output(output):
     import numpy
     import sys
 
-    def matching_regex(lines, re):
-        for line in lines:
-            m = re.match(line)
-            if m is not None: yield m
-
     # like "@rpath/libmkl_intel.dylib (compatibility version 0.0.0, current version 0.0.0)"
     re1 = compile(r"\s*@rpath/lib/(.+) \(.+\)")
     # like "@loader_path/libmkl_intel.dylib (compatibility version 0.0.0, current version 0.0.0)"
@@ -91,9 +94,10 @@ def parse_otool_output(output):
     # we assume for now that @rpath == <sys.prefix>/lib
     prefix_dir = getattr(sys, 'base_prefix', sys.prefix)
     sys_lib_dir = join(prefix_dir, "lib")
-    mkl_dirs = []
-    mkl_libs = []
-    for m in matching_regex(output.splitlines(), re1):
+
+    mkl_dirs, mkl_libs = [], []
+    re1_match, output_lines = split_regex(output.splitlines(), re1)
+    for m in re1_match:
         fname = m.group(1)
         m_fname = re_fname.match(fname)
         if m_fname:
@@ -101,21 +105,23 @@ def parse_otool_output(output):
             mkl_libs.append(join(sys_lib_dir, m.group(1)))
             mkl_dirs.append(sys_lib_dir)
 
-    for m in matching_regex(output.splitlines(), re2):
-	full_path = join(dirname(numpy.__file__), 'linalg', m.group(1))
-	fpath, fname = split_path(abspath(full_path))
+    re2_match, output_lines = split_regex(output_lines, re2)
+    for m in re2_match:
+        full_path = join(dirname(numpy.__file__), 'linalg', m.group(1))
+        fpath, fname = split_path(abspath(full_path))
         m_fname = re_fname.match(fname)
         if m_fname:
             mkl_libs.append(full_path)
             mkl_dirs.append(fpath)
 
-    for m in matching_regex(output.splitlines(), re3):
+    for m in split_regex(output_lines, re3)[0]:
         path = m.group(1)
         fname = basename(path)
         m_fname = re_fname.match(fname)
         if m_fname:
             mkl_libs.append(path)
             mkl_dirs.append(dirname(path))
+
     return set(mkl_dirs), set(mkl_libs)
 
 def get_mkl_dirs_and_libs_like_numpy():
