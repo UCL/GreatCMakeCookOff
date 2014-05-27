@@ -1,21 +1,37 @@
 # Scripts that modify LD_LIBRARY_PATH and such
 
-function(_add_to_a_path THISFILE PATH)
+# Adds a single path to a path-file
+function(_add_to_a_path_single THISFILE path)
+    # If quacks like a library, get directory where it resides
+    get_filename_component(extension "${path}" EXT)
+    if("${extension}" MATCHES "\\.so.*" OR "${extension}" MATCHES "\\.dylib")
+        get_filename_component(path "${path}" PATH)
+    elseif("${extension}" MATCHES "\\.a")
+        return() # Archive are not dynamic, no need to add to rpath.
+    endif()
+    # Add to path file if not there yet
     if(NOT EXISTS "${THISFILE}")
-        file(WRITE "${THISFILE}" "${PATH}\n")
-        return()
-    endif()
-    file(STRINGS "${THISFILE}" ALLPATHS)
-    list(FIND ALLPATHS "${PATH}" INDEX)
-    if(INDEX EQUAL -1)
-        file(APPEND "${THISFILE}" "${PATH}\n")
+        file(WRITE "${THISFILE}" "${path}\n")
+    else()
+        file(STRINGS "${THISFILE}" ALLPATHS)
+        list(FIND ALLPATHS "${path}" INDEX)
+        if(INDEX EQUAL -1)
+            file(APPEND "${THISFILE}" "${path}\n")
+        endif()
     endif()
 endfunction()
-function(add_to_ld_path PATH)
-    _add_to_a_path("${PROJECT_BINARY_DIR}/paths/ldpaths" "${PATH}")
+# Adds many paths to a path file
+function(_add_to_a_path THISFILE path)
+    foreach(path ${ARGN})
+        _add_to_a_path_single("${THISFILE}" "${path}")
+    endforeach()
 endfunction()
-function(add_to_python_path PATH)
-    _add_to_a_path("${PROJECT_BINARY_DIR}/paths/pypaths.pth" "${PATH}")
+
+function(add_to_ld_path)
+    _add_to_a_path("${PROJECT_BINARY_DIR}/paths/ldpaths" ${ARGN})
+endfunction()
+function(add_to_python_path)
+    _add_to_a_path("${PROJECT_BINARY_DIR}/paths/pypaths.pth" ${ARGN})
 endfunction()
 
 if(NOT UNIX)
