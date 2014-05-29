@@ -2,6 +2,9 @@
 
 # Adds a single path to a path-file
 function(_add_to_a_path_single THISFILE path)
+    if("${path}" STREQUAL "" OR "${path}" MATCHES "NOTFOUND")
+        return()
+    endif()
     # If quacks like a library, get directory where it resides
     get_filename_component(extension "${path}" EXT)
     if("${extension}" MATCHES "\\.so.*" OR "${extension}" MATCHES "\\.dylib")
@@ -9,6 +12,8 @@ function(_add_to_a_path_single THISFILE path)
     elseif("${extension}" MATCHES "\\.a")
         return() # Archive are not dynamic, no need to add to rpath.
     endif()
+    # Makes it an absolute path
+    get_filename_component(path "${path}" ABSOLUTE)
     # Add to path file if not there yet
     if(NOT EXISTS "${THISFILE}")
         file(WRITE "${THISFILE}" "${path}\n")
@@ -21,7 +26,7 @@ function(_add_to_a_path_single THISFILE path)
     endif()
 endfunction()
 # Adds many paths to a path file
-function(_add_to_a_path THISFILE path)
+function(_add_to_a_path THISFILE)
     foreach(path ${ARGN})
         _add_to_a_path_single("${THISFILE}" "${path}")
     endforeach()
