@@ -42,9 +42,9 @@ if(NOT UNIX)
     return()
 endif()
 
-set(_PATH_TO_LOCALBASH_IN
+get_filename_component(_PATH_TO_LOCALBASH_IN
     "${CMAKE_CURRENT_LIST_DIR}/localbash.in.sh"
-    CACHE INTERNAL "Path to a template bash script"
+    ABSOLUTE
 )
 find_program(BASH_EXECUTABLE bash)
 find_program(ENV_EXECUTABLE env)
