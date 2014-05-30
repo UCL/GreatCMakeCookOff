@@ -68,6 +68,11 @@ if(PYTHON_EXECUTABLE)
         _get_prefixes(NumpyMKL_PREFIXES ${NumpyMKL_LIBRARIES})
         _get_libdirs(NumpyMKL_LIBRARY_DIRS ${NumpyMKL_LIBRARIES})
         _get_vendor(NumpyMKL_VENDOR ${NumpyMKL_LIBRARIES})
+        # Adds pthread if necessary
+        if("${NumpyMKL_LIBRARIES}" MATCHES "mkl"
+            AND "${NumpyMKL_LIBRARIES}" MATCHES "thread")
+            list(APPEND NumpyMKL_LIBRARIES "${CMAKE_THREAD_LIBS_INIT}")
+        endif()
     endif()
 endif()
 
