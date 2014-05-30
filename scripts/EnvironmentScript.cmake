@@ -28,7 +28,6 @@ endfunction()
 # Adds many paths to a path file
 function(_add_to_a_path THISFILE)
     foreach(path ${ARGN})
-        file(GLOB these_files "${path}")
         _add_to_a_path_single("${THISFILE}" "${these_files}")
     endforeach()
 endfunction()
