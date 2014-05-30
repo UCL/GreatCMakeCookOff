@@ -42,7 +42,7 @@ endfunction()
 # Gets list of eggs in given directories
 function(_get_python_eggs OUTVAR)
     unset(patterns)
-    foreach(directory ${apeg_UNPARSED_ARGUMENTS})
+    foreach(directory ${ARGN})
         if(NOT "${directory}" MATCHES ".*egg")
             list(APPEND patterns "${directory}/*.egg")
         else()
