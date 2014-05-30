@@ -28,7 +28,7 @@ endfunction()
 # Adds many paths to a path file
 function(_add_to_a_path THISFILE)
     foreach(path ${ARGN})
-        _add_to_a_path_single("${THISFILE}" "${these_files}")
+        _add_to_a_path_single("${THISFILE}" "${path}")
     endforeach()
 endfunction()
 
