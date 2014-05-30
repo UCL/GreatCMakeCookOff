@@ -116,6 +116,10 @@ macro(_find_package_for_lookup package REQUIRED QUIET DOWNLOAD CHECK)
     if(dolook OR do_rootchange)
         if(do_rootchange)
             _set_root_path("${EXTERNAL_ROOT}" ONLY)
+        else() 
+            # Set external root as first place to look
+            set(_SAVE_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
+            list(INSERT CMAKE_PREFIX_PATH 0 "${EXTERNAL_ROOT}")
         endif()
         find_package(${package} ${ARGN}
             ${required} ${quiet}
@@ -127,6 +131,8 @@ macro(_find_package_for_lookup package REQUIRED QUIET DOWNLOAD CHECK)
                 message(STATUS "Found ${package} in external "
                     "projects directory ${EXTERNAL_ROO}")
             endif()
+        else()
+            set(CMAKE_PREFIX_PATH ${_SAVE_CMAKE_PREFIX_PATH})
         endif()
     endif()
 endmacro()
