@@ -3,18 +3,29 @@
 find_package(PythonInterp REQUIRED)
 
 # Find python package directory
-if(NOT DEFINED PYTHON_PKG_DIR)
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c
-              "from distutils.sysconfig import get_python_lib; print(get_python_lib())"
-              OUTPUT_VARIABLE PYTHON_PKG_DIR
-  )
-  if(PYTHON_PKG_DIR )
-    string (STRIP ${PYTHON_PKG_DIR} PYTHON_PKG_DIR)
-    set(PYTHON_PKG_DIR ${PYTHON_PKG_DIR} CACHE PATH "Main python package repository.")
-    mark_as_advanced(PYTHON_PKG_DIR)
-  endif(PYTHON_PKG_DIR)
-endif(NOT DEFINED PYTHON_PKG_DIR)
+if(NOT DEFINED DEFAULT_PYTHON_PKG_DIR)
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE} -c
+          "from distutils.sysconfig import get_python_lib; print(get_python_lib())"
+          OUTPUT_VARIABLE DEFAULT_PYTHON_PKG_DIR
+    )
+    if(DEFAULT_PYTHON_PKG_DIR )
+        string (STRIP ${DEFAULT_PYTHON_PKG_DIR} DEFAULT_PYTHON_PKG_DIR)
+        set(DEFAULT_PYTHON_PKG_DIR
+            ${DEFAULT_PYTHON_PKG_DIR} CACHE PATH "Main python package repository.")
+        mark_as_advanced(DEFAULT_PYTHON_PKG_DIR)
+    endif(DEFAULT_PYTHON_PKG_DIR)
+endif()
+
+if(NOT DEFINED PYTHON_PKG_DIR AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(PYTHON_PKG_DIR "${DEFAULT_PYTHON_PKG_DIR}")
+    message(STATUS "Python install path (PYTHON_PKG_DIR): ${PYTHON_PKG_DIR}")
+elseif(NOT DEFINED PYTHON_PKG_DIR)
+    set(PYTHON_PKG_DIR "${CMAKE_INSTALL_PREFIX}/lib/python")
+    set(PYTHON_PKG_DIR "${PYTHON_PKG_DIR}${PYTHON_VERSION_MAJOR}.")
+    set(PYTHON_PKG_DIR "${PYTHON_PKG_DIR}${PYTHON_VERSION_MINOR}/site-packages")
+    message(STATUS "Python install path (PYTHON_PKG_DIR): ${PYTHON_PKG_DIR}")
+endif()
 
 # Installs relative to PYTHON_PKG_DIR
 function(install_python)
