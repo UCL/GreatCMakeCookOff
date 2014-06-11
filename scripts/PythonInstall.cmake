@@ -19,12 +19,17 @@ endif()
 
 if(NOT DEFINED PYTHON_PKG_DIR AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(PYTHON_PKG_DIR "${DEFAULT_PYTHON_PKG_DIR}")
-    message(STATUS "Python install path (PYTHON_PKG_DIR): ${PYTHON_PKG_DIR}")
 elseif(NOT DEFINED PYTHON_PKG_DIR)
     set(PYTHON_PKG_DIR "${CMAKE_INSTALL_PREFIX}/lib/python")
     set(PYTHON_PKG_DIR "${PYTHON_PKG_DIR}${PYTHON_VERSION_MAJOR}.")
     set(PYTHON_PKG_DIR "${PYTHON_PKG_DIR}${PYTHON_VERSION_MINOR}/site-packages")
+endif()
+if(NOT DEFINED _OLD_PYTHON_PKG_DIR
+    OR NOT "${PYTHON_PKG_DIR}" STREQUAL "${_OLD_PYTHON_PKG_DIR}")
     message(STATUS "Python install path (PYTHON_PKG_DIR): ${PYTHON_PKG_DIR}")
+    set(_OLD_PYTHON_PKG_DIR "${PYTHON_PKG_DIR}" CACHE INTERNAL
+        "Current python install path"
+    )
 endif()
 
 # Installs relative to PYTHON_PKG_DIR
