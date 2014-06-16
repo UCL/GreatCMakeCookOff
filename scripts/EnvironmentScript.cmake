@@ -83,8 +83,11 @@ find_program(ENV_EXECUTABLE env)
 include(CMakeParseArguments)
 
 function(create_environment_script)
-    cmake_parse_arguments(env "PYTHON" "PATH;EXECUTABLE;WORKING_DIRECTORY"
-        "" ${ARGN})
+    cmake_parse_arguments(env 
+        "PYTHON"
+        "SCRIPT;PATH;EXECUTABLE;WORKING_DIRECTORY"
+        "" ${ARGN}
+    )
     if(NOT env_PATH)
         set(env_PATH "${CMAKE_CURRENT_BINARY_DIR}/envscript.sh")
     endif()
@@ -95,10 +98,13 @@ function(create_environment_script)
     if(NOT env_PYTHON)
         set(env_PYTHON "")
     endif()
+    if(NOT env_SCRIPT)
+        set(env_SCRIPT "${_PATH_TO_LOCALBASH_IN}")
+    endif()
 
     get_filename_component(filename "${env_PATH}" NAME)
     get_filename_component(directory "${env_PATH}" PATH)
-    configure_file("${_PATH_TO_LOCALBASH_IN}"
+    configure_file("${env_SCRIPT}"
         "${PROJECT_BINARY_DIR}/CMakeFiles/${filename}"
         @ONLY
     )
