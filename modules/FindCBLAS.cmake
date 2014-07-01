@@ -63,27 +63,27 @@ macro(_look_for_blas_libraries)
     endif()
 endmacro()
 
-macro(_look_for_include_directories)
+function(_look_for_include_directories)
     # Adds BLAS_INCLUDE_DIR
-    function(include_directories_from_library_paths OUTVAR)
-        set(results)
-        foreach(path ${ARGN})
-            string(REGEX REPLACE 
-                "(.*)/lib(64)?/.*" "\\1/include" current "${path}")
-            if(NOT "${current}" STREQUAL "/include"
-                AND IS_DIRECTORY "${current}")
-                list(APPEND results "${current}")
-            endif()
-        endforeach()
-        if(NOT "${results}" STREQUAL "")
-            list(REMOVE_DUPLICATES results)
-            set(${OUTVAR} ${results} PARENT_SCOPE)
+    set(directories)
+    foreach(path ${ARGN})
+        string(REGEX REPLACE 
+            "(.*)/lib(64)?/.*" "\\1/include" current "${path}")
+        if(NOT "${current}" STREQUAL "/include"
+            AND IS_DIRECTORY "${current}")
+            list(APPEND directories "${current}")
         endif()
-    endfunction()
-    # find_package blas does not look for cblas.h
-    include_directories_from_library_paths(directories ${BLAS_LIBRARIES})
-    find_path(BLAS_INCLUDE_DIR NAMES cblas.h mkl.h HINTS ${directories})
-endmacro()
+    endforeach()
+    if(NOT "${directories}" STREQUAL "")
+        list(REMOVE_DUPLICATES directories)
+        set(${OUTVAR} ${directories} PARENT_SCOPE)
+        # find_package blas does not look for cblas.h
+        find_path(BLAS_INCLUDE_DIR NAMES cblas.h mkl.h HINTS ${directories})
+    else()
+        find_path(BLAS_INCLUDE_DIR NAMES cblas.h mkl.h HINTS ${directories})
+    endif()
+    set(BLAS_INCLUDE_DIR ${BLAS_INCLUDE_DIR} PARENT_SCOPE)
+endfunction()
 
 
 macro(_slot_pthread_into_mkl)
@@ -128,7 +128,7 @@ endif()
 if(BLAS_LIBRARIES)
     _slot_pthread_into_mkl()
     if(NOT BLAS_INCLUDE_DIR)
-        _look_for_include_directories()
+        _look_for_include_directories(${BLAS_LIBRARIES})
     endif()
 endif()
 
