@@ -5,7 +5,7 @@ include(CMakeParseArguments)
 function(add_copy_files FILECOPIER_TARGET)
     cmake_parse_arguments(
         FILECOPIER
-        ""
+        "VERBOSE"
         "DESTINATION;GLOB"
         "REPLACE;FILES"
         ${ARGN}
@@ -44,19 +44,28 @@ function(add_copy_files FILECOPIER_TARGET)
             string(REGEX REPLACE "${PATTERN}" "${REPLACEMENT}" output ${output})
         endif()
         set(output ${destination}/${output})
-        get_filename_component(input "${input}" ABSOLUTE)
-
-        add_custom_command(
-            TARGET ${FILECOPIER_TARGET}
-            PRE_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${input} ${output}
-            DEPENDS ${input}
-        )
+        get_filename_component(input_abs "${input}" ABSOLUTE)
+        get_filename_component(output_abs "${output}" ABSOLUTE)
+        set(verbosity COMMENT "Copying ${input} to ${destination}")
+        if(NOT ${FILECOPIER_VERBOSE})
+            unset(verbosity)
+        endif()
+        if(NOT "${input_abs}" STREQUAL "${output_abs}")
+            add_custom_command(
+                TARGET ${FILECOPIER_TARGET}
+                PRE_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${input_abs} ${output_abs}
+                ${verbosity}
+                DEPENDS ${input}
+            )
+       endif()
     endforeach()
 endfunction()
 
 function(add_copy_directory dircopy_TARGET directory)
-    cmake_parse_arguments(dircopy "" "DESTINATION;RELATIVE" "EXCLUDE;GLOB" ${ARGN})
+    cmake_parse_arguments(dircopy
+        "VERBOSE" "DESTINATION;RELATIVE" "EXCLUDE;GLOB" ${ARGN})
 
     get_filename_component(directory "${directory}" ABSOLUTE)
     if(NOT TARGET ${dircopy_TARGET})
@@ -98,16 +107,25 @@ function(add_copy_directory dircopy_TARGET directory)
     endif()
 
     # And do the copying
-    foreach(input ${in_files})
-        set(output "${dircopy_DESTINATION}/${input}")
-        set(input "${dircopy_RELATIVE}/${input}")
-
-        add_custom_command(
-            TARGET ${dircopy_TARGET}
-            PRE_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${input} ${output}
-            DEPENDS ${input}
-        )
+    foreach(infile ${in_files})
+        set(output "${dircopy_DESTINATION}/${infile}")
+        set(input "${dircopy_RELATIVE}/${infile}")
+        get_filename_component(output_abs "${output}" ABSOLUTE)
+        get_filename_component(input_abs "${input}" ABSOLUTE)
+        set(verbosity COMMENT "Copying ${infile} to ${dircopy_DESTINATION}")
+        if(NOT ${dircopy_VERBOSE})
+            unset(verbosity)
+        endif()
+        if(NOT "${input_abs}" STREQUAL "${output_abs}")
+            add_custom_command(
+                TARGET ${dircopy_TARGET}
+                PRE_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${input_abs} ${output_abs}
+                ${verbosity}
+                DEPENDS ${input}
+            )
+        endif()
     endforeach()
 endfunction()
 
