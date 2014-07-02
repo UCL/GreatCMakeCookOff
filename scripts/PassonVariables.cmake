@@ -34,7 +34,7 @@ function(passon_variables PACKAGE)
         if(does_match)
             get_property(type CACHE ${variable} PROPERTY TYPE)
             get_property(help CACHE ${variable} PROPERTY HELPSTRING)
-            set(setters 
+            set(setters
               "${setters}\nset(${variable} \"${${variable}}\" CACHE ${type} \"${help}\")"
             )
         endif()
@@ -42,5 +42,5 @@ function(passon_variables PACKAGE)
     if(NOT passon_APPEND)
       file(WRITE "${passon_FILENAME}" "# pre-cached variables for ${PACKAGE}")
     endif()
-    file(APPEND "${passon_FILENAME}" ${setters} ${passon_ALSOADD})
+    file(APPEND "${passon_FILENAME}" "${setters}" "${passon_ALSOADD}")
 endfunction()
