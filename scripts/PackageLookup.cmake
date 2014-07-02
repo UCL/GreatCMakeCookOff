@@ -84,19 +84,18 @@ endmacro()
 
 macro(_find_package_for_lookup package REQUIRED QUIET DOWNLOAD CHECK)
     string(TOUPPER "${package}" PACKAGE)
-    unset(recursive)
+    set(recursive FALSE)
     _get_sane_name(${package} SANENAME)
     if(${SANENAME}_RECURSIVE) # Called by recursive step
         set(recursive TRUE)
         if(${package}_NOFIND)
             set(${package}_FOUND TRUE CACHE BOOL "")
         endif()
-        delete_variables("${PACKAGE}_LIBRAR.*" "${PACKAGE}_INCLU.*"
-           "${PACKAGE}_.*_FLAGS")
+        delete_package_variables(${package})
     endif()
     # First try and find package (unless downloading by default)
     set(dolook TRUE)
-    if(DOWNLOAD AND NOT recursive)
+    if(${DOWNLOAD} AND NOT ${recursive})
         if(CHECK)
             set(do_rootchange TRUE)
         endif()
@@ -194,6 +193,24 @@ function(get_lookup_hookscript_name hook package)
     set(${variable} "${filename}" PARENT_SCOPE)
 endfunction()
 
+macro(delete_package_variables package)
+    string(TOUPPER "${package}" PACKAGE)
+    delete_variables(
+       "LOOKUP_${package}" "LOOKUP_${PACKAGE}"
+       "^${package}_LIBRAR.*" "^${PACKAGE}_LIBRAR.*"
+       "^${package}_.*_LIBRAR.*" "^${PACKAGE}_.*_LIBRAR.*"
+       "^${package}_INCLUD.*" "^${PACKAGE}_INCLUD.*"
+       "^${package}_.*_INCLUD.*" "^${PACKAGE}_.*_INCLUD.*"
+       "^${package}_FOUND" "^${PACKAGE}_FOUND"
+       "^${package}_.*_FLAGS" "^${PACKAGE}_.*_FLAGS"
+       "^${package}_.*CXXFLAGS" "^${PACKAGE}_.*CXXFLAGS"
+       "^${package}_.*CFLAGS" "^${PACKAGE}_.*CFLAGS"
+       "^${package}_.*F9.FLAGS" "^${PACKAGE}_.*F9.FLAGS"
+    )
+    unset(${package}_FOUND)
+    unset(${PACKAGE}_FOUND)
+endmacro()
+
 # Looks for a lookup package file and includes it.
 macro(lookup_package package)
 
@@ -219,9 +236,9 @@ macro(lookup_package package)
         set(${package}_KEEP FALSE)
     endif()
     # users can request to download the package explicitly on the command-line
-    if(LOOKUP_${package})
+    if(LOOKUP_${package} OR LOOKUP_${PACKAGE})
         set(${package}_DOWNLOAD_BY_DEFAULT TRUE)
-        unset(LOOKUP_${package} CACHE)
+        delete_package_variables(${package})
     endif()
 
     # Reappends components
