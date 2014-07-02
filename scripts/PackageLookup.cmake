@@ -15,7 +15,8 @@ endif()
 include(CachedVariables)
 include(Utilities)
 add_to_envvar(PKG_CONFIG_PATH "${EXTERNAL_ROOT}/lib/pkgconfig" PREPEND OS UNIX)
-add_to_envvar(PKG_CONFIG_PATH "${EXTERNAL_ROOT}/lib64/pkgconfig" PREPEND OS UNIX)
+add_to_envvar(PKG_CONFIG_PATH
+    "${EXTERNAL_ROOT}/lib64/pkgconfig" PREPEND OS UNIX)
 add_to_envvar(LD_LIBRARY_PATH "${EXTERNAL_ROOT}/lib" PREPEND OS UNIX)
 add_to_envvar(LD_LIBRARY_PATH "${EXTERNAL_ROOT}/lib64" PREPEND OS UNIX)
 add_to_envvar(DYLD_LIBRARY_PATH "${EXTERNAL_ROOT}/lib" PREPEND OS APPLE)
@@ -87,6 +88,7 @@ macro(_find_package_for_lookup package REQUIRED QUIET DOWNLOAD CHECK)
     set(recursive FALSE)
     _get_sane_name(${package} SANENAME)
     if(${SANENAME}_RECURSIVE) # Called by recursive step
+        delete_package_variables(${package})
         set(recursive TRUE)
         if(${package}_NOFIND)
             set(${package}_FOUND TRUE CACHE BOOL "")
@@ -152,9 +154,11 @@ macro(_perform_actual_lookup package)
     else()
         if(NOT ${package}_QUIET)
             if(${package}_FOUND)
-                message(STATUS "${package} is built locally as an external project")
+                message(STATUS
+                    "${package} is built locally as an external project")
             elseif(NOT ${package}_DOWNLOAD_BY_DEFAULT)
-                message(STATUS "Will attempt to download and install ${package}")
+                message(STATUS
+                    "Will attempt to download and install ${package}")
             else()
                 message(STATUS "Will download, build,"
                    " and install a local version of ${package}")
@@ -182,7 +186,8 @@ function(get_lookup_hookscript_name hook package)
         set(filename "${EXTERNAL_ROOT}/hooks/install/${package}.cmake")
     else()
         set(hooks POST_LOOKUP INSTALL)
-        message(FATAL_ERROR "Hook argument(${hook}) should be one of ${hooks}.")
+        message(FATAL_ERROR
+            "Hook argument(${hook}) should be one of ${hooks}.")
     endif()
     list(LENGTH ARGN nargs)
     set(variable hook_script)
@@ -228,7 +233,8 @@ macro(lookup_package package)
         "ARGUMENTS;COMPONENTS"
         ${ARGN}
     )
-    # Set explicitly to TRUE or FALSE to simplify setting ${package}_LOOKUP_BUILD
+    # Set explicitly to TRUE or FALSE to simplify setting
+    # ${package}_LOOKUP_BUILD
     if(${package}_KEEP)
         set(${package}_KEEP TRUE)
     else()
@@ -281,7 +287,8 @@ endmacro()
 
 # Adds an external step to an external project to rerun cmake
 macro(add_recursive_cmake_step name)
-    cmake_parse_arguments(recursive "NOCHECK" "FOUND_VAR;PACKAGE_NAME" "" ${ARGN})
+    cmake_parse_arguments(recursive
+        "NOCHECK" "FOUND_VAR;PACKAGE_NAME" "" ${ARGN})
     set(recurse_name "${name}")
     if(recursive_PACKAGE_NAME)
         set(recurse_name "${recursive_PACKAGE_NAME}")
@@ -300,11 +307,12 @@ macro(add_recursive_cmake_step name)
         set(cmakefile "${PROJECT_BINARY_DIR}/CMakeFiles/external")
         set(cmakefile "${cmakefile}/${name}_recursive.cmake")
         file(WRITE "${cmakefile}"
-            "set(CMAKE_PROGRAM_PATH \"${EXTERNAL_ROOT}/bin\" CACHE PATH \"\")\n"
-            "set(CMAKE_LIBRARY_PATH \"${EXTERNAL_ROOT}/lib\" CACHE PATH \"\")\n"
-            "set(CMAKE_INCLUDE_PATH \"${EXTERNAL_ROOT}/include\" CACHE PATH \"\")\n"
-            "set(CMAKE_PREFIX_PATH \"${EXTERNAL_ROOT}\" CACHE PATH \"\")\n"
-            "set(${SANENAME}_RECURSIVE TRUE CACHE INTERNAL \"\")\n"
+          "set(CMAKE_PROGRAM_PATH \"${EXTERNAL_ROOT}/bin\" CACHE PATH \"\")\n"
+          "set(CMAKE_LIBRARY_PATH \"${EXTERNAL_ROOT}/lib\" CACHE PATH \"\")\n"
+          "set(CMAKE_INCLUDE_PATH"
+            "\"${EXTERNAL_ROOT}/include\" CACHE PATH \"\")\n"
+          "set(CMAKE_PREFIX_PATH \"${EXTERNAL_ROOT}\" CACHE PATH \"\")\n"
+          "set(${SANENAME}_RECURSIVE TRUE CACHE INTERNAL \"\")\n"
         )
         if(NOT recursive_NOCHECK)
             file(APPEND "${cmakefile}"
@@ -313,14 +321,18 @@ macro(add_recursive_cmake_step name)
         endif()
         ExternalProject_Add_Step(
             ${name} reCMake
-            COMMAND ${CMAKE_COMMAND} -C "${cmakefile}" --no-varn-unused-cli "${CMAKE_SOURCE_DIR}"
+            COMMAND
+                ${CMAKE_COMMAND} -C "${cmakefile}"
+                    --no-varn-unused-cli "${CMAKE_SOURCE_DIR}"
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             ${recursive_UNPARSED_ARGUMENTS}
         )
         if(${${SANENAME}_REQUIREDONRECURSE})
             if(NOT ${found_var} OR "${${found_var}}" STREQUAL "")
                 unset(${SANENAME}_REQUIREDONRECURSE CACHE)
-                message(FATAL_ERROR "[${name}] Could not be downloaded and installed")
+                message(FATAL_ERROR
+                    "[${name}] Could not be downloaded and installed"
+                )
             endif()
         endif()
     endif()
@@ -330,7 +342,8 @@ endmacro()
 # A script that is executed once a package has been built locally
 # This function should be called from the lookup recipe
 function(write_lookup_hook hook package)
-    cmake_parse_arguments(_wpls${package} "APPEND" "SCRIPTNAME;CONFIGURE" "" ${ARGN})
+    cmake_parse_arguments(_wpls${package}
+        "APPEND" "SCRIPTNAME;CONFIGURE" "" ${ARGN})
     if(_wpls${package}_APPEND AND _wpls${package}_CONFIGURE)
         message(FATAL_ERROR "Only one of APPEND and CONFIGURE is valid")
     endif()
