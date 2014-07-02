@@ -42,5 +42,10 @@ function(passon_variables PACKAGE)
     if(NOT passon_APPEND)
       file(WRITE "${passon_FILENAME}" "# pre-cached variables for ${PACKAGE}")
     endif()
-    file(APPEND "${passon_FILENAME}" "${setters}" "${passon_ALSOADD}")
+    file(APPEND "${passon_FILENAME}"
+        "${setters}\n"
+        "\n# Explicitely added lines\n"
+        "${passon_ALSOADD}"
+        "\n# End of passon_variables\n"
+    )
 endfunction()

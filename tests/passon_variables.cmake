@@ -12,54 +12,16 @@ passon_variables(thispackage
   FILENAME "${CMAKE_CURRENT_BINARY_DIR}/thispackage.cmake"
   PUBLIC
   PATTERNS ".*var_.*" alist
+  ALSOADD "set(alsoadded \"hello world\")\n"
 )
 
-file(WRITE "${CMAKE_BINARY_DIR}/test.cmake"
-    "include(thispackage.cmake)\n"
-    "if(NOT DEFINED thisvar_zero)\n"
-    "  message(FATAL_ERROR \"thisvar_zero undefined\")\n"
-    "endif()\n"
-    "if(NOT thisvar_zero STREQUAL \"${CMAKE_CURRENT_BINARY_DIR}/hello\")\n"
-    "  message(FATAL_ERROR \"wrong value for thisvar_zero\")\n"
-    "endif()\n"
-    "if(NOT DEFINED thisvar_two)\n"
-    "  message(FATAL_ERROR \"thisvar_two undefined\")\n"
-    "endif()\n"
-    "if(NOT thisvar_two)\n"
-    "  message(FATAL_ERROR \"wrong value for thisvar_two\")\n"
-    "endif()\n"
-    "if(NOT DEFINED othervar_one)\n"
-    "  message(FATAL_ERROR \"othervar_one undefined\")\n"
-    "endif()\n"
-    "if(NOT othervar_one EQUAL 2)\n"
-    "  message(FATAL_ERROR \"wrong value for othervar_one\")\n"
-    "endif()\n"
-    "if(DEFINED othervar_two)\n"
-    "  message(FATAL_ERROR \"othervar_two defined\")\n"
-    "endif()\n"
-    "if(DEFINED othervarone)\n"
-    "  message(FATAL_ERROR \"othervarone defined\")\n"
-    "endif()\n"
-    "list(LENGTH alist alist_size)\n"
-    "if(NOT alist_size EQUAL 3)\n"
-    "    message(FATAL_ERROR \"Incorrect list size: \${alist_size} vs 3\")\n"
-    "endif()\n"
-    "list(GET alist 0 item)\n"
-    "if(NOT item EQUAL 42)\n"
-    "    message(FATAL_ERROR \"Incorrect first item\")\n"
-    "endif()\n"
-    "list(GET alist 1 item)\n"
-    "if(NOT item STREQUAL \"this\")\n"
-    "    message(FATAL_ERROR \"Incorrect second item\")\n"
-    "endif()\n"
-    "list(GET alist 2 item)\n"
-    "if(NOT item STREQUAL \"that\")\n"
-    "    message(FATAL_ERROR \"Incorrect third item\")\n"
-    "endif()\n"
+configure_file( "${cookoff_path}/tests/passon_variables_test.in.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/test.cmake"
+    @ONLY
 )
 
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/test.cmake"
+    COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/test.cmake"
     RESULT_VARIABLE result
 )
 if(NOT result EQUAL 0)
