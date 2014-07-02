@@ -169,7 +169,9 @@ macro(_perform_actual_lookup package)
             "Whether package is obtained from a lookup build"
             FORCE
         )
-        add_dependencies(lookup_dependencies ${package})
+        if(TARGET ${package})
+            add_dependencies(lookup_dependencies ${package})
+        endif()
     endif()
 endmacro()
 

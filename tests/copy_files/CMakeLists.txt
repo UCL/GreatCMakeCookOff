@@ -16,16 +16,19 @@ add_copy_files(copy
     DESTINATION ${PROJECT_BINARY_DIR}/here
     ${PROJECT_BINARY_DIR}/original/hello
     ${PROJECT_BINARY_DIR}/original/world
+    VERBOSE
 )
 add_copy_files(copy
     GLOB ${PROJECT_BINARY_DIR}/original/*.c
     DESTINATION ${PROJECT_BINARY_DIR}/here
+    VERBOSE
 )
 add_copy_directory(copy "${PROJECT_BINARY_DIR}/original"
     RELATIVE "${PROJECT_BINARY_DIR}"
     DESTINATION "${PROJECT_BINARY_DIR}/dir_copies"
     GLOB *.h *.c
     EXCLUDE "notthis.*"
+    VERBOSE
 )
 
 cmake_test(copy_files)
