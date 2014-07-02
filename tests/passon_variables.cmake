@@ -12,7 +12,9 @@ passon_variables(thispackage
   FILENAME "${CMAKE_CURRENT_BINARY_DIR}/thispackage.cmake"
   PUBLIC
   PATTERNS ".*var_.*" alist
-  ALSOADD "set(alsoadded \"hello world\")\n"
+  ALSOADD
+    "set(alsoadded \"hello world\")\n"
+    "set(alsoadded2 \"hello this world\")\n"
 )
 
 configure_file( "${cookoff_path}/tests/passon_variables_test.in.cmake"

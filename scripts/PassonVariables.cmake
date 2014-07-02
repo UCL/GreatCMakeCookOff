@@ -45,7 +45,7 @@ function(passon_variables PACKAGE)
     file(APPEND "${passon_FILENAME}"
         "${setters}\n"
         "\n# Explicitely added lines\n"
-        "${passon_ALSOADD}"
+        ${passon_ALSOADD}
         "\n# End of passon_variables\n"
     )
 endfunction()
