@@ -14,7 +14,7 @@ passon_variables(thispackage
   PATTERNS ".*var_.*" alist
   ALSOADD
     "set(alsoadded \"hello world\")\n"
-    "set(alsoadded2 \"hello this world\")\n"
+    "set(alsoadded2 42 this that)\n"
 )
 
 configure_file( "${cookoff_path}/tests/passon_variables_test.in.cmake"
