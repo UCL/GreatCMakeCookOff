@@ -80,7 +80,7 @@ macro(_find_package_for_lookup package REQUIRED QUIET DOWNLOAD CHECK)
     # First try and find package (unless downloading by default)
     set(dolook TRUE)
     if(${DOWNLOAD} AND NOT ${recursive})
-        if(CHECK)
+        if(${CHECK})
             set(do_rootchange TRUE)
         endif()
         set(dolook FALSE)
@@ -237,7 +237,7 @@ macro(lookup_package package)
     # First try and locate package
     _find_package_for_lookup(${package}
         "${${package}_REQUIRED}" "${${package}_QUIET}"
-        "${${package}_DOWNLOAD_BY_DEFAULT}" "${${package}_CHECK_EXACT}"
+        "${${package}_DOWNLOAD_BY_DEFAULT}" "${${package}_CHECK_EXTERNAL}"
         ${${package}_UNPARSED_ARGUMENTS}
     )
 
