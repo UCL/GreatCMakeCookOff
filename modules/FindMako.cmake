@@ -6,7 +6,7 @@ if(NOT PYTHON_EXECUTABLE)
   endif()
 endif()
 # If mako was installed by this process previously, check that it is still there
-if(MAKO_EXTERNAL_INSTALL) 
+if(MAKO_EXTERNAL_INSTALL)
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} "-c \"import mako\""
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/python
@@ -21,7 +21,7 @@ endif()
 # If mako is not found ...
 if(NOT FOUND_MAKO)
   # Then look for it by importing it
-  execute_process( 
+  execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import mako"
     ERROR_VARIABLE DUMMY
     OUTPUT_VARIABLE DUMMY
@@ -30,7 +30,7 @@ if(NOT FOUND_MAKO)
   if(FOUND_MAKO EQUAL 0)
     message(STATUS "[Mako] Found")
     set(FOUND_MAKO TRUE CACHE INTERNAL "Found mako python package")
-    set(MAKO_EXTERNAL_INSTALL FALSE CACHE INTERNAL "Manual install of mako") 
+    set(MAKO_EXTERNAL_INSTALL FALSE CACHE INTERNAL "Manual install of mako")
     return()
   endif()
 else()
@@ -39,7 +39,7 @@ else()
   return()
 endif()
 
-message(STATUS "[Mako] Not found") 
+message(STATUS "[Mako] Not found")
 # Now try and install mako using pip
 if(NOT PIP_EXECUTABLE)
   find_program(PIP_EXECUTABLE pip)
@@ -67,7 +67,7 @@ else()
   message(STATUS "[Mako] installed in ${PROJECT_BINARY_DIR}/external/python")
 endif()
 
-execute_process( 
+execute_process(
   COMMAND ${PYTHON_EXECUTABLE} -c "import mako"
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/python
   ERROR_VARIABLE DUMMY
@@ -77,7 +77,7 @@ execute_process(
 if(FOUND_MAKO EQUAL 0)
   message(STATUS "[Mako] now available in build directory")
   set(FOUND_MAKO TRUE CACHE INTERNAL "Found mako python package")
-  set(MAKO_EXTERNAL_INSTALL TRUE CACHE INTERNAL "Manual install of mako") 
+  set(MAKO_EXTERNAL_INSTALL TRUE CACHE INTERNAL "Manual install of mako")
   return()
 else()
   message(FATAL_ERROR "Could not install mako")

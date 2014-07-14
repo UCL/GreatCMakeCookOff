@@ -1,4 +1,4 @@
-list(APPEND CMAKE_MODULE_PATH ${cookoff_path})
+list(APPEND CMAKE_MODULE_PATH ${cookoff_path}/scripts ${cookoff_path}/modules)
 include(CheckIsNaN)
 if(NOT ISNAN_VARIATION)
   message(STATUS "Could not find working isnan.")
