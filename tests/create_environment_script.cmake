@@ -28,6 +28,24 @@ function(try_execute script)
     endif()
 endfunction()
 
+function(check_ldpaths msg)
+    if(NOT EXISTS "${PROJECT_BINARY_DIR}/paths/ldpaths")
+        message(FATAL_ERROR "${msg}: file ldpaths does not exist")
+    endif()
+
+    file(READ "${PROJECT_BINARY_DIR}/paths/ldpaths" actual)
+    unset(expected)
+    foreach(directory ${ARGN})
+        set(expected "${expected}${directory}\n")
+    endforeach()
+    if(NOT expected STREQUAL actual)
+        message(FATAL_ERROR "${msg}\n" 
+            "expected: ${expected}\n"
+            "actual: ${actual}"
+        )
+    endif()
+endfunction()
+
 # Without executable
 create_environment_script(PATH "${PROJECT_BINARY_DIR}/noexec.sh")
 try_execute(noexec ARGS echo "hello" OUTPUT "hello")
@@ -43,3 +61,61 @@ create_environment_script(PATH "${PROJECT_BINARY_DIR}/ch_dir.sh"
     EXECUTABLE pwd WORKING_DIRECTORY "${directory}"
 )
 try_execute(ch_dir  OUTPUT "${directory}")
+
+
+# Check dyldpath modifications
+create_environment_script(PATH "${PROJECT_BINARY_DIR}/dyld.sh" 
+    EXECUTABLE "echo $DYLD_LIBRARY_PATH")
+file(REMOVE "${PROJECT_BINARY_DIR}/paths/ldpaths"
+    "${PROJECT_BINARY_DIR}/lib"
+    "${PROJECT_BINARY_DIR}/lib64"
+    "${PROJECT_BINARY_DIR}/lib32"
+)
+set(expected "$ENV{DYLD_LIBRARY_PATH}")
+try_execute(dyld OUTPUT "${expected}")
+
+# add a system environment path -- should not be added to ldpaths
+# for simplicity, do this first: the file ldpaths should not be created by call
+list(GET CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES 0 directory)
+add_to_ld_path("${directory}" "/System/Library/")
+if(EXISTS "${PROJECT_BINARY_DIR}/paths/ldpaths")
+    message(FATAL_ERROR "Path should not have made it through")
+endif()
+# Path should be unchanged
+try_execute(dyld OUTPUT "${expected}")
+
+# add a system environment path -- should not be added to ldpaths
+# now the file will be created and have one entry
+add_to_ld_path("${PROJECT_BINARY_DIR}/lib")
+if(NOT EXISTS "${PROJECT_BINARY_DIR}/paths/ldpaths")
+    message(FATAL_ERROR "Valid path not written to file")
+endif()
+check_ldpaths("Paths not found in ldpaths file" "${PROJECT_BINARY_DIR}/lib")
+# Path should be unchanged because directory does not yet exist
+try_execute(dyld OUTPUT "${expected}")
+# Now create path
+file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+set(expected "${expected}:${PROJECT_BINARY_DIR}/lib")
+try_execute(dyld OUTPUT "${expected}")
+
+# Add a second path and re-add the first
+add_to_ld_path("${PROJECT_BINARY_DIR}/lib64" "${PROJECT_BINARY_DIR}/lib")
+check_ldpaths("Paths not found in ldpaths file"
+    "${PROJECT_BINARY_DIR}/lib"
+    "${PROJECT_BINARY_DIR}/lib64"
+)
+file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/lib64")
+set(expected "${expected}:${PROJECT_BINARY_DIR}/lib64")
+try_execute(dyld OUTPUT "${expected}")
+
+# Now add system paths and check again for good measure
+add_to_ld_path(${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES}
+    "${PROJECT_BINARY_DIR}/lib32" "/System/fakey")
+check_ldpaths("Paths not found in ldpaths file"
+    "${PROJECT_BINARY_DIR}/lib"
+    "${PROJECT_BINARY_DIR}/lib64"
+    "${PROJECT_BINARY_DIR}/lib32"
+)
+file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/lib32")
+set(expected "${expected}:${PROJECT_BINARY_DIR}/lib32")
+try_execute(dyld OUTPUT "${expected}")
