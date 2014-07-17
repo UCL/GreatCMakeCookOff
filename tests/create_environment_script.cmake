@@ -4,6 +4,7 @@ initialize_cookoff()
 include(CMakeParseArguments)
 include(EnvironmentScript)
 
+# Executes an environment script, checks its result and output
 function(try_execute script)
     cmake_parse_arguments(try_execute "" "OUTPUT" "ARGS" ${ARGN})
 
@@ -19,7 +20,7 @@ function(try_execute script)
         message(FATAL_ERROR "environment script failed with "
             "${result}: ${error}")
     endif()
-    if(NOT output STREQUAL try_execute_OUTPUT)
+    if(NOT "${output}" STREQUAL "${try_execute_OUTPUT}")
         message(FATAL_ERROR "environment script did not output expected"
             " result\n"
             "expected: ${try_execute_OUTPUT}\n"
@@ -28,6 +29,7 @@ function(try_execute script)
     endif()
 endfunction()
 
+# Checks the file ldpaths contains expected paths
 function(check_ldpaths msg)
     if(NOT EXISTS "${PROJECT_BINARY_DIR}/paths/ldpaths")
         message(FATAL_ERROR "${msg}: file ldpaths does not exist")
@@ -38,12 +40,26 @@ function(check_ldpaths msg)
     foreach(directory ${ARGN})
         set(expected "${expected}${directory}\n")
     endforeach()
-    if(NOT expected STREQUAL actual)
+    if(NOT "${expected}" STREQUAL "${actual}")
         message(FATAL_ERROR "${msg}\n" 
             "expected: ${expected}\n"
             "actual: ${actual}"
         )
     endif()
+endfunction()
+
+# Check DYLD_ENVIRONMENT_PATH has expected path
+function(check_path)
+    unset(expected)
+    foreach(current $ENV{DYLD_LIBRARY_PATH} ${ARGN})
+        if("${expected}" STREQUAL "")
+            set(expected "${current}")
+        else()
+            set(expected "${expected}:${current}")
+        endif()
+    endforeach()
+    
+    try_execute(dyld OUTPUT "${expected}")
 endfunction()
 
 # Without executable
@@ -66,12 +82,12 @@ try_execute(ch_dir  OUTPUT "${directory}")
 # Check dyldpath modifications
 create_environment_script(PATH "${PROJECT_BINARY_DIR}/dyld.sh" 
     EXECUTABLE "echo $DYLD_LIBRARY_PATH")
-file(REMOVE "${PROJECT_BINARY_DIR}/paths/ldpaths"
-    "${PROJECT_BINARY_DIR}/lib"
-    "${PROJECT_BINARY_DIR}/lib64"
+file(REMOVE "${PROJECT_BINARY_DIR}/paths/ldpaths")
+file(REMOVE_RECURSE
+    "${PROJECT_BINARY_DIR}/lib" "${PROJECT_BINARY_DIR}/lib64"
     "${PROJECT_BINARY_DIR}/lib32"
 )
-set(expected "$ENV{DYLD_LIBRARY_PATH}")
+check_path()
 try_execute(dyld OUTPUT "${expected}")
 
 # add a system environment path -- should not be added to ldpaths
@@ -82,7 +98,7 @@ if(EXISTS "${PROJECT_BINARY_DIR}/paths/ldpaths")
     message(FATAL_ERROR "Path should not have made it through")
 endif()
 # Path should be unchanged
-try_execute(dyld OUTPUT "${expected}")
+check_path()
 
 # add a system environment path -- should not be added to ldpaths
 # now the file will be created and have one entry
@@ -92,11 +108,10 @@ if(NOT EXISTS "${PROJECT_BINARY_DIR}/paths/ldpaths")
 endif()
 check_ldpaths("Paths not found in ldpaths file" "${PROJECT_BINARY_DIR}/lib")
 # Path should be unchanged because directory does not yet exist
-try_execute(dyld OUTPUT "${expected}")
+check_path()
 # Now create path
 file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
-set(expected "${expected}:${PROJECT_BINARY_DIR}/lib")
-try_execute(dyld OUTPUT "${expected}")
+check_path("${PROJECT_BINARY_DIR}/lib")
 
 # Add a second path and re-add the first
 add_to_ld_path("${PROJECT_BINARY_DIR}/lib64" "${PROJECT_BINARY_DIR}/lib")
@@ -104,9 +119,9 @@ check_ldpaths("Paths not found in ldpaths file"
     "${PROJECT_BINARY_DIR}/lib"
     "${PROJECT_BINARY_DIR}/lib64"
 )
+check_path("${PROJECT_BINARY_DIR}/lib")
 file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/lib64")
-set(expected "${expected}:${PROJECT_BINARY_DIR}/lib64")
-try_execute(dyld OUTPUT "${expected}")
+check_path("${PROJECT_BINARY_DIR}/lib" "${PROJECT_BINARY_DIR}/lib64")
 
 # Now add system paths and check again for good measure
 add_to_ld_path(${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES}
@@ -116,6 +131,7 @@ check_ldpaths("Paths not found in ldpaths file"
     "${PROJECT_BINARY_DIR}/lib64"
     "${PROJECT_BINARY_DIR}/lib32"
 )
+check_path("${PROJECT_BINARY_DIR}/lib" "${PROJECT_BINARY_DIR}/lib64")
 file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/lib32")
-set(expected "${expected}:${PROJECT_BINARY_DIR}/lib32")
-try_execute(dyld OUTPUT "${expected}")
+check_path("${PROJECT_BINARY_DIR}/lib" "${PROJECT_BINARY_DIR}/lib64"
+    "${PROJECT_BINARY_DIR}/lib32")
