@@ -10,11 +10,18 @@ cmake_test(add_to_path)
 
 find_program(Hg_EXECUTABLE hg)
 if("${CMAKE_VERSION}" VERSION_GREATER 2.8.9 AND Hg_EXECUTABLE)
-   cmake_test(lookup_eigen SOURCE)
+    cmake_test(lookup_eigen SOURCE -DLOOKUP_EIGEN=TRUE)
+    cmake_test(use_external)
+    cmake_test(use_external_download_by_default)
+    set_tests_properties(
+        cmake_test_use_external cmake_test_use_external_download_by_default
+        PROPERTIES DEPENDS cmake_test_lookup_eigen
+    )
 endif()
 find_program(svn_EXECUTABLE svn)
 if(svn_EXECUTABLE)
-    cmake_test(addgtest NOEXEC SOURCE --test-command ${CMAKE_MAKE_PROGRAM} test)
+    cmake_test(addgtest NOEXEC SOURCE
+        --test-command ${CMAKE_MAKE_PROGRAM} test)
 endif()
 
 add_subdirectory(cpp11)
