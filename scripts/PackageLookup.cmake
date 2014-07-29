@@ -292,7 +292,7 @@ macro(add_recursive_cmake_step name)
         file(WRITE "${cmakefile}"
           "set(CMAKE_PROGRAM_PATH \"${EXTERNAL_ROOT}/bin\" CACHE PATH \"\")\n"
           "set(CMAKE_LIBRARY_PATH \"${EXTERNAL_ROOT}/lib\" CACHE PATH \"\")\n"
-          "set(CMAKE_INCLUDE_PATH"
+          "set(CMAKE_INCLUDE_PATH "
             "\"${EXTERNAL_ROOT}/include\" CACHE PATH \"\")\n"
           "set(CMAKE_PREFIX_PATH \"${EXTERNAL_ROOT}\" CACHE PATH \"\")\n"
           "set(${SANENAME}_RECURSIVE TRUE CACHE INTERNAL \"\")\n"
