@@ -27,3 +27,4 @@ endif()
 
 add_subdirectory(cpp11)
 add_subdirectory(copy_files)
+add_subdirectory(python_modules)
