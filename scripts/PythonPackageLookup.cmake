@@ -5,8 +5,32 @@ include(CMakeParseArguments)
 include(PythonPackage)
 include(PackageLookup)
 
+function(_lpp_check_is_syspath python syspath)
+    set(program
+        "from sys import path"
+        "from os.path import abspath"
+        "print abspath('${syspath}')"
+        "print [abspath(u) for u in path]"
+        "assert abspath('${syspath}') in [abspath(u) for u in path]"
+    )
+    execute_process(
+        COMMAND ${python} -c "${program}"
+        RESULT_VARIABLE result
+        ERROR_VARIABLE error
+        OUTPUT_VARIABLE output
+    )
+    if(NOT result EQUAL 0)
+        message(WARNING
+            "Installing package into a path python won't know about: "
+            "${syspath}. You might want to use a local environment and "
+            "call ``add_to_python_path('${syspath}')``."
+        )
+    endif()
+endfunction()
+
 function(lookup_python_package package)
     cmake_parse_arguments(lpp "QUIET;REQUIRED" "VERSION;PATH" "" ${ARGN})
+    _python_executable(LOCALPYTHON ${lpp_UNPARSED_ARGUMENTS})
     if(NOT lpp_PATH)
         set(lpp_PATH "${EXTERNAL_ROOT}/python")
     endif()
@@ -25,7 +49,7 @@ function(lookup_python_package package)
     endif()
 
     # check we have setuptools
-    find_python_package(setuptools QUIET)
+    find_python_package(setuptools QUIET ${lpp_UNPARSED_ARGUMENTS})
     if(NOT setuptools_FOUND)
         if(lpp_REQUIRED)
             message(FATAL_ERROR "setuptools not available, cannot install ${package}")
@@ -38,6 +62,7 @@ function(lookup_python_package package)
     if(NOT EXISTS "${lpp_PATH}")
         file(MAKE_DIRECTORY "${lpp_PATH}")
     endif()
+    _lpp_check_is_syspath("${LOCALPYTHON}" "${lpp_PATH}")
     file(WRITE "${EXTERNAL_ROOT}/install_${package}.py"
         "from os import environ\n"
         "if 'PYTHONPATH' not in environ:\n"
@@ -53,7 +78,7 @@ function(lookup_python_package package)
         "exit(0 if result == True else 1)\n"
     )
     execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} "${EXTERNAL_ROOT}/install_${package}.py"
+        COMMAND ${LOCALPYTHON} "${EXTERNAL_ROOT}/install_${package}.py"
         RESULT_VARIABLE result
         ERROR_VARIABLE error
         OUTPUT_VARIABLE output
@@ -61,5 +86,5 @@ function(lookup_python_package package)
     if(lpp_REQUIRED)
         set(arguments "${arguments} REQUIRED")
     endif()
-    find_python_package(${package} REQUIRED)
+    find_python_package(${package} REQUIRED ${lpp_UNPARSED_ARGUMENTS})
 endfunction()
