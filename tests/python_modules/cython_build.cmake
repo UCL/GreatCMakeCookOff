@@ -9,9 +9,10 @@ set(PYTHON_PKG_DIR "${PROJECT_BINARY_DIR}/python_install"
 
 find_package(CoherentPython)
 include(PythonModule)
-
+include(PythonPackageLookup)
 include(EnvironmentScript)
-set(LOCAL_PYTHON_EXECUTABLE "@CMAKE_CURRENT_BINARY_DIR@/extension_tester.sh")
+
+set(LOCAL_PYTHON_EXECUTABLE "@CMAKE_CURRENT_BINARY_DIR@/cython_tester.sh")
 create_environment_script(
     EXECUTABLE "${PYTHON_EXECUTABLE}"
     PATH "${LOCAL_PYTHON_EXECUTABLE}"
@@ -20,19 +21,18 @@ create_environment_script(
 add_to_python_path("@EXTERNAL_ROOT@/python")
 add_to_python_path("${PYTHON_BINARY_DIR}")
 
-foreach(pathname module.c other.h other.cc)
-    configure_file(@CMAKE_CURRENT_SOURCE_DIR@/${pathname} 
+lookup_python_package(pytest REQUIRED PATH "${EXTERNAL_ROOT}/python")
+lookup_python_package(cython REQUIRED PATH "${EXTERNAL_ROOT}/python")
+get_filename_component(directory "${PYTHON_EXECUTABLE}" PATH)
+find_program(cython_EXECUTABLE cython HINTS "${directory}")
+
+foreach(pathname structure.pyx structure.pxd structure.h structure.c)
+    configure_file("@CMAKE_CURRENT_SOURCE_DIR@/${pathname}"
         "${CMAKE_CURRENT_SOURCE_DIR}/${pathname}"
         COPYONLY
     )
 endforeach()
-add_python_module("extension" module.c *.cc *.h)
 
-foreach(target extension)
-    if(NOT TARGET ${target})
-        message(FATAL_ERROR "Target ${target} does not exist")
-    endif()
-    if(NOT TARGET ${target}-ext)
-        message(FATAL_ERROR "Target ${target}-ext does not exist")
-    endif()
-endforeach()
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
+add_library(pystructure SHARED structure.c)
+add_python_module("extension" *.pyx *.pxd LIBRARIES pystructure FAKE_INIT)

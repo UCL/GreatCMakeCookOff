@@ -8,6 +8,10 @@ if(NOT PYTHON_BINARY_DIR)
         CACHE PATH "Location of python package in build tree")
 endif()
 add_to_python_path(${PYTHON_BINARY_DIR})
+set(DEPS_SCRIPT
+    ${CMAKE_CURRENT_LIST_DIR}/find_cython_deps.py
+    CACHE INTERNAL "Script to determine cython dependencies"
+)
 
 function(_pm_location_and_name module)
     string(REGEX REPLACE "\\." "/" location "${module}")
@@ -22,6 +26,11 @@ function(_pm_default)
         set(do_install FALSE PARENT_SCOPE)
     else()
         set(do_install TRUE PARENT_SCOPE)
+    endif()
+    if(NOT ${module}_CPP)
+        set(${module}_CPP "" PARENT_SCOPE)
+    else()
+        set(${module}_CPP CPP PARENT_SCOPE)
     endif()
 
     unset(excluded)
@@ -45,6 +54,10 @@ function(_pm_default)
         message(FATAL_ERROR "Python module has no sources")
     endif()
     set(ALL_SOURCES ${sources} PARENT_SCOPE)
+
+    if(${module}_LOCATION)
+        set(location ${${module}_LOCATION} PARENT_SCOPE)
+    endif()
 endfunction()
 
 function(_pm_filter_list output input)
@@ -57,6 +70,26 @@ function(_pm_filter_list output input)
         endforeach()
     endforeach()
     set(${output} ${result} PARENT_SCOPE)
+endfunction()
+
+function(get_pyx_dependencies SOURCE OUTVAR)
+    if(NOT "${LOCAL_PYTHON_EXECUTABLE}")
+        set(LOCAL_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
+    endif()
+    execute_process(
+        COMMAND ${LOCAL_PYTHON_EXECUTABLE} ${DEPS_SCRIPT} ${SOURCE} ${ARGN}
+        RESULT_VARIABLE RESULT
+        OUTPUT_VARIABLE OUTPUT
+        ERROR_VARIABLE ERROR
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    if("${RESULT}" STREQUAL "0")
+        set(${OUTVAR} ${OUTPUT} PARENT_SCOPE)
+    else()
+        message("Error: ${ERROR}")
+        message("Output: ${OUTPUT}")
+        message(FATAL_ERROR "Error while computing cython dependencies")
+    endif()
 endfunction()
 
 function(_pm_add_fake_init location)
@@ -86,22 +119,24 @@ function(_pm_add_python_extension module)
         include_directories(${NUMPY_INCLUDE_DIRS})
     endif()
 
-    add_library (${${ext}_TARGET}-ext MODULE ${${ext}_SOURCES})
-    get_filename_component(location "${${ext}_LOCATION}" PATH)
-    target_link_libraries(${${ext}_TARGET}-ext ${PYTHON_LIBRARIES})
-    set_target_properties(${${ext}_TARGET}-ext
+    set(container_target ${${ext}_TARGET})
+    set(pymodule ${container_target}-ext)
+
+    add_library(${pymodule} MODULE ${${ext}_SOURCES})
+    target_link_libraries(${pymodule} ${PYTHON_LIBRARIES})
+    set_target_properties(${pymodule}
         PROPERTIES
         OUTPUT_NAME "${${ext}_EXTENSION}"
         PREFIX "" SUFFIX ".so"
-        LIBRARY_OUTPUT_DIRECTORY "${PYTHON_BINARY_DIR}/${location}"
+        LIBRARY_OUTPUT_DIRECTORY "${PYTHON_BINARY_DIR}/${${ext}_LOCATION}"
     )
     if(${ext}_LIBRARIES)
-        target_link_libraries(${${ext}_TARGET}-ext ${${ext}_LIBRARIES})
+        target_link_libraries(${pymodule} ${${ext}_LIBRARIES})
     endif()
-    add_dependencies(${${ext}_TARGET} ${${ext}_TARGET}-ext)
+    add_dependencies(${container_target} ${pymodule})
 
     if(${${ext}_INSTALL})
-        install_python(TARGETS ${${ext}_TARGET}-ext DESTINATION "${location}")
+        install_python(TARGETS ${pymodule} DESTINATION "${${ext}_LOCATION}")
     endif()
 endfunction()
 
@@ -172,6 +207,79 @@ function(_pm_add_headers module)
     )
 endfunction()
 
+function(_pm_add_cythons module)
+    string(REGEX REPLACE "/" "_" cys "cys.${module}")
+    cmake_parse_arguments(${cys} "CPP" "INSTALL;LOCATION" "SOURCES" ${ARGN})
+    foreach(src ${${cys}_SOURCES})
+        _pm_add_cython(${module}
+            ${src} ${${cys}_LOCATION} ${${cys}_INSTALL} ${${cys}_CPP}
+            ${${cys}_UNPARSED_ARGUMENTS}
+        )
+    endforeach()
+endfunction()
+
+function(_pm_add_cython module source location do_install cpp)
+
+    # Creates command-line arguments for cython for include directories
+    get_property(included_dirs
+        DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        PROPERTY INCLUDE_DIRECTORIES
+    )
+    set(inclusion)
+    foreach(included ${included_dirs})
+      set(inclusion ${inclusion} -I${included})
+    endforeach()
+
+    # Computes dependencies
+    get_pyx_dependencies(${source} DEPENDENCIES ${included_dirs})
+
+    # Call cython
+    get_filename_component(cy_module ${source} NAME_WE)
+    unset(arguments)
+    if(cython_EXECUTABLE)
+        set(arguments ${cython_EXECUTABLE})
+    elseif(LOCAL_PYTHON_EXECUTABLE)
+        set(arguments ${LOCAL_PYTHON_EXECUTABLE} -m cython)
+    else()
+        set(arguments ${PYTHON_EXECUTABLE} -m cython)
+    endif()
+    if(cpp)
+        set(c_source "cython_${cy_module}.cc")
+        list(APPEND arguments --cplus)
+    else()
+        set(c_source "cython_${cy_module}.c")
+    endif()
+
+    # Create C source from cython
+    list(APPEND arguments
+        "${CMAKE_CURRENT_SOURCE_DIR}/${source}"
+        -o ${c_source} ${inclusion}
+    )
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${c_source}
+        COMMAND ${arguments}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        DEPENDS ${DEPENDENCIES}
+        COMMENT "Generating c/c++ source ${source} with cython"
+    )
+
+    # Extension name
+    get_filename_component(extension ${cy_module} NAME_WE)
+    if("${extension}" STREQUAL "")
+        set(extension ${cy_module})
+    endif()
+
+    # Add python module
+    _pm_add_python_extension(${module}.${cy_module}
+        TARGET ${module}
+        INSTALL ${do_install}
+        EXTENSION ${extension}
+        SOURCES ${c_source}
+        LOCATION ${location}
+        ${ARGN}
+    )
+endfunction()
+
 function(add_python_module module)
 
     # Sets submodule, location, and module from module
@@ -179,8 +287,8 @@ function(add_python_module module)
 
     # Parses arguments
     cmake_parse_arguments(${module}
-        "FAKE_INIT;NOINSTALL;INSTALL"
-        "HEADER_DESTINATION;TARGETNAME"
+        "FAKE_INIT;NOINSTALL;INSTALL;CPP;ROOT_LOCATION"
+        "HEADER_DESTINATION;TARGETNAME;LANGUAGE;LOCATION"
         "SOURCES;HEADERS;EXCLUDE;LIBRARIES"
         ${ARGN}
     )
@@ -193,12 +301,14 @@ function(add_python_module module)
     _pm_filter_list(CPP_SOURCES ALL_SOURCES ".*\\.cpp$" ".*\\.cc$")
     _pm_filter_list(CPP_HEADERS ALL_SOURCES ".*\\.hpp" ".*\\.h")
     _pm_filter_list(PY_SOURCES ALL_SOURCES ".*\\.py$")
+    _pm_filter_list(CY_SOURCES ALL_SOURCES ".*\\.pyx")
+    _pm_filter_list(CY_HEADERS ALL_SOURCES ".*\\.pxd")
 
     if(C_SOURCES OR CPP_SOURCES)
-        if(PY_SOURCES)
-            message(FATAL_ERROR "Python and C sources in same call"
+        if(PY_SOURCES OR CY_SOURCES)
+            message(FATAL_ERROR "Python/Cython and C sources in same call"
                 " to add_python_module.\n"
-                "Please split into separate calls."
+                "Please split into separate pure C extensions from othes."
             )
         endif()
     endif()
@@ -215,17 +325,22 @@ function(add_python_module module)
     endif()
 
     # First adds fake init if necessary
-    if(${${module}_FAKE_INIT})
+    if(${module}_FAKE_INIT)
+        if(C_SOURCES OR CPP_SOURCES)
+            message(FATAL_ERROR
+                "FAKE_INIT AND C/C++ extensions are incompatible")
+        endif()
         _pm_add_fake_init(${location})
     endif()
 
 
     # Then compiles an extension if C/C++ sources
+    get_filename_component(extension_location "${location}" PATH)
     _pm_add_python_extension(${module}
         TARGET ${targetname}
         INSTALL ${do_install}
         EXTENSION ${submodule}
-        LOCATION ${location}
+        LOCATION ${extension_location}
         LIBRARIES ${${module}_LIBRARIES}
         SOURCES ${C_SOURCES} ${CPP_SOURCES}
     )
@@ -242,7 +357,16 @@ function(add_python_module module)
     _pm_add_headers(${module}
         LOCATION ${location}
         DESTINATION ${${module}_HEADER_DESTINATION}
-        SOURCES ${CPP_HEADERS} ${C_HEADERS}
+        SOURCES ${CPP_HEADERS} ${C_HEADERS} ${CY_HEADERS}
         INSTALL ${do_install}
+    )
+
+    # Then create cython extensions
+    _pm_add_cythons(${module}
+        ${${module}_CPP}
+        LOCATION ${location}
+        SOURCES ${CY_SOURCES}
+        INSTALL ${do_install}
+        LIBRARIES ${${module}_LIBRARIES}
     )
 endfunction()
