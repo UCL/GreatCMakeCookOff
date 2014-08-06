@@ -106,7 +106,7 @@ function(_pm_add_python_extension module)
     string(REGEX REPLACE "/" "_" ext "ext.${module}")
     cmake_parse_arguments(${ext}
         ""
-        "INSTALL;TARGET;LOCATION;EXTENSION"
+        "INSTALL;TARGET;LOCATION;EXTENSION;MODULE_TARGET"
         "SOURCES;LIBRARIES"
         ${ARGN}
     )
@@ -119,24 +119,28 @@ function(_pm_add_python_extension module)
         include_directories(${NUMPY_INCLUDE_DIRS})
     endif()
 
+    set(location ${${ext}_LOCATION})
     set(container_target ${${ext}_TARGET})
-    set(pymodule ${container_target}-ext)
+    set(module_target ${container_target}-ext)
+    if(NOT "${${ext}_MODULE_TARGET}" STREQUAL "")
+        set(module_target ${${ext}_MODULE_TARGET})
+    endif()
 
-    add_library(${pymodule} MODULE ${${ext}_SOURCES})
-    target_link_libraries(${pymodule} ${PYTHON_LIBRARIES})
-    set_target_properties(${pymodule}
+    add_library(${module_target} MODULE ${${ext}_SOURCES})
+    target_link_libraries(${module_target} ${PYTHON_LIBRARIES})
+    set_target_properties(${module_target}
         PROPERTIES
         OUTPUT_NAME "${${ext}_EXTENSION}"
         PREFIX "" SUFFIX ".so"
-        LIBRARY_OUTPUT_DIRECTORY "${PYTHON_BINARY_DIR}/${${ext}_LOCATION}"
+        LIBRARY_OUTPUT_DIRECTORY "${PYTHON_BINARY_DIR}/${location}"
     )
     if(${ext}_LIBRARIES)
-        target_link_libraries(${pymodule} ${${ext}_LIBRARIES})
+        target_link_libraries(${module_target} ${${ext}_LIBRARIES})
     endif()
-    add_dependencies(${container_target} ${pymodule})
+    add_dependencies(${container_target} ${module_target})
 
     if(${${ext}_INSTALL})
-        install_python(TARGETS ${pymodule} DESTINATION "${${ext}_LOCATION}")
+        install_python(TARGETS ${module_target} DESTINATION ${location})
     endif()
 endfunction()
 
@@ -209,17 +213,16 @@ endfunction()
 
 function(_pm_add_cythons module)
     string(REGEX REPLACE "/" "_" cys "cys.${module}")
-    cmake_parse_arguments(${cys} "CPP" "INSTALL;LOCATION" "SOURCES" ${ARGN})
-    foreach(src ${${cys}_SOURCES})
-        _pm_add_cython(${module}
-            ${src} ${${cys}_LOCATION} ${${cys}_INSTALL} ${${cys}_CPP}
-            ${${cys}_UNPARSED_ARGUMENTS}
-        )
+    cmake_parse_arguments(${cys} "" "" "SOURCES" ${ARGN})
+    foreach(source ${${cys}_SOURCES})
+        _pm_add_cython(${module} ${source} ${${cys}_UNPARSED_ARGUMENTS})
     endforeach()
 endfunction()
 
-function(_pm_add_cython module source location do_install cpp)
+function(_pm_add_cython module source)
 
+    string(REGEX REPLACE "/" "_" cy "cy.${module}")
+    cmake_parse_arguments(${cy} "CPP" "TARGET" "" ${ARGN})
     # Creates command-line arguments for cython for include directories
     get_property(included_dirs
         DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -227,7 +230,7 @@ function(_pm_add_cython module source location do_install cpp)
     )
     set(inclusion)
     foreach(included ${included_dirs})
-      set(inclusion ${inclusion} -I${included})
+        set(inclusion ${inclusion} -I${included})
     endforeach()
 
     # Computes dependencies
@@ -243,7 +246,7 @@ function(_pm_add_cython module source location do_install cpp)
     else()
         set(arguments ${PYTHON_EXECUTABLE} -m cython)
     endif()
-    if(cpp)
+    if(${${cy}_CPP})
         set(c_source "cython_${cy_module}.cc")
         list(APPEND arguments --cplus)
     else()
@@ -269,14 +272,19 @@ function(_pm_add_cython module source location do_install cpp)
         set(extension ${cy_module})
     endif()
 
+    # cy_module might already contain module
+    if("${cy_module}" MATCHES "^${module}")
+        set(full_module ${cy_module})
+    else()
+        set(full_module ${module}.${cy_module})
+    endif()
     # Add python module
-    _pm_add_python_extension(${module}.${cy_module}
-        TARGET ${module}
-        INSTALL ${do_install}
+    _pm_add_python_extension(${full_module}
+        TARGET ${${cy}_TARGET}
+        MODULE_TARGET ${full_module}-cython
         EXTENSION ${extension}
         SOURCES ${c_source}
-        LOCATION ${location}
-        ${ARGN}
+        ${${cy}_UNPARSED_ARGUMENTS}
     )
 endfunction()
 
@@ -365,8 +373,9 @@ function(add_python_module module)
     _pm_add_cythons(${module}
         ${${module}_CPP}
         LOCATION ${location}
-        SOURCES ${CY_SOURCES}
         INSTALL ${do_install}
         LIBRARIES ${${module}_LIBRARIES}
+        TARGET ${targetname}
+        SOURCES ${CY_SOURCES}
     )
 endfunction()
