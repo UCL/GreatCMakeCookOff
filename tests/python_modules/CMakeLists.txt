@@ -42,9 +42,15 @@ add_test(NAME cython_extension
 set_tests_properties(cython_extension PROPERTIES
     DEPENDS cmake_test_cython_build)
 
+cmake_test(confed_build NOEXEC --build-target install)
+cmake_test(confed_tests)
+set_tests_properties(cmake_test_confed_tests PROPERTIES
+    DEPENDS cmake_test_confed_build)
+
 set_tests_properties(
     cmake_test_pure_tests cmake_test_pure_build
     cmake_test_extension_build python_extension cmake_test_extension_files
     cmake_test_cython_build cmake_test_cython_files cython_extension
+    cmake_test_confed_build cmake_test_confed_tests
     PROPERTIES LABELS "python"
 )

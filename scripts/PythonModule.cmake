@@ -288,6 +288,36 @@ function(_pm_add_cython module source)
     )
 endfunction()
 
+function(_pm_get_confed_filename filename OUTPUT)
+    get_filename_component(filename "${filename}" ABSOLUTE)
+    file(RELATIVE_PATH relfile "${CMAKE_CURRENT_SOURCE_DIR}" "${filename}")
+    if("${relfile}" MATCHES "\\.\\./")
+        file(RELATIVE_PATH relfile "${CMAKE_CURRENT_BINARY_DIR}" "${filename}")
+        if("${relfile}" MATCHES "\\.\\./")
+            message(FATAL_ERROR "File ${filename} is not in build or source "
+                "directory or subdirectory.")
+        endif()
+    endif()
+    string(REGEX REPLACE "(.*)\\.in(\\..*)" "\\1\\2" output "${relfile}")
+    set(${OUTPUT} "${CMAKE_CURRENT_BINARY_DIR}/${output}" PARENT_SCOPE)
+endfunction()
+
+function(_pm_configure_files files_to_modify OUTPUT)
+    if("${${files_to_modify}}" STREQUAL "")
+        return()
+    endif()
+    set(all_sources ${ARGN})
+    unset(configured_files)
+    foreach(filename ${${files_to_modify}})
+        _pm_get_confed_filename("${filename}" output)
+        configure_file("${filename}" "${output}" @ONLY)
+        list(APPEND configured_files "${output}")
+    endforeach()
+    list(REMOVE_ITEM all_sources ${${files_to_modify}})
+    list(APPEND all_sources ${configured_files})
+    set(${OUTPUT} ${all_sources} PARENT_SCOPE)
+endfunction()
+
 function(add_python_module module)
 
     # Sets submodule, location, and module from module
@@ -295,7 +325,7 @@ function(add_python_module module)
 
     # Parses arguments
     cmake_parse_arguments(${module}
-        "FAKE_INIT;NOINSTALL;INSTALL;CPP;ROOT_LOCATION"
+        "FAKE_INIT;NOINSTALL;INSTALL;CPP;ROOT_LOCATION;NOCONFIG"
         "HEADER_DESTINATION;TARGETNAME;LANGUAGE;LOCATION"
         "SOURCES;HEADERS;EXCLUDE;LIBRARIES"
         ${ARGN}
@@ -303,6 +333,13 @@ function(add_python_module module)
     list(APPEND ${module}_SOURCES ${${module}_UNPARSED_ARGUMENTS})
     # Sets defaults, do_install, and  ALL_SOURCES
     _pm_default()
+    # Figure out files that should be passed through configure
+    if(NOT ${module}_NOCONFIG)
+        _pm_filter_list(IN_FILES ALL_SOURCES ".*\\.in\\..*")
+        # Configure requested files and modifies ALL_SOURCES accordingly
+        # Eg remove the *.in.* files and replace them with the configure files.
+        _pm_configure_files(IN_FILES ALL_SOURCES ${ALL_SOURCES})
+    endif()
     # Figures out C/C++/HEADERS/Python sources
     _pm_filter_list(C_SOURCES ALL_SOURCES ".*\\.c$")
     _pm_filter_list(C_HEADERS ALL_SOURCES ".*\\.h$")
