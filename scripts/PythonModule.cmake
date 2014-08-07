@@ -140,7 +140,7 @@ function(_pm_add_python_extension module)
     add_dependencies(${container_target} ${module_target})
 
     if(${${ext}_INSTALL})
-        install_python(TARGETS ${module_target} DESTINATION ${location})
+        install_python(TARGETS ${module_target} DESTINATION "${location}")
     endif()
 endfunction()
 
