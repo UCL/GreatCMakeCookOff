@@ -31,7 +31,8 @@ function(_apt_add_single_test TESTNAME source)
     _apt_single_declare("_apt_single")
 
     get_filename_component(abs_source "${source}" ABSOLUTE)
-    string(REGEX REPLACE ".*/tests?_?(.*)\\.(py|so)" "\\1" testname "${abs_source}")
+    string(REGEX REPLACE ".*/tests?_?(.*)\\.(py|so)" "\\1" testname
+        "${abs_source}")
     if(NOT "${prefix}" STREQUAL "")
         set(testname "${prefix}${testname}")
     endif()
