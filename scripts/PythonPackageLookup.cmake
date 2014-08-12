@@ -59,8 +59,6 @@ function(lookup_python_package package)
         return()
     endif()
 
-    get_filename_component(lpp_PATH "${lpp_PATH}" ABSOLUTE)
-    get_filename_component(EXTERNAL_ROOT "${EXTERNAL_ROOT}" ABSOLUTE)
     if(NOT EXISTS "${lpp_PATH}")
         file(MAKE_DIRECTORY "${lpp_PATH}")
     endif()
@@ -75,16 +73,9 @@ function(lookup_python_package package)
         "    environ['PYTHONPATH'] += ':${lpp_PATH}'\n"
         "from sys import path, exit\n"
         "path.append('${lpp_PATH}')\n"
-        "try:\n"
-        "    from pip import main as install\n"
-        "    args = ['install', '--target', path[-1], '${package}']\n"
-        "    result = install(args)\n"
-        "    exit(result)\n"
-        "except ImportError:\n"
-        "    from setuptools.command.easy_install import main as install\n"
-        "    args = ['--install-dir', path[-1], '${package}']\n"
-        "    result = install(args)\n"
-        "    exit(0 if result == True else 1)\n"
+        "from setuptools.command.easy_install import main as install\n"
+        "result = install(['--install-dir', path[-1], '${package}'])\n"
+        "exit(0 if result == True else 1)\n"
     )
     execute_process(
         COMMAND ${LOCALPYTHON} "${EXTERNAL_ROOT}/install_${package}.py"
@@ -92,16 +83,8 @@ function(lookup_python_package package)
         ERROR_VARIABLE error
         OUTPUT_VARIABLE output
     )
-    if(result EQUAL 0)
-        if(lpp_REQUIRED)
-            set(arguments "${arguments} REQUIRED")
-        endif()
-        find_python_package(${package} ${arguments} ${lpp_UNPARSED_ARGUMENTS})
-    elseif(lpp_REQUIRED)
-        message("output: ${output}\n")
-        message("error: ${error}\n")
-        message(FATAL_ERROR "Could not install ${package}")
-    else()
-        message(WARNING "Could not install ${package}")
+    if(lpp_REQUIRED)
+        set(arguments "${arguments} REQUIRED")
     endif()
+    find_python_package(${package} REQUIRED ${lpp_UNPARSED_ARGUMENTS})
 endfunction()
