@@ -59,6 +59,8 @@ function(lookup_python_package package)
         return()
     endif()
 
+    get_filename_component(lpp_PATH "${lpp_PATH}" ABSOLUTE)
+    get_filename_component(EXTERNAL_ROOT "${EXTERNAL_ROOT}" ABSOLUTE)
     if(NOT EXISTS "${lpp_PATH}")
         file(MAKE_DIRECTORY "${lpp_PATH}")
     endif()
