@@ -325,9 +325,9 @@ function(add_python_module module)
 
     # Parses arguments
     cmake_parse_arguments(${module}
-        "FAKE_INIT;NOINSTALL;INSTALL;CPP;ROOT_LOCATION;NOCONFIG"
-        "HEADER_DESTINATION;TARGETNAME;LANGUAGE;LOCATION"
-        "SOURCES;HEADERS;EXCLUDE;LIBRARIES"
+        "FAKE_INIT;NOINSTALL;INSTALL;CPP;NOCONFIG"
+        "HEADER_DESTINATION;TARGETNAME;LOCATION"
+        "SOURCES;EXCLUDE;LIBRARIES"
         ${ARGN}
     )
     list(APPEND ${module}_SOURCES ${${module}_UNPARSED_ARGUMENTS})
