@@ -76,8 +76,8 @@ function(lookup_python_package package)
         "from sys import path, exit\n"
         "path.append('${lpp_PATH}')\n"
         "from setuptools.command.easy_install import main as install\n"
-        "result = install(['--install-dir', path[-1], '${package}'])\n"
-        "exit(0 if result == True else 1)\n"
+        "result = install(['--install-dir', '${lpp_PATH}', '${package}'])\n"
+        "exit(0 if result == True or result is None else 1)\n"
     )
     execute_process(
         COMMAND ${LOCALPYTHON} "${EXTERNAL_ROOT}/install_${package}.py"
