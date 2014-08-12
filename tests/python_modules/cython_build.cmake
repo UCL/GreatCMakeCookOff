@@ -21,8 +21,8 @@ create_environment_script(
 add_to_python_path("@EXTERNAL_ROOT@/python")
 add_to_python_path("${PYTHON_BINARY_DIR}")
 
-lookup_python_package(pytest REQUIRED PATH "${EXTERNAL_ROOT}/python")
-lookup_python_package(cython REQUIRED PATH "${EXTERNAL_ROOT}/python")
+lookup_python_package(pytest REQUIRED PATH "@EXTERNAL_ROOT@/python")
+lookup_python_package(cython REQUIRED PATH "@EXTERNAL_ROOT@/python")
 get_filename_component(directory "${PYTHON_EXECUTABLE}" PATH)
 find_program(cython_EXECUTABLE cython HINTS "${directory}")
 
