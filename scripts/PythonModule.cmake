@@ -13,11 +13,16 @@ set(DEPS_SCRIPT
     CACHE INTERNAL "Script to determine cython dependencies"
 )
 
-function(_pm_location_and_name module)
+function(_pm_location_and_name module module_LOCATION)
     string(REGEX REPLACE "\\." "/" location "${module}")
     get_filename_component(submodule "${location}" NAME)
 
     set(submodule ${submodule} PARENT_SCOPE)
+
+    if(NOT "${module_LOCATION}" STREQUAL "")
+        set(location ${module_LOCATION} PARENT_SCOPE)
+    endif()
+
     set(location ${location} PARENT_SCOPE)
 endfunction()
 
@@ -54,10 +59,6 @@ function(_pm_default)
         message(FATAL_ERROR "Python module has no sources")
     endif()
     set(ALL_SOURCES ${sources} PARENT_SCOPE)
-
-    if(${module}_LOCATION)
-        set(location ${${module}_LOCATION} PARENT_SCOPE)
-    endif()
 endfunction()
 
 function(_pm_filter_list output input)
@@ -102,6 +103,20 @@ function(_pm_add_fake_init location)
     endif()
 endfunction()
 
+function(python_extension_targetname outvar module)
+    cmake_parse_arguments(_pm_tgname
+        ""
+        "MODULE_TARGET"
+        ";"
+        ${ARGN}
+    )
+    set(module_target ${module}-ext)
+    if(NOT "${_pm_tgname_MODULE_TARGET}" STREQUAL "")
+        set(module_target ${_pm_tgname_MODULE_TARGET})
+    endif()
+    set(${outvar} ${module_target} PARENT_SCOPE)
+endfunction()
+
 function(_pm_add_python_extension module)
     string(REGEX REPLACE "/" "_" ext "ext.${module}")
     cmake_parse_arguments(${ext}
@@ -121,18 +136,20 @@ function(_pm_add_python_extension module)
 
     set(location ${${ext}_LOCATION})
     set(container_target ${${ext}_TARGET})
-    set(module_target ${container_target}-ext)
-    if(NOT "${${ext}_MODULE_TARGET}" STREQUAL "")
-        set(module_target ${${ext}_MODULE_TARGET})
-    endif()
+    python_extension_targetname(module_target
+        ${${ext}_TARGET} MODULE_TARGET ${${ext}_MODULE_TARGET})
 
     add_library(${module_target} MODULE ${${ext}_SOURCES})
     target_link_libraries(${module_target} ${PYTHON_LIBRARIES})
+    set(output_dir "${location}")
+    if(NOT IS_ABSOLUTE "${location}")
+        set(output_dir "${PYTHON_BINARY_DIR}/${location}")
+    endif()
     set_target_properties(${module_target}
         PROPERTIES
         OUTPUT_NAME "${${ext}_EXTENSION}"
         PREFIX "" SUFFIX ".so"
-        LIBRARY_OUTPUT_DIRECTORY "${PYTHON_BINARY_DIR}/${location}"
+        LIBRARY_OUTPUT_DIRECTORY "${output_dir}"
     )
     if(${ext}_LIBRARIES)
         target_link_libraries(${module_target} ${${ext}_LIBRARIES})
@@ -272,20 +289,33 @@ function(_pm_add_cython module source)
         set(extension ${cy_module})
     endif()
 
-    # cy_module might already contain module
+    _pm_cython_full_module_name(full_module ${module} "${source}")
+    cython_extension_targetname(targetname ${module} "${source}")
+    # Add python module
+    _pm_add_python_extension(${full_module}
+        TARGET ${${cy}_TARGET}
+        MODULE_TARGET ${targetname}
+        EXTENSION ${extension}
+        SOURCES ${c_source}
+        ${${cy}_UNPARSED_ARGUMENTS}
+    )
+endfunction()
+
+function(_pm_cython_full_module_name outvar module source)
+    get_filename_component(cy_module ${source} NAME_WE)
     if("${cy_module}" MATCHES "^${module}")
         set(full_module ${cy_module})
     else()
         set(full_module ${module}.${cy_module})
     endif()
-    # Add python module
-    _pm_add_python_extension(${full_module}
-        TARGET ${${cy}_TARGET}
-        MODULE_TARGET ${full_module}-cython
-        EXTENSION ${extension}
-        SOURCES ${c_source}
-        ${${cy}_UNPARSED_ARGUMENTS}
-    )
+    set(${outvar} ${full_module} PARENT_SCOPE)
+endfunction()
+
+function(cython_extension_targetname outvar module source)
+    _pm_cython_full_module_name(full_module ${module} "${source}")
+    python_extension_targetname(targetname ${module}
+        MODULE_TARGET ${full_module}-cython)
+    set(${outvar} ${targetname} PARENT_SCOPE)
 endfunction()
 
 function(_pm_get_confed_filename filename OUTPUT)
@@ -320,17 +350,17 @@ endfunction()
 
 function(add_python_module module)
 
-    # Sets submodule, location, and module from module
-    _pm_location_and_name(${module})
-
     # Parses arguments
     cmake_parse_arguments(${module}
         "FAKE_INIT;NOINSTALL;INSTALL;CPP;NOCONFIG"
-        "HEADER_DESTINATION;TARGETNAME;LOCATION"
+        "HEADER_DESTINATION;TARGETNAME;LOCATION;OUTPUT_PYTHON_SOURCES"
         "SOURCES;EXCLUDE;LIBRARIES"
         ${ARGN}
     )
     list(APPEND ${module}_SOURCES ${${module}_UNPARSED_ARGUMENTS})
+    # Sets submodule, location, and module from module
+    _pm_location_and_name(${module} "${${module}_LOCATION}")
+
     # Sets defaults, do_install, and  ALL_SOURCES
     _pm_default()
     # Figure out files that should be passed through configure
@@ -415,4 +445,12 @@ function(add_python_module module)
         TARGET ${targetname}
         SOURCES ${CY_SOURCES}
     )
+
+    # Outputs pure python sources if requested.
+    # This is used mainly by add_pytest. It makes configurable tests trivial to
+    # add.
+    if(NOT ${${module}_OUTPUT_PYTHON_SOURCES} STREQUAL "")
+        set(${${module}_OUTPUT_PYTHON_SOURCES} ${PY_SOURCES} PARENT_SCOPE)
+    endif()
+
 endfunction()

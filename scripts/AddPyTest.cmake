@@ -1,56 +1,28 @@
 include(PythonModule)
 
-function(_apt_single_declare prefix)
-    if(${prefix}_PREFIX)
-        set(prefix ${${prefix}_PREFIX} PARENT_SCOPE)
-    else()
-        set(prefix "" PARENT_SCOPE)
+function(pytest_name OUTVAR source prefix)
+    get_filename_component(filename "${source}" NAME_WE)
+    string(REGEX REPLACE "tests?_?(.*)" "\\1" testname "${filename}")
+    if(NOT "${prefix}" STREQUAL "")
+        set(testname "${prefix}.${testname}")
     endif()
-    if(LOCAL_PYTHON_EXECUTABLE)
-        set(exec "${LOCAL_PYTHON_EXECUTABLE}" PARENT_SCOPE)
-    elseif(PYTHON_EXECUTABLE)
-        set(exec "${PYTHON_EXECUTABLE}" PARENT_SCOPE)
-    else()
-        message(FATAL_ERROR "Python executable not  set")
-    endif()
-    if(${prefix}_WORKING_DIRECTORY)
-        set(working_directory "${${prefix}_WORKING_DIRECTORY}" PARENT_SCOPE)
-    else()
-        set(working_directory "${CMAKE_CURRENT_BINARY_DIR}")
-    endif()
-
+    set(${OUTVAR} ${testname} PARENT_SCOPE)
 endfunction()
 
-function(_apt_add_single_test TESTNAME source)
-    # Parses input arguments
-    cmake_parse_arguments(_apt_single
-        "" "PREFIX;WORKING_DIRECTORY" "CMDLINE"
-        ${ARGN}
-    )
-    # Declares a number of variables
-    _apt_single_declare("_apt_single")
-
-    get_filename_component(abs_source "${source}" ABSOLUTE)
-    string(REGEX REPLACE ".*/tests?_?(.*)\\.(py|so)" "\\1" testname
-        "${abs_source}")
+function(_apt_module_name OUTVAR prefix)
+    set(target "tests")
     if(NOT "${prefix}" STREQUAL "")
-        set(testname "${prefix}${testname}")
+        set(target "${prefix}.${target}")
     endif()
-    if(NOT DEFINED LOCAL_PYTEST OR NOT LOCAL_PYTEST)
-        message(FATAL_ERROR "LOCAL_PYTEST not defined. "
-            "Was setup_pytest called?")
-    endif()
-    add_test(NAME ${testname}
-        WORKING_DIRECTORY ${working_directory}
-        COMMAND ${LOCAL_PYTEST} ${abs_source} ${_apt_single_CMDLINE}
-    )
-    set(${TESTNAME} ${testname} PARENT_SCOPE)
+    set(${OUTVAR} ${target} PARENT_SCOPE)
 endfunction()
 
 function(add_pytest)
     # Parses input arguments
     cmake_parse_arguments(pytests
-        "" "WORKING_DIRECTORY;PREFIX" "LABELS;CMDLINE;EXCLUDE"
+        "CPP;INSTALL;NOINSTALL;FAKE_INIT"
+        "WORKING_DIRECTORY;PREFIX;LOCATION;TARGETNAME;EXECUTABLE"
+        "LABELS;CMDLINE;EXCLUDE;LIBRARIES"
         ${ARGN}
     )
     # Compute sources
@@ -62,23 +34,65 @@ function(add_pytest)
         list(REMOVE_ITEM sources ${excludes})
     endif()
 
+    # Set some standard variables
+    if(LOCAL_PYTHON_EXECUTABLE)
+        set(exec "${LOCAL_PYTHON_EXECUTABLE}" PARENT_SCOPE)
+    elseif(PYTHON_EXECUTABLE)
+        set(exec "${PYTHON_EXECUTABLE}" PARENT_SCOPE)
+    else()
+        message(FATAL_ERROR "Python executable not set")
+    endif()
+    set(working_directory "${CMAKE_CURRENT_BINARY_DIR}")
+    if(_pypy_WORKING_DIRECTORY)
+        set(working_directory "${pytests_WORKING_DIRECTORY}")
+    endif()
+    set(executable "${pytests_EXECUTABLE}")
+    if("${executable}" STREQUAL "")
+        if(NOT "${LOCAL_PYTEST}" STREQUAL "")
+            set(executable "${LOCAL_PYTEST}")
+        else()
+            message(FATAL_ERROR "Could not figure out py.test executable.\n"
+                "Was setup_pytest called?")
+        endif()
+    endif()
+
+    _apt_module_name(target "${pytests_PREFIX}")
+    set(arguments INSTALL)
+    if(pytests_NOINSTALL)
+        set(arguments NOINSTALL)
+    endif()
+    if(pytests_FAKE_INIT)
+        list(APPEND arguments FAKE_INIT)
+    endif()
+    add_python_module(${target}
+        ${sources}
+        ${arguments}
+        LOCATION ${pytests_LOCATION}
+        LIBRARIES ${pytests_LIBRARIES}
+        TARGETNAME ${pytests_TARGETNAME}
+        OUTPUT_PYTHON_SOURCES sources
+    )
+
+    # Gets location of python modules in build
+    _pm_location_and_name(${target} "${pytests_LOCATION}")
+    if(NOT IS_ABSOLUTE "${location}")
+        set(location "${PYTHON_BINARY_DIR}/${location}")
+    endif()
+
     unset(all_tests)
     foreach(source ${sources})
-        _apt_add_single_test(testname "${source}"
-            PREFIX ${pytests_PREFIX}
-            WORKING_DIRECTORY "${pytests_WORKING_DIRECTORY}"
-            CMDLINE ${pytests_CMDLINE}
-        )
-        list(APPEND all_tests ${testname})
+        get_filename_component(filename "${source}" NAME)
+        if("${filename}" MATCHES "^tests?_.*\\.py")
+            set(filename "${location}/${filename}")
+            pytest_name(testname "${source}" "${pytests_PREFIX}")
+            add_test(NAME ${testname}
+                WORKING_DIRECTORY ${working_directory}
+                COMMAND ${executable} ${filename} ${pytests_CMDLINE}
+            )
+            list(APPEND all_tests ${testname})
+        endif()
     endforeach()
 
-    # Add labels to tests
-    set(labels python py.test)
-    if(pytests_LABELS)
-        list(APPEND labels ${pytests_LABELS})
-        list(REMOVE_DUPLICATES labels)
-    endif()
-    set_tests_properties(${all_tests} PROPERTIES LABELS "${labels}")
 endfunction()
 
 function(setup_pytest python_path pytest_path)
