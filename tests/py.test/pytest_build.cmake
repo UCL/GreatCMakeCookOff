@@ -46,10 +46,21 @@ file(WRITE "${PROJECT_SOURCE_DIR}/hackage/_cython.pyx"
     "   assert value == 5\n"
     "   assert value != 6\n"
 )
+file(WRITE "${PROJECT_SOURCE_DIR}/hackage/_cython_cpp.pyx"
+    "from libcpp.vector cimport vector\n"
+    "def test_cpp():\n"
+    "   cdef vector[int] *value = new vector[int](1, 3)\n"
+    "   assert value.at(0) == 3\n"
+    "   assert value.size() == 1\n"
+    "   del value"
+)
 file(WRITE "${PROJECT_SOURCE_DIR}/hackage/test_cython.py"
     "def test_something():\n"
     "   from _cython import test_something\n"
     "   test_something()\n"
+    "def test_cpp():\n"
+    "   from _cython_cpp import test_cpp\n"
+    "   test_cpp()\n"
 )
 
 find_package(CoherentPython REQUIRED)
@@ -60,6 +71,7 @@ setup_pytest("@EXTERNAL_ROOT@/python" "@PROJECT_BINARY_DIR@/py.test.sh")
 add_pytest(hackage/test_*.py hackage/*.pyx
     EXCLUDE hackage/test_cmdl.py
     PREFIX "hackage"
+    CPP
 )
 add_pytest(hackage/test_cmdl.py hackage/conftest.py
     PREFIX "hackage" CMDLINE "--cmdl=an option")

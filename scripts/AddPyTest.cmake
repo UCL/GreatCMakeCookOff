@@ -64,6 +64,9 @@ function(add_pytest)
     if(pytests_FAKE_INIT)
         list(APPEND arguments FAKE_INIT)
     endif()
+    if(pytests_CPP)
+        list(APPEND arguments CPP)
+    endif()
     add_python_module(${target}
         ${sources}
         ${arguments}
