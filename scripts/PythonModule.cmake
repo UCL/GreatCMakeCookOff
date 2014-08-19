@@ -74,15 +74,16 @@ function(_pm_filter_list output input)
 endfunction()
 
 function(get_pyx_dependencies SOURCE OUTVAR)
-    if(NOT "${LOCAL_PYTHON_EXECUTABLE}")
-        set(LOCAL_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
+    set(local_python "${LOCAL_PYTHON_EXECUTABLE}")
+    if(NOT "${local_python}")
+        set(local_python ${PYTHON_EXECUTABLE})
     endif()
     execute_process(
-        COMMAND ${LOCAL_PYTHON_EXECUTABLE} ${DEPS_SCRIPT} ${SOURCE} ${ARGN}
+        COMMAND ${local_python} ${DEPS_SCRIPT} ${SOURCE} ${ARGN}
         RESULT_VARIABLE RESULT
         OUTPUT_VARIABLE OUTPUT
         ERROR_VARIABLE ERROR
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     if("${RESULT}" STREQUAL "0")
         set(${OUTVAR} ${OUTPUT} PARENT_SCOPE)
@@ -187,6 +188,9 @@ function(_pm_add_pure_python)
         DESTINATION "${PYTHON_BINARY_DIR}/${${py}_LOCATION}"
     )
     add_dependencies(${${py}_TARGET} ${targetname_copy})
+    if(TARGET ${${py}_TARGET}-mako)
+        add_dependencies(${targetname_copy} ${${py}_TARGET}-mako)
+    endif()
     if(${${py}_INSTALL})
         install_python(FILES ${${py}_SOURCES} DESTINATION ${${py}_LOCATION})
     endif()
@@ -278,7 +282,8 @@ function(_pm_add_cython module source)
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${c_source}
         COMMAND ${arguments}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            $<$<OR:$<CONFIG:RelWithDebInfo>,$<CONFIG:Debug>>:--dbg>
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         DEPENDS ${DEPENDENCIES}
         COMMENT "Generating c/c++ source ${source} with cython"
     )
@@ -328,8 +333,7 @@ function(_pm_get_confed_filename filename OUTPUT)
                 "directory or subdirectory.")
         endif()
     endif()
-    string(REGEX REPLACE "(.*)\\.in(\\..*)" "\\1\\2" output "${relfile}")
-    set(${OUTPUT} "${CMAKE_CURRENT_BINARY_DIR}/${output}" PARENT_SCOPE)
+    set(${OUTPUT} "${CMAKE_CURRENT_BINARY_DIR}/${relfile}" PARENT_SCOPE)
 endfunction()
 
 function(_pm_configure_files files_to_modify OUTPUT)
@@ -340,7 +344,9 @@ function(_pm_configure_files files_to_modify OUTPUT)
     unset(configured_files)
     foreach(filename ${${files_to_modify}})
         _pm_get_confed_filename("${filename}" output)
-        configure_file("${filename}" "${output}" @ONLY)
+        string(REGEX REPLACE "(.*)\\.in(\\..*)" "\\1\\2" output "${output}")
+        file(RELATIVE_PATH relpath "${CMAKE_CURRENT_BINARY_DIR}" "${output}")
+        configure_file("${filename}" "${relpath}" @ONLY)
         list(APPEND configured_files "${output}")
     endforeach()
     list(REMOVE_ITEM all_sources ${${files_to_modify}})
@@ -348,13 +354,71 @@ function(_pm_configure_files files_to_modify OUTPUT)
     set(${OUTPUT} ${all_sources} PARENT_SCOPE)
 endfunction()
 
+function(_pm_mako_files)
+    # Parses arguments
+    cmake_parse_arguments(_pm_mako
+        ""
+        "MAKO_SCRIPT;OUTPUT_PYTHON_SOURCES;TARGETNAME"
+        "MAKO_CMDLINE"
+        ${ARGN}
+    )
+    set(all_sources ${_pm_mako_UNPARSED_ARGUMENTS})
+    if("${all_sources}" STREQUAL "")
+        return()
+    endif()
+    _pm_filter_list(mako_files all_sources ".*\\.mako\\..*")
+    if("${mako_files}" STREQUAL "")
+        return()
+    endif()
+
+    set(local_python "${LOCAL_PYTHON_EXECUTABLE}")
+    if(NOT "${local_python}")
+        set(local_python ${PYTHON_EXECUTABLE})
+    endif()
+    set(mako_script "${_pm_mako_MAKO_SCRIPT}")
+    if("${mako_script}" STREQUAL "")
+        if("${mako_SCRIPT}" STREQUAL "")
+            message(FATAL_ERROR "Mako render script not defined")
+        endif()
+        set(mako_script "${mako_SCRIPT}")
+    endif()
+
+
+    unset(output_files)
+    unset(commands)
+    foreach(filename ${mako_files})
+        _pm_get_confed_filename("${filename}" output)
+        string(REGEX REPLACE "(.*)\\.mako(\\..*)" "\\1\\2" output "${output}")
+        list(APPEND commands
+            COMMAND ${local_python} -B ${mako_SCRIPT} ${filename} > ${output}
+        )
+        list(REMOVE_ITEM all_sources "${filename}")
+        list(APPEND all_sources "${output}")
+    endforeach()
+
+    list(REMOVE_AT commands 0)
+    add_custom_target(${_pm_mako_TARGETNAME}-mako
+        ${commands}
+        DEPENDS ${mako_files}
+        WORKING_DIRECTORY  "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Rendering mako files for ${_pm_mako_TARGETNAME}"
+    )
+
+    set(${_pm_mako_OUTPUT_PYTHON_SOURCES} ${all_sources} PARENT_SCOPE)
+    add_dependencies(${_pm_mako_TARGETNAME} ${_pm_mako_TARGETNAME}-mako)
+endfunction()
+
 function(add_python_module module)
 
+    set(oneargs
+        HEADER_DESTINATION TARGETNAME LOCATION OUTPUT_PYTHON_SOURCES
+        MAKO_SCRIPT
+    )
     # Parses arguments
     cmake_parse_arguments(${module}
-        "FAKE_INIT;NOINSTALL;INSTALL;CPP;NOCONFIG"
-        "HEADER_DESTINATION;TARGETNAME;LOCATION;OUTPUT_PYTHON_SOURCES"
-        "SOURCES;EXCLUDE;LIBRARIES"
+        "FAKE_INIT;NOINSTALL;INSTALL;CPP;NOCONFIG;NOMAKO"
+        "${oneargs}"
+        "SOURCES;EXCLUDE;LIBRARIES;MAKO_CMDLINE"
         ${ARGN}
     )
     list(APPEND ${module}_SOURCES ${${module}_UNPARSED_ARGUMENTS})
@@ -363,12 +427,30 @@ function(add_python_module module)
 
     # Sets defaults, do_install, and  ALL_SOURCES
     _pm_default()
+    set(targetname ${module})
+    if(${module}_TARGETNAME)
+        set(targetname ${${module}_TARGETNAME})
+    endif()
+    # creates a global target
+    if(NOT TARGET ${targetname})
+        add_custom_target(${targetname} ALL)
+    endif()
+
     # Figure out files that should be passed through configure
     if(NOT ${module}_NOCONFIG)
         _pm_filter_list(IN_FILES ALL_SOURCES ".*\\.in\\..*")
         # Configure requested files and modifies ALL_SOURCES accordingly
         # Eg remove the *.in.* files and replace them with the configure files.
         _pm_configure_files(IN_FILES ALL_SOURCES ${ALL_SOURCES})
+    endif()
+    # Figure out files that should be passed through mako and render them
+    if(NOT ${module}_NOMAKO)
+        _pm_mako_files(${ALL_SOURCES}
+            TARGETNAME "${targetname}"
+            OUTPUT_PYTHON_SOURCES ALL_SOURCES
+            MAKO_SCRIPT "${${module}_MAKO_SCRIPT}"
+            MAKO_CMDLINE ${${module}_MAKO_CMDLINE}
+        )
     endif()
     # Figures out C/C++/HEADERS/Python sources
     _pm_filter_list(C_SOURCES ALL_SOURCES ".*\\.c$")
@@ -388,16 +470,7 @@ function(add_python_module module)
         endif()
     endif()
 
-    set(targetname ${module})
-    if(${module}_TARGETNAME)
-        set(targetname ${${module}_TARGETNAME})
-    endif()
-
     # Now for the actual meat
-    # First creates a global target
-    if(NOT TARGET ${targetname})
-        add_custom_target(${targetname} ALL)
-    endif()
 
     # First adds fake init if necessary
     if(${module}_FAKE_INIT)
