@@ -156,6 +156,9 @@ function(_pm_add_python_extension module)
         target_link_libraries(${module_target} ${${ext}_LIBRARIES})
     endif()
     add_dependencies(${container_target} ${module_target})
+    if(TARGET ${container_target}-mako)
+        add_dependencies(${module_target} ${container_target}-mako)
+    endif()
 
     if(${${ext}_INSTALL})
         install_python(TARGETS ${module_target} DESTINATION "${location}")
@@ -183,13 +186,12 @@ function(_pm_add_pure_python)
         set(targetname_copy "${targetname_copy}-copy")
     endif()
 
-    add_copy_files(${targetname_copy}
+    add_copy_files(${${py}_TARGET}
         FILES ${${py}_SOURCES}
         DESTINATION "${PYTHON_BINARY_DIR}/${${py}_LOCATION}"
     )
-    add_dependencies(${${py}_TARGET} ${targetname_copy})
     if(TARGET ${${py}_TARGET}-mako)
-        add_dependencies(${targetname_copy} ${${py}_TARGET}-mako)
+        add_dependencies(${${py}_TARGET} ${${py}_TARGET}-mako)
     endif()
     if(${${py}_INSTALL})
         install_python(FILES ${${py}_SOURCES} DESTINATION ${${py}_LOCATION})
@@ -256,6 +258,9 @@ function(_pm_add_cython module source)
 
     # Computes dependencies
     get_pyx_dependencies(${source} DEPENDENCIES ${included_dirs})
+    if(TARGET ${${cy}_TARGET}-mako)
+        list(APPEND DEPENDENCIES ${${cy}_TARGET}-mako)
+    endif()
 
     # Call cython
     get_filename_component(cy_module ${source} NAME_WE)
@@ -274,16 +279,23 @@ function(_pm_add_cython module source)
         set(c_source "cython_${cy_module}.c")
     endif()
 
+    # Figure out generated source name
+    set(generated_source "${source}")
+    if("${source}" MATCHES ".*\\.mako\\..*")
+        _pm_get_confed_filename("${source}" generated_source)
+        string(REGEX REPLACE "(.*)\\.mako(\\..*)" "\\1\\2"
+            generated_source "${generated_source}")
+    endif()
     # Create C source from cython
     list(APPEND arguments
-        "${CMAKE_CURRENT_SOURCE_DIR}/${source}"
-        -o ${c_source} ${inclusion}
+        "${generated_source}"
+        -o "${CMAKE_CURRENT_BINARY_DIR}/${c_source}" ${inclusion}
     )
     add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${c_source}
+        OUTPUT "${c_source}"
         COMMAND ${arguments}
             $<$<OR:$<CONFIG:RelWithDebInfo>,$<CONFIG:Debug>>:--dbg>
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         DEPENDS ${DEPENDENCIES}
         COMMENT "Generating c/c++ source ${source} with cython"
     )
@@ -383,29 +395,25 @@ function(_pm_mako_files)
         set(mako_script "${mako_SCRIPT}")
     endif()
 
+    if(NOT TARGET ${_pm_mako_TARGETNAME}-mako)
+        add_custom_target(${_pm_mako_TARGETNAME}-mako)
+    endif()
 
-    unset(output_files)
-    unset(commands)
     foreach(filename ${mako_files})
         _pm_get_confed_filename("${filename}" output)
         string(REGEX REPLACE "(.*)\\.mako(\\..*)" "\\1\\2" output "${output}")
-        list(APPEND commands
-            COMMAND ${local_python} -B ${mako_SCRIPT} ${filename} > ${output}
+        get_filename_component(abspath "${filename}" ABSOLUTE)
+        add_custom_command(
+            TARGET ${_pm_mako_TARGETNAME}-mako
+            COMMAND ${local_python} -B ${mako_SCRIPT} ${abspath} > ${output}
+            DEPENDS "${filename}"
+            COMMENT "Mako-ing file ${filename}"
         )
         list(REMOVE_ITEM all_sources "${filename}")
         list(APPEND all_sources "${output}")
     endforeach()
 
-    list(REMOVE_AT commands 0)
-    add_custom_target(${_pm_mako_TARGETNAME}-mako
-        ${commands}
-        DEPENDS ${mako_files}
-        WORKING_DIRECTORY  "${CMAKE_CURRENT_SOURCE_DIR}"
-        COMMENT "Rendering mako files for ${_pm_mako_TARGETNAME}"
-    )
-
     set(${_pm_mako_OUTPUT_PYTHON_SOURCES} ${all_sources} PARENT_SCOPE)
-    add_dependencies(${_pm_mako_TARGETNAME} ${_pm_mako_TARGETNAME}-mako)
 endfunction()
 
 function(add_python_module module)
@@ -444,22 +452,29 @@ function(add_python_module module)
         _pm_configure_files(IN_FILES ALL_SOURCES ${ALL_SOURCES})
     endif()
     # Figure out files that should be passed through mako and render them
+    set(MODIFIED_SOURCES ${ALL_SOURCES})
     if(NOT ${module}_NOMAKO)
         _pm_mako_files(${ALL_SOURCES}
             TARGETNAME "${targetname}"
-            OUTPUT_PYTHON_SOURCES ALL_SOURCES
+            OUTPUT_PYTHON_SOURCES MODIFIED_SOURCES
             MAKO_SCRIPT "${${module}_MAKO_SCRIPT}"
             MAKO_CMDLINE ${${module}_MAKO_CMDLINE}
         )
     endif()
     # Figures out C/C++/HEADERS/Python sources
-    _pm_filter_list(C_SOURCES ALL_SOURCES ".*\\.c$")
-    _pm_filter_list(C_HEADERS ALL_SOURCES ".*\\.h$")
-    _pm_filter_list(CPP_SOURCES ALL_SOURCES ".*\\.cpp$" ".*\\.cc$")
-    _pm_filter_list(CPP_HEADERS ALL_SOURCES ".*\\.hpp" ".*\\.h")
-    _pm_filter_list(PY_SOURCES ALL_SOURCES ".*\\.py$")
+    _pm_filter_list(C_SOURCES MODIFIED_SOURCES ".*\\.c$")
+    _pm_filter_list(C_HEADERS MODIFIED_SOURCES ".*\\.h$")
+    _pm_filter_list(CPP_SOURCES MODIFIED_SOURCES ".*\\.cpp$" ".*\\.cc$")
+    _pm_filter_list(CPP_HEADERS MODIFIED_SOURCES ".*\\.hpp" ".*\\.h")
+    _pm_filter_list(PY_SOURCES MODIFIED_SOURCES ".*\\.py$")
+    # We need to keep track of the original sources file to figure out
+    # cython dependencies. This is difficult if files can be changed by mako.
+    # So filename transformation are applied when treating cython.
+    # Of course, if cmake were a decent language, it would have key-value pairs
+    # of some kind and we couuld the info reguarding the origin of a generated
+    # file. That is not the case.
     _pm_filter_list(CY_SOURCES ALL_SOURCES ".*\\.pyx")
-    _pm_filter_list(CY_HEADERS ALL_SOURCES ".*\\.pxd")
+    _pm_filter_list(CY_HEADERS MODIFIED_SOURCES ".*\\.pxd")
 
     if(C_SOURCES OR CPP_SOURCES)
         if(PY_SOURCES OR CY_SOURCES)

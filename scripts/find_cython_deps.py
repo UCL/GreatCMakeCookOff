@@ -12,7 +12,8 @@ def check_c_includes(filename, includes):
     from os.path import exists, isfile, join
     for directory in includes:
         path = join(directory, filename)
-        if exists(path) and isfile(path): return path
+        if exists(path) and isfile(path):
+            return path
 
 
 def check_cython_includes(filename, includes):
@@ -20,16 +21,20 @@ def check_cython_includes(filename, includes):
     from os.path import exists, isfile, join
     for directory in includes:
         path = join(directory, filename) + ".pxd"
-        if exists(path) and isfile(path): return path
+        if exists(path) and isfile(path):
+            return path
         path = join(directory, *filename.split('.')) + ".pxd"
-        if exists(path) and isfile(path): return path
+        if exists(path) and isfile(path):
+            return path
+
 
 def check_extern_dep(line, results, includes):
     from os.path import abspath
     found = from_extern_re.match(line)
     if found is not None:
         actual = check_c_includes(found.group('filename'), includes)
-        if actual is not None: results.add(abspath(actual))
+        if actual is not None:
+            results.add(abspath(actual))
 
 
 def check_cimport_dep(line, results, includes):
@@ -44,7 +49,8 @@ def check_cimport_dep(line, results, includes):
 
 def cython_deps(path, includes, results=None):
     from os.path import splitext, split, exists, isfile, join, abspath
-    if results is None: results = set([abspath(path)])
+    if results is None:
+        results = set([abspath(path)])
 
     path = abspath(path)
     directory, filename = split(path)

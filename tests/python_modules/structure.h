@@ -3,7 +3,7 @@
 
 typedef struct {
     int meaning_of_life;
-    char const* message;
+    char * message;
 } Structure;
 
 void init_structure(Structure *_structure);

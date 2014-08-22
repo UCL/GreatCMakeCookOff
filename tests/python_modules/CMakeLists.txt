@@ -52,11 +52,17 @@ cmake_test(mako_tests)
 set_tests_properties(cmake_test_mako_tests PROPERTIES
     DEPENDS cmake_test_mako_build)
 
+cmake_test(mako_cython_build NOEXEC)
+cmake_test(mako_cython_files)
+set_tests_properties(cmake_test_mako_cython_files PROPERTIES
+    DEPENDS cmake_test_mako_cython_build)
+
 set_tests_properties(
     cmake_test_pure_tests cmake_test_pure_build
     cmake_test_extension_build python_extension cmake_test_extension_files
     cmake_test_cython_build cmake_test_cython_files cython_extension
     cmake_test_confed_build cmake_test_confed_tests
     cmake_test_mako_build cmake_test_mako_tests
+    cmake_test_mako_cython_build
     PROPERTIES LABELS "python"
 )
