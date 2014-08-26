@@ -1,6 +1,6 @@
 include(ConfigureFiles)
 
-function(mako_files targetname)
+function(mako_files)
     # Parses arguments
     cmake_parse_arguments(_mako
         ""
@@ -31,10 +31,6 @@ function(mako_files targetname)
         set(mako_script "${mako_SCRIPT}")
     endif()
 
-    if(NOT TARGET ${targetname})
-        add_custom_target(${targetname})
-    endif()
-
     unset(makoed_files)
     foreach(filename ${sources})
         output_filename("${filename}" output "${destination}")
@@ -42,9 +38,9 @@ function(mako_files targetname)
         get_filename_component(abspath "${filename}" ABSOLUTE)
 
         add_custom_command(
-            TARGET ${targetname}
-            COMMAND ${local_python} -B ${mako_SCRIPT} ${abspath} > ${output}
-            DEPENDS ${abspath}
+            OUTPUT "${output}"
+            COMMAND ${local_python} -B ${mako_script} ${abspath} > ${output}
+            DEPENDS "${abspath}" "${mako_script}"
             COMMENT "Mako-ing file ${filename}"
         )
         list(APPEND makoed_files "${output}")

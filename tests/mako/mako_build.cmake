@@ -36,11 +36,15 @@ file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/other.mako.py"
 )
 
 set(destination "${CMAKE_CURRENT_BINARY_DIR}/python_package/makoed")
-add_custom_target(makoed ALL)
-mako_files(makoed *.mako.py
+mako_files(*.mako.py
     DESTINATION "${destination}"
     OUTPUT_FILES output
 )
+# output must be used somewhere. Otherwise it is not built.
+# In practice, the output will be used in some library or something.
+# Otherwise, a new target with the output files need to be declared as below.
+# Doing add_dependencies on a prior target seems to fail, however.
+add_custom_target(makoed ALL DEPENDS ${output})
 
 list(LENGTH output i)
 if(NOT i EQUAL 2)
