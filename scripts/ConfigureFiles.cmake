@@ -22,7 +22,7 @@ function(output_filename filename OUTPUT)
     set(${OUTPUT} "${destination}/${relfile}" PARENT_SCOPE)
 endfunction()
 
-function(configure_files)
+macro(configure_files)
     # Parses arguments
     cmake_parse_arguments(_cf
         "" "OUTPUT_FILES;DESTINATION" ""
@@ -32,22 +32,21 @@ function(configure_files)
     if("${sources}" STREQUAL "")
         return()
     endif()
-    set(destination "${_cf_DESTINATION}")
-    if("${destination}")
-        set(destination "${CMAKE_CURRENT_BINARY_DIR}")
+    if("${_cf_DESTINATION}" STREQUAL "")
+        set(_cf_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
     endif()
 
-    unset(configured_files)
+    unset(_cf_configured_files)
     foreach(filename ${sources})
-        output_filename("${filename}" output "${destination}")
+        output_filename("${filename}" output "${_cf_DESTINATION}")
         string(REGEX REPLACE "(.*)\\.in(\\..*)" "\\1\\2" output "${output}")
 
         configure_file("${filename}" "${output}" @ONLY)
-        list(APPEND configured_files "${output}")
+        list(APPEND _cf_configured_files "${output}")
     endforeach()
 
-    if(_cf_OUTPUT_FILES)
-        set(${_cf_OUTPUT_FILES} ${all_sources} PARENT_SCOPE)
+    if(NOT "${_cf_OUTPUT_FILES}" STREQUAL "")
+        set(${_cf_OUTPUT_FILES} ${_cf_configured_files})
     endif()
-endfunction()
+endmacro()
 
