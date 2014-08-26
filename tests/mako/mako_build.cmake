@@ -36,7 +36,7 @@ file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/other.mako.py"
 )
 
 set(destination "${CMAKE_CURRENT_BINARY_DIR}/python_package/makoed")
-mako_files(*.mako.py
+mako_files(GLOB *.mako.py
     DESTINATION "${destination}"
     OUTPUT_FILES output
 )

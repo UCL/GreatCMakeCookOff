@@ -5,10 +5,15 @@ function(mako_files)
     cmake_parse_arguments(_mako
         ""
         "MAKO_SCRIPT;OUTPUT_FILES;DESTINATION"
-        "MAKO_CMDLINE;DEPENDENCIES"
+        "MAKO_CMDLINE;DEPENDENCIES;GLOB"
         ${ARGN}
     )
-    file(GLOB sources ${_mako_UNPARSED_ARGUMENTS})
+    unset(sources)
+    if(NOT "${_mako_GLOB}" STREQUAL "")
+        file(GLOB sources ${_mako_GLOB})
+    endif()
+    list(APPEND sources ${_mako_UNPARSED_ARGUMENTS})
+    list(REMOVE_DUPLICATES sources)
     if("${sources}" STREQUAL "")
         return()
     endif()

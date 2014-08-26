@@ -25,19 +25,22 @@ endfunction()
 macro(configure_files)
     # Parses arguments
     cmake_parse_arguments(_cf
-        "" "OUTPUT_FILES;DESTINATION" ""
+        "" "OUTPUT_FILES;DESTINATION" "GLOB"
         ${ARGN}
     )
-    file(GLOB sources ${_cf_UNPARSED_ARGUMENTS})
-    if("${sources}" STREQUAL "")
-        return()
+
+    unset(_cf_sources)
+    if(NOT "${_mako_GLOB}" STREQUAL "")
+        file(GLOB _cf_sources ${_cf_GLOB})
     endif()
-    if("${_cf_DESTINATION}" STREQUAL "")
-        set(_cf_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+    list(APPEND _cf_sources ${_cf_UNPARSED_ARGUMENTS})
+    list(REMOVE_DUPLICATES _cf_sources)
+    if("${_cf_sources}" STREQUAL "")
+        return()
     endif()
 
     unset(_cf_configured_files)
-    foreach(filename ${sources})
+    foreach(filename ${_cf_sources})
         output_filename("${filename}" output "${_cf_DESTINATION}")
         string(REGEX REPLACE "(.*)\\.in(\\..*)" "\\1\\2" output "${output}")
 

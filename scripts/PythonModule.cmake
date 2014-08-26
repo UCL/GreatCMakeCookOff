@@ -46,13 +46,18 @@ function(_pm_default)
     endif()
 
     unset(sources)
-    if(NOT "${${module}_SOURCES}" STREQUAL "")
-        file(GLOB sources RELATIVE
-            "${CMAKE_CURRENT_SOURCE_DIR}" ${${module}_SOURCES})
-        if(NOT "${excluded}" STREQUAL "")
-            list(REMOVE_ITEM sources ${excluded})
+    if(NOT "${${module}_GLOB}" STREQUAL "")
+        file(GLOB sources
+            RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" ${${module}_GLOB})
+    endif()
+    list(APPEND sources ${${module}_SOURCES} ${${module}_UNPARSED_ARGUMENTS})
+    list(REMOVE_DUPLICATES sources)
+    if(NOT "${excluded}" STREQUAL "")
+        list(REMOVE_ITEM sources ${excluded})
+        file(GLOB patterns ${excluded})
+        if(NOT "${patterns}" STREQUAL "")
+            list(REMOVE_ITEM sources ${patterns})
         endif()
-        list(REMOVE_DUPLICATES sources)
     endif()
 
     if("${sources}" STREQUAL "")
@@ -226,11 +231,6 @@ function(_pm_add_headers module)
         string(REGEX REPLACE "\\." "/" header_destination ${${h}_DESTINATION})
     endif()
 
-    add_copy_files(${${h}_TARGET}-headers
-        FILES ${${h}_SOURCES}-headers
-        DESTINATION "${PYTHON_BINARY_DIR}/${${h}_LOCATION}"
-    )
-
     install_python(FILES ${headers}
         DESTINATION ${header_destination}
         COMPONENT dev
@@ -349,10 +349,9 @@ function(add_python_module module)
     cmake_parse_arguments(${module}
         "FAKE_INIT;NOINSTALL;INSTALL;CPP"
         "HEADER_DESTINATION;TARGETNAME;LOCATION;OUTPUT_PYTHON_SOURCES"
-        "SOURCES;EXCLUDE;LIBRARIES"
+        "SOURCES;EXCLUDE;LIBRARIES;GLOB"
         ${ARGN}
     )
-    list(APPEND ${module}_SOURCES ${${module}_UNPARSED_ARGUMENTS})
     # Sets submodule, location, and module from module
     _pm_location_and_name(${module} "${${module}_LOCATION}")
 
