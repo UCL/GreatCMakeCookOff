@@ -8,6 +8,8 @@ cmake_test(passon_variables)
 cmake_test(python_package)
 cmake_test(add_to_path)
 cmake_test(create_environment_script)
+cmake_test(output_filename)
+cmake_test(configure_files)
 
 find_program(Hg_EXECUTABLE hg)
 if("${CMAKE_VERSION}" VERSION_GREATER 2.8.9 AND Hg_EXECUTABLE)
