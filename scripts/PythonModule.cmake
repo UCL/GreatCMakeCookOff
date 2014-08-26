@@ -123,7 +123,7 @@ function(_pm_add_python_extension module)
     cmake_parse_arguments(${ext}
         ""
         "INSTALL;TARGET;LOCATION;EXTENSION;MODULE_TARGET"
-        "SOURCES;LIBRARIES"
+        "SOURCES;LIBRARIES;DEPENDENCIES"
         ${ARGN}
     )
     if("${${ext}_SOURCES}" STREQUAL "")
@@ -156,8 +156,9 @@ function(_pm_add_python_extension module)
         target_link_libraries(${module_target} ${${ext}_LIBRARIES})
     endif()
     add_dependencies(${container_target} ${module_target})
-    if(TARGET ${container_target}-mako)
-        add_dependencies(${module_target} ${container_target}-mako)
+    if(NOT "${${ext}_DEPENDENCIES}" STREQUAL "")
+        message("ADDING TARGET *** ${${ext}_DEPENDENCIES}")
+        add_dependencies(${module_target} ${${ext}_DEPENDENCIES})
     endif()
 
     if(${${ext}_INSTALL})
@@ -190,9 +191,6 @@ function(_pm_add_pure_python)
         FILES ${${py}_SOURCES}
         DESTINATION "${PYTHON_BINARY_DIR}/${${py}_LOCATION}"
     )
-    if(TARGET ${${py}_TARGET}-mako)
-        add_dependencies(${${py}_TARGET} ${${py}_TARGET}-mako)
-    endif()
     if(${${py}_INSTALL})
         install_python(FILES ${${py}_SOURCES} DESTINATION ${${py}_LOCATION})
     endif()
@@ -228,6 +226,11 @@ function(_pm_add_headers module)
         string(REGEX REPLACE "\\." "/" header_destination ${${h}_DESTINATION})
     endif()
 
+    add_copy_files(${${h}_TARGET}-headers
+        FILES ${${h}_SOURCES}-headers
+        DESTINATION "${PYTHON_BINARY_DIR}/${${h}_LOCATION}"
+    )
+
     install_python(FILES ${headers}
         DESTINATION ${header_destination}
         COMPONENT dev
@@ -258,9 +261,6 @@ function(_pm_add_cython module source)
 
     # Computes dependencies
     get_pyx_dependencies(${source} DEPENDENCIES ${included_dirs})
-    if(TARGET ${${cy}_TARGET}-mako)
-        list(APPEND DEPENDENCIES ${${cy}_TARGET}-mako)
-    endif()
 
     # Call cython
     get_filename_component(cy_module ${source} NAME_WE)
@@ -281,11 +281,6 @@ function(_pm_add_cython module source)
 
     # Figure out generated source name
     set(generated_source "${source}")
-    if("${source}" MATCHES ".*\\.mako\\..*")
-        _pm_get_confed_filename("${source}" generated_source)
-        string(REGEX REPLACE "(.*)\\.mako(\\..*)" "\\1\\2"
-            generated_source "${generated_source}")
-    endif()
     # Create C source from cython
     list(APPEND arguments
         "${generated_source}"
@@ -348,85 +343,13 @@ function(_pm_get_confed_filename filename OUTPUT)
     set(${OUTPUT} "${CMAKE_CURRENT_BINARY_DIR}/${relfile}" PARENT_SCOPE)
 endfunction()
 
-function(_pm_configure_files files_to_modify OUTPUT)
-    if("${${files_to_modify}}" STREQUAL "")
-        return()
-    endif()
-    set(all_sources ${ARGN})
-    unset(configured_files)
-    foreach(filename ${${files_to_modify}})
-        _pm_get_confed_filename("${filename}" output)
-        string(REGEX REPLACE "(.*)\\.in(\\..*)" "\\1\\2" output "${output}")
-        file(RELATIVE_PATH relpath "${CMAKE_CURRENT_BINARY_DIR}" "${output}")
-        configure_file("${filename}" "${relpath}" @ONLY)
-        list(APPEND configured_files "${output}")
-    endforeach()
-    list(REMOVE_ITEM all_sources ${${files_to_modify}})
-    list(APPEND all_sources ${configured_files})
-    set(${OUTPUT} ${all_sources} PARENT_SCOPE)
-endfunction()
-
-function(_pm_mako_files)
-    # Parses arguments
-    cmake_parse_arguments(_pm_mako
-        ""
-        "MAKO_SCRIPT;OUTPUT_PYTHON_SOURCES;TARGETNAME"
-        "MAKO_CMDLINE"
-        ${ARGN}
-    )
-    set(all_sources ${_pm_mako_UNPARSED_ARGUMENTS})
-    if("${all_sources}" STREQUAL "")
-        return()
-    endif()
-    _pm_filter_list(mako_files all_sources ".*\\.mako\\..*")
-    if("${mako_files}" STREQUAL "")
-        return()
-    endif()
-
-    set(local_python "${LOCAL_PYTHON_EXECUTABLE}")
-    if(NOT "${local_python}")
-        set(local_python ${PYTHON_EXECUTABLE})
-    endif()
-    set(mako_script "${_pm_mako_MAKO_SCRIPT}")
-    if("${mako_script}" STREQUAL "")
-        if("${mako_SCRIPT}" STREQUAL "")
-            message(FATAL_ERROR "Mako render script not defined")
-        endif()
-        set(mako_script "${mako_SCRIPT}")
-    endif()
-
-    if(NOT TARGET ${_pm_mako_TARGETNAME}-mako)
-        add_custom_target(${_pm_mako_TARGETNAME}-mako)
-    endif()
-
-    foreach(filename ${mako_files})
-        _pm_get_confed_filename("${filename}" output)
-        string(REGEX REPLACE "(.*)\\.mako(\\..*)" "\\1\\2" output "${output}")
-        get_filename_component(abspath "${filename}" ABSOLUTE)
-        add_custom_command(
-            TARGET ${_pm_mako_TARGETNAME}-mako
-            COMMAND ${local_python} -B ${mako_SCRIPT} ${abspath} > ${output}
-            DEPENDS "${filename}"
-            COMMENT "Mako-ing file ${filename}"
-        )
-        list(REMOVE_ITEM all_sources "${filename}")
-        list(APPEND all_sources "${output}")
-    endforeach()
-
-    set(${_pm_mako_OUTPUT_PYTHON_SOURCES} ${all_sources} PARENT_SCOPE)
-endfunction()
-
 function(add_python_module module)
 
-    set(oneargs
-        HEADER_DESTINATION TARGETNAME LOCATION OUTPUT_PYTHON_SOURCES
-        MAKO_SCRIPT
-    )
     # Parses arguments
     cmake_parse_arguments(${module}
-        "FAKE_INIT;NOINSTALL;INSTALL;CPP;NOCONFIG;NOMAKO"
-        "${oneargs}"
-        "SOURCES;EXCLUDE;LIBRARIES;MAKO_CMDLINE"
+        "FAKE_INIT;NOINSTALL;INSTALL;CPP"
+        "HEADER_DESTINATION;TARGETNAME;LOCATION;OUTPUT_PYTHON_SOURCES"
+        "SOURCES;EXCLUDE;LIBRARIES"
         ${ARGN}
     )
     list(APPEND ${module}_SOURCES ${${module}_UNPARSED_ARGUMENTS})
@@ -444,37 +367,14 @@ function(add_python_module module)
         add_custom_target(${targetname} ALL)
     endif()
 
-    # Figure out files that should be passed through configure
-    if(NOT ${module}_NOCONFIG)
-        _pm_filter_list(IN_FILES ALL_SOURCES ".*\\.in\\..*")
-        # Configure requested files and modifies ALL_SOURCES accordingly
-        # Eg remove the *.in.* files and replace them with the configure files.
-        _pm_configure_files(IN_FILES ALL_SOURCES ${ALL_SOURCES})
-    endif()
-    # Figure out files that should be passed through mako and render them
-    set(MODIFIED_SOURCES ${ALL_SOURCES})
-    if(NOT ${module}_NOMAKO)
-        _pm_mako_files(${ALL_SOURCES}
-            TARGETNAME "${targetname}"
-            OUTPUT_PYTHON_SOURCES MODIFIED_SOURCES
-            MAKO_SCRIPT "${${module}_MAKO_SCRIPT}"
-            MAKO_CMDLINE ${${module}_MAKO_CMDLINE}
-        )
-    endif()
     # Figures out C/C++/HEADERS/Python sources
-    _pm_filter_list(C_SOURCES MODIFIED_SOURCES ".*\\.c$")
-    _pm_filter_list(C_HEADERS MODIFIED_SOURCES ".*\\.h$")
-    _pm_filter_list(CPP_SOURCES MODIFIED_SOURCES ".*\\.cpp$" ".*\\.cc$")
-    _pm_filter_list(CPP_HEADERS MODIFIED_SOURCES ".*\\.hpp" ".*\\.h")
-    _pm_filter_list(PY_SOURCES MODIFIED_SOURCES ".*\\.py$")
-    # We need to keep track of the original sources file to figure out
-    # cython dependencies. This is difficult if files can be changed by mako.
-    # So filename transformation are applied when treating cython.
-    # Of course, if cmake were a decent language, it would have key-value pairs
-    # of some kind and we couuld the info reguarding the origin of a generated
-    # file. That is not the case.
+    _pm_filter_list(C_SOURCES ALL_SOURCES ".*\\.c$")
+    _pm_filter_list(C_HEADERS ALL_SOURCES ".*\\.h$")
+    _pm_filter_list(CPP_SOURCES ALL_SOURCES ".*\\.cpp$" ".*\\.cc$")
+    _pm_filter_list(CPP_HEADERS ALL_SOURCES ".*\\.hpp" ".*\\.h")
+    _pm_filter_list(PY_SOURCES ALL_SOURCES ".*\\.py$")
     _pm_filter_list(CY_SOURCES ALL_SOURCES ".*\\.pyx")
-    _pm_filter_list(CY_HEADERS MODIFIED_SOURCES ".*\\.pxd")
+    _pm_filter_list(CY_HEADERS ALL_SOURCES ".*\\.pxd")
 
     if(C_SOURCES OR CPP_SOURCES)
         if(PY_SOURCES OR CY_SOURCES)
