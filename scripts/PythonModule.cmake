@@ -194,7 +194,7 @@ function(_pm_add_headers module)
     string(REGEX REPLACE "/" "_" h "h.${module}")
     cmake_parse_arguments(${h}
         ""
-        "INSTALL;LOCATION;DESTINATION"
+        "INSTALL;LOCATION;DESTINATION;TARGET"
         "SOURCES"
         ${ARGN}
     )
@@ -220,6 +220,12 @@ function(_pm_add_headers module)
         string(REGEX REPLACE "\\." "/" header_destination ${${h}_DESTINATION})
     endif()
 
+    if(NOT IS_ABSOLUTE "${header_destination}")
+        add_copy_files(${${h}_TARGET}
+            FILES ${headers}
+            DESTINATION "${PYTHON_BINARY_DIR}/${header_destination}"
+        )
+    endif()
     install_python(FILES ${headers}
         DESTINATION ${header_destination}
         COMPONENT dev
@@ -268,11 +274,9 @@ function(_pm_add_cython module source)
         set(c_source "cython_${cy_module}.c")
     endif()
 
-    # Figure out generated source name
-    set(generated_source "${source}")
     # Create C source from cython
     list(APPEND arguments
-        "${generated_source}"
+        "${source}"
         -o "${CMAKE_CURRENT_BINARY_DIR}/${c_source}" ${inclusion}
     )
     add_custom_command(
@@ -406,6 +410,7 @@ function(add_python_module module)
 
     # Then copy/install header files
     _pm_add_headers(${module}
+        TARGET ${targetname}
         LOCATION ${location}
         DESTINATION ${${module}_HEADER_DESTINATION}
         SOURCES ${CPP_HEADERS} ${C_HEADERS} ${CY_HEADERS}
