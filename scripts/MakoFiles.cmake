@@ -4,8 +4,8 @@ function(mako_files)
     # Parses arguments
     cmake_parse_arguments(_mako
         ""
-        "MAKO_SCRIPT;OUTPUT_FILES;DESTINATION"
-        "MAKO_CMDLINE;DEPENDENCIES;GLOB"
+        "MAKO_SCRIPT;OUTPUT_FILES;DESTINATION;TARGETNAME"
+        "CMDLINE;DEPENDENCIES;GLOB;DEPENDS"
         ${ARGN}
     )
     unset(sources)
@@ -25,7 +25,7 @@ function(mako_files)
     endif()
 
     set(local_python "${LOCAL_PYTHON_EXECUTABLE}")
-    if(NOT "${local_python}")
+    if("${local_python}" STREQUAL "")
         set(local_python ${PYTHON_EXECUTABLE})
     endif()
     set(mako_script "${_mako_MAKO_SCRIPT}")
@@ -43,14 +43,20 @@ function(mako_files)
         get_filename_component(abspath "${filename}" ABSOLUTE)
 
         add_custom_command(
-            OUTPUT "${output}"
-            COMMAND ${local_python} -B ${mako_script} ${abspath} > ${output}
-            DEPENDS "${abspath}" "${mako_script}"
+            OUTPUT ${output}
+            COMMAND
+                ${local_python} -B ${mako_script}
+                    ${abspath} ${_mako_CMDLINE} > ${output}
+            DEPENDS "${abspath}" "${mako_script}" ${_mako_DEPENDS}
             COMMENT "Mako-ing file ${filename}"
         )
         list(APPEND makoed_files "${output}")
     endforeach()
 
     set(${_mako_OUTPUT_FILES} ${makoed_files} PARENT_SCOPE)
+    # Add custom target. Makes it easier to handle dependencies.
+    if(NOT "${_mako_TARGETNAME}" STREQUAL "")
+        add_custom_target(${_mako_TARGETNAME} DEPENDS ${makoed_files})
+    endif()
 endfunction()
 

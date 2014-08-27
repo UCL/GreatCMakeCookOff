@@ -61,6 +61,10 @@ def cython_deps(path, includes, results=None):
             results.add(abspath(newpath))
             cython_deps(newpath, includes, results)
 
+    # Generated files may not exist
+    if not exists(path): 
+        return results
+
     with open(path, 'r') as file:
         for line in file:
             check_extern_dep(line, results, includes)
