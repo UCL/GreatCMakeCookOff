@@ -96,6 +96,10 @@ function(add_pytest)
         endif()
     endforeach()
 
+    list(APPEND pytests_LABELS pytest python)
+    list(REMOVE_DUPLICATES pytests_LABELS)
+    set_tests_properties(${all_tests} PROPERTIES LABELS "${pytests_LABELS}")
+
 endfunction()
 
 function(setup_pytest python_path pytest_path)
