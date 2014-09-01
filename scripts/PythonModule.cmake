@@ -2,6 +2,7 @@ include(FindPackageHandleStandardArgs)
 include(PythonInstall)
 include(TargetCopyFiles)
 include(EnvironmentScript)
+include(FilterList)
 
 if(NOT PYTHON_BINARY_DIR)
     set(PYTHON_BINARY_DIR "${PROJECT_BINARY_DIR}/python_package"
@@ -13,11 +14,16 @@ set(DEPS_SCRIPT
     CACHE INTERNAL "Script to determine cython dependencies"
 )
 
-function(_pm_location_and_name module)
+function(_pm_location_and_name module module_LOCATION)
     string(REGEX REPLACE "\\." "/" location "${module}")
     get_filename_component(submodule "${location}" NAME)
 
     set(submodule ${submodule} PARENT_SCOPE)
+
+    if(NOT "${module_LOCATION}" STREQUAL "")
+        set(location ${module_LOCATION} PARENT_SCOPE)
+    endif()
+
     set(location ${location} PARENT_SCOPE)
 endfunction()
 
@@ -41,47 +47,37 @@ function(_pm_default)
     endif()
 
     unset(sources)
-    if(NOT "${${module}_SOURCES}" STREQUAL "")
-        file(GLOB sources RELATIVE
-            "${CMAKE_CURRENT_SOURCE_DIR}" ${${module}_SOURCES})
-        if(NOT "${excluded}" STREQUAL "")
-            list(REMOVE_ITEM sources ${excluded})
+    if(NOT "${${module}_GLOB}" STREQUAL "")
+        file(GLOB sources
+            RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" ${${module}_GLOB})
+    endif()
+    list(APPEND sources ${${module}_SOURCES} ${${module}_UNPARSED_ARGUMENTS})
+    list(REMOVE_DUPLICATES sources)
+    if(NOT "${excluded}" STREQUAL "")
+        list(REMOVE_ITEM sources ${excluded})
+        file(GLOB patterns ${excluded})
+        if(NOT "${patterns}" STREQUAL "")
+            list(REMOVE_ITEM sources ${patterns})
         endif()
-        list(REMOVE_DUPLICATES sources)
     endif()
 
     if("${sources}" STREQUAL "")
         message(FATAL_ERROR "Python module has no sources")
     endif()
     set(ALL_SOURCES ${sources} PARENT_SCOPE)
-
-    if(${module}_LOCATION)
-        set(location ${${module}_LOCATION} PARENT_SCOPE)
-    endif()
-endfunction()
-
-function(_pm_filter_list output input)
-    unset(result)
-    foreach(filename ${${input}})
-        foreach(pattern ${ARGN})
-            if("${filename}" MATCHES "${pattern}")
-                list(APPEND result "${filename}")
-            endif()
-        endforeach()
-    endforeach()
-    set(${output} ${result} PARENT_SCOPE)
 endfunction()
 
 function(get_pyx_dependencies SOURCE OUTVAR)
-    if(NOT "${LOCAL_PYTHON_EXECUTABLE}")
-        set(LOCAL_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
+    set(local_python "${LOCAL_PYTHON_EXECUTABLE}")
+    if(NOT "${local_python}")
+        set(local_python ${PYTHON_EXECUTABLE})
     endif()
     execute_process(
-        COMMAND ${LOCAL_PYTHON_EXECUTABLE} ${DEPS_SCRIPT} ${SOURCE} ${ARGN}
+        COMMAND ${local_python} ${DEPS_SCRIPT} ${SOURCE} ${ARGN}
         RESULT_VARIABLE RESULT
         OUTPUT_VARIABLE OUTPUT
         ERROR_VARIABLE ERROR
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     if("${RESULT}" STREQUAL "0")
         set(${OUTVAR} ${OUTPUT} PARENT_SCOPE)
@@ -102,12 +98,26 @@ function(_pm_add_fake_init location)
     endif()
 endfunction()
 
+function(python_extension_targetname outvar module)
+    cmake_parse_arguments(_pm_tgname
+        ""
+        "MODULE_TARGET"
+        ";"
+        ${ARGN}
+    )
+    set(module_target ${module}-ext)
+    if(NOT "${_pm_tgname_MODULE_TARGET}" STREQUAL "")
+        set(module_target ${_pm_tgname_MODULE_TARGET})
+    endif()
+    set(${outvar} ${module_target} PARENT_SCOPE)
+endfunction()
+
 function(_pm_add_python_extension module)
     string(REGEX REPLACE "/" "_" ext "ext.${module}")
     cmake_parse_arguments(${ext}
         ""
         "INSTALL;TARGET;LOCATION;EXTENSION;MODULE_TARGET"
-        "SOURCES;LIBRARIES"
+        "SOURCES;LIBRARIES;DEPENDENCIES"
         ${ARGN}
     )
     if("${${ext}_SOURCES}" STREQUAL "")
@@ -121,23 +131,29 @@ function(_pm_add_python_extension module)
 
     set(location ${${ext}_LOCATION})
     set(container_target ${${ext}_TARGET})
-    set(module_target ${container_target}-ext)
-    if(NOT "${${ext}_MODULE_TARGET}" STREQUAL "")
-        set(module_target ${${ext}_MODULE_TARGET})
-    endif()
+    python_extension_targetname(module_target
+        ${${ext}_TARGET} MODULE_TARGET ${${ext}_MODULE_TARGET})
 
     add_library(${module_target} MODULE ${${ext}_SOURCES})
     target_link_libraries(${module_target} ${PYTHON_LIBRARIES})
+    set(output_dir "${location}")
+    if(NOT IS_ABSOLUTE "${location}")
+        set(output_dir "${PYTHON_BINARY_DIR}/${location}")
+    endif()
     set_target_properties(${module_target}
         PROPERTIES
         OUTPUT_NAME "${${ext}_EXTENSION}"
         PREFIX "" SUFFIX ".so"
-        LIBRARY_OUTPUT_DIRECTORY "${PYTHON_BINARY_DIR}/${location}"
+        LIBRARY_OUTPUT_DIRECTORY "${output_dir}"
     )
     if(${ext}_LIBRARIES)
         target_link_libraries(${module_target} ${${ext}_LIBRARIES})
     endif()
     add_dependencies(${container_target} ${module_target})
+    if(NOT "${${ext}_DEPENDENCIES}" STREQUAL "")
+        message("ADDING TARGET *** ${${ext}_DEPENDENCIES}")
+        add_dependencies(${module_target} ${${ext}_DEPENDENCIES})
+    endif()
 
     if(${${ext}_INSTALL})
         install_python(TARGETS ${module_target} DESTINATION "${location}")
@@ -165,11 +181,10 @@ function(_pm_add_pure_python)
         set(targetname_copy "${targetname_copy}-copy")
     endif()
 
-    add_copy_files(${targetname_copy}
+    add_copy_files(${${py}_TARGET}
         FILES ${${py}_SOURCES}
         DESTINATION "${PYTHON_BINARY_DIR}/${${py}_LOCATION}"
     )
-    add_dependencies(${${py}_TARGET} ${targetname_copy})
     if(${${py}_INSTALL})
         install_python(FILES ${${py}_SOURCES} DESTINATION ${${py}_LOCATION})
     endif()
@@ -179,7 +194,7 @@ function(_pm_add_headers module)
     string(REGEX REPLACE "/" "_" h "h.${module}")
     cmake_parse_arguments(${h}
         ""
-        "INSTALL;LOCATION;DESTINATION"
+        "INSTALL;LOCATION;DESTINATION;TARGET"
         "SOURCES"
         ${ARGN}
     )
@@ -205,6 +220,12 @@ function(_pm_add_headers module)
         string(REGEX REPLACE "\\." "/" header_destination ${${h}_DESTINATION})
     endif()
 
+    if(NOT IS_ABSOLUTE "${header_destination}")
+        add_copy_files(${${h}_TARGET}
+            FILES ${headers}
+            DESTINATION "${PYTHON_BINARY_DIR}/${header_destination}"
+        )
+    endif()
     install_python(FILES ${headers}
         DESTINATION ${header_destination}
         COMPONENT dev
@@ -255,13 +276,14 @@ function(_pm_add_cython module source)
 
     # Create C source from cython
     list(APPEND arguments
-        "${CMAKE_CURRENT_SOURCE_DIR}/${source}"
-        -o ${c_source} ${inclusion}
+        "${source}"
+        -o "${CMAKE_CURRENT_BINARY_DIR}/${c_source}" ${inclusion}
     )
     add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${c_source}
+        OUTPUT "${c_source}"
         COMMAND ${arguments}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            $<$<OR:$<CONFIG:RelWithDebInfo>,$<CONFIG:Debug>>:--dbg>
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         DEPENDS ${DEPENDENCIES}
         COMMENT "Generating c/c++ source ${source} with cython"
     )
@@ -272,20 +294,33 @@ function(_pm_add_cython module source)
         set(extension ${cy_module})
     endif()
 
-    # cy_module might already contain module
+    _pm_cython_full_module_name(full_module ${module} "${source}")
+    cython_extension_targetname(targetname ${module} "${source}")
+    # Add python module
+    _pm_add_python_extension(${full_module}
+        TARGET ${${cy}_TARGET}
+        MODULE_TARGET ${targetname}
+        EXTENSION ${extension}
+        SOURCES ${c_source}
+        ${${cy}_UNPARSED_ARGUMENTS}
+    )
+endfunction()
+
+function(_pm_cython_full_module_name outvar module source)
+    get_filename_component(cy_module ${source} NAME_WE)
     if("${cy_module}" MATCHES "^${module}")
         set(full_module ${cy_module})
     else()
         set(full_module ${module}.${cy_module})
     endif()
-    # Add python module
-    _pm_add_python_extension(${full_module}
-        TARGET ${${cy}_TARGET}
-        MODULE_TARGET ${full_module}-cython
-        EXTENSION ${extension}
-        SOURCES ${c_source}
-        ${${cy}_UNPARSED_ARGUMENTS}
-    )
+    set(${outvar} ${full_module} PARENT_SCOPE)
+endfunction()
+
+function(cython_extension_targetname outvar module source)
+    _pm_cython_full_module_name(full_module ${module} "${source}")
+    python_extension_targetname(targetname ${module}
+        MODULE_TARGET ${full_module}-cython)
+    set(${outvar} ${targetname} PARENT_SCOPE)
 endfunction()
 
 function(_pm_get_confed_filename filename OUTPUT)
@@ -298,56 +333,40 @@ function(_pm_get_confed_filename filename OUTPUT)
                 "directory or subdirectory.")
         endif()
     endif()
-    string(REGEX REPLACE "(.*)\\.in(\\..*)" "\\1\\2" output "${relfile}")
-    set(${OUTPUT} "${CMAKE_CURRENT_BINARY_DIR}/${output}" PARENT_SCOPE)
-endfunction()
-
-function(_pm_configure_files files_to_modify OUTPUT)
-    if("${${files_to_modify}}" STREQUAL "")
-        return()
-    endif()
-    set(all_sources ${ARGN})
-    unset(configured_files)
-    foreach(filename ${${files_to_modify}})
-        _pm_get_confed_filename("${filename}" output)
-        configure_file("${filename}" "${output}" @ONLY)
-        list(APPEND configured_files "${output}")
-    endforeach()
-    list(REMOVE_ITEM all_sources ${${files_to_modify}})
-    list(APPEND all_sources ${configured_files})
-    set(${OUTPUT} ${all_sources} PARENT_SCOPE)
+    set(${OUTPUT} "${CMAKE_CURRENT_BINARY_DIR}/${relfile}" PARENT_SCOPE)
 endfunction()
 
 function(add_python_module module)
 
-    # Sets submodule, location, and module from module
-    _pm_location_and_name(${module})
-
     # Parses arguments
     cmake_parse_arguments(${module}
-        "FAKE_INIT;NOINSTALL;INSTALL;CPP;NOCONFIG"
-        "HEADER_DESTINATION;TARGETNAME;LOCATION"
-        "SOURCES;EXCLUDE;LIBRARIES"
+        "FAKE_INIT;NOINSTALL;INSTALL;CPP"
+        "HEADER_DESTINATION;TARGETNAME;LOCATION;OUTPUT_PYTHON_SOURCES"
+        "SOURCES;EXCLUDE;LIBRARIES;GLOB"
         ${ARGN}
     )
-    list(APPEND ${module}_SOURCES ${${module}_UNPARSED_ARGUMENTS})
+    # Sets submodule, location, and module from module
+    _pm_location_and_name(${module} "${${module}_LOCATION}")
+
     # Sets defaults, do_install, and  ALL_SOURCES
     _pm_default()
-    # Figure out files that should be passed through configure
-    if(NOT ${module}_NOCONFIG)
-        _pm_filter_list(IN_FILES ALL_SOURCES ".*\\.in\\..*")
-        # Configure requested files and modifies ALL_SOURCES accordingly
-        # Eg remove the *.in.* files and replace them with the configure files.
-        _pm_configure_files(IN_FILES ALL_SOURCES ${ALL_SOURCES})
+    set(targetname ${module})
+    if(${module}_TARGETNAME)
+        set(targetname ${${module}_TARGETNAME})
     endif()
+    # creates a global target
+    if(NOT TARGET ${targetname})
+        add_custom_target(${targetname} ALL)
+    endif()
+
     # Figures out C/C++/HEADERS/Python sources
-    _pm_filter_list(C_SOURCES ALL_SOURCES ".*\\.c$")
-    _pm_filter_list(C_HEADERS ALL_SOURCES ".*\\.h$")
-    _pm_filter_list(CPP_SOURCES ALL_SOURCES ".*\\.cpp$" ".*\\.cc$")
-    _pm_filter_list(CPP_HEADERS ALL_SOURCES ".*\\.hpp" ".*\\.h")
-    _pm_filter_list(PY_SOURCES ALL_SOURCES ".*\\.py$")
-    _pm_filter_list(CY_SOURCES ALL_SOURCES ".*\\.pyx")
-    _pm_filter_list(CY_HEADERS ALL_SOURCES ".*\\.pxd")
+    filter_list(C_SOURCES ALL_SOURCES ".*\\.c$")
+    filter_list(C_HEADERS ALL_SOURCES ".*\\.h$")
+    filter_list(CPP_SOURCES ALL_SOURCES ".*\\.cpp$" ".*\\.cc$")
+    filter_list(CPP_HEADERS ALL_SOURCES ".*\\.hpp" ".*\\.h")
+    filter_list(PY_SOURCES ALL_SOURCES ".*\\.py$")
+    filter_list(CY_SOURCES ALL_SOURCES ".*\\.pyx")
+    filter_list(CY_HEADERS ALL_SOURCES ".*\\.pxd")
 
     if(C_SOURCES OR CPP_SOURCES)
         if(PY_SOURCES OR CY_SOURCES)
@@ -358,16 +377,7 @@ function(add_python_module module)
         endif()
     endif()
 
-    set(targetname ${module})
-    if(${module}_TARGETNAME)
-        set(targetname ${${module}_TARGETNAME})
-    endif()
-
     # Now for the actual meat
-    # First creates a global target
-    if(NOT TARGET ${targetname})
-        add_custom_target(${targetname} ALL)
-    endif()
 
     # First adds fake init if necessary
     if(${module}_FAKE_INIT)
@@ -400,6 +410,7 @@ function(add_python_module module)
 
     # Then copy/install header files
     _pm_add_headers(${module}
+        TARGET ${targetname}
         LOCATION ${location}
         DESTINATION ${${module}_HEADER_DESTINATION}
         SOURCES ${CPP_HEADERS} ${C_HEADERS} ${CY_HEADERS}
@@ -415,4 +426,12 @@ function(add_python_module module)
         TARGET ${targetname}
         SOURCES ${CY_SOURCES}
     )
+
+    # Outputs pure python sources if requested.
+    # This is used mainly by add_pytest. It makes configurable tests trivial to
+    # add.
+    if(NOT ${${module}_OUTPUT_PYTHON_SOURCES} STREQUAL "")
+        set(${${module}_OUTPUT_PYTHON_SOURCES} ${PY_SOURCES} PARENT_SCOPE)
+    endif()
+
 endfunction()

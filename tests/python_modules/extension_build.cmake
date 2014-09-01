@@ -26,7 +26,7 @@ foreach(pathname module.c other.h other.cc)
         COPYONLY
     )
 endforeach()
-add_python_module("extension" module.c *.cc *.h)
+add_python_module("extension" module.c GLOB *.cc *.h)
 
 foreach(target extension)
     if(NOT TARGET ${target})

@@ -11,9 +11,10 @@ function(add_copy_files FILECOPIER_TARGET)
         ${ARGN}
     )
 
-    if(NOT TARGET ${FILECOPIER_TARGET})
+    if(NOT TARGET "${FILECOPIER_TARGET}")
         add_custom_target(${FILECOPIER_TARGET})
     endif()
+    get_target_property(result ${FILECOPIER_TARGET} TYPE)
     if(NOT FILECOPIER_DESTINATION)
         set(destination ${CMAKE_CURRENT_BINARY_DIR})
     else()
@@ -57,7 +58,7 @@ function(add_copy_files FILECOPIER_TARGET)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     ${input_abs} ${output_abs}
                 ${verbosity}
-                DEPENDS ${input}
+                DEPENDS "${input}"
             )
        endif()
     endforeach()
@@ -123,7 +124,7 @@ function(add_copy_directory dircopy_TARGET directory)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     ${input_abs} ${output_abs}
                 ${verbosity}
-                DEPENDS ${input}
+                DEPENDS "${input}"
             )
         endif()
     endforeach()

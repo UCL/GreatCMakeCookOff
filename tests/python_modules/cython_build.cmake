@@ -35,4 +35,4 @@ endforeach()
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 add_library(pystructure SHARED structure.c)
-add_python_module("extension" *.pyx *.pxd LIBRARIES pystructure FAKE_INIT)
+add_python_module("extension" GLOB *.pyx *.pxd LIBRARIES pystructure FAKE_INIT)

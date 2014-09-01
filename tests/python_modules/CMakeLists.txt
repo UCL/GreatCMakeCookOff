@@ -15,7 +15,7 @@ find_program(PYTEST_EXEC py.test PATH "${EXTERNAL_ROOT}/python" REQUIRED)
 cmake_test(pure_build NOEXEC --build-target install)
 cmake_test(pure_tests)
 set_tests_properties(cmake_test_pure_tests PROPERTIES
-    DEPENDS cmake_tests_pure_build)
+    DEPENDS cmake_test_pure_build)
 
 cmake_test(extension_build NOEXEC --build-target install)
 set(python_exec "${CMAKE_CURRENT_BINARY_DIR}/extension_tester.sh")
@@ -42,15 +42,9 @@ add_test(NAME cython_extension
 set_tests_properties(cython_extension PROPERTIES
     DEPENDS cmake_test_cython_build)
 
-cmake_test(confed_build NOEXEC --build-target install)
-cmake_test(confed_tests)
-set_tests_properties(cmake_test_confed_tests PROPERTIES
-    DEPENDS cmake_test_confed_build)
-
 set_tests_properties(
     cmake_test_pure_tests cmake_test_pure_build
     cmake_test_extension_build python_extension cmake_test_extension_files
     cmake_test_cython_build cmake_test_cython_files cython_extension
-    cmake_test_confed_build cmake_test_confed_tests
     PROPERTIES LABELS "python"
 )

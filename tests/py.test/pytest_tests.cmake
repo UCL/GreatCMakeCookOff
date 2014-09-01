@@ -16,32 +16,50 @@ function(test_exists test_name)
     endif()
 endfunction()
 
-function(check_test_passes test_name)
+function(check_test_passes test_name expected_ntests)
     execute_process(
         COMMAND ${CMAKE_CTEST_COMMAND} -V -R ${test_name}
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../pytest_build/"
-        RESULT_VARIABLE result OUTPUT_QUIET ERROR_QUIET
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE output
+        ERROR_QUIET
     )
     if(NOT result EQUAL 0)
         message(FATAL_ERROR "test ${test_name} did not pass - ${result}")
     endif()
+    if(NOT "${output}" MATCHES "collected ${expected_ntests} items")
+        message(STATUS "o: ${output}")
+        message(FATAL_ERROR
+            "Expected ${expected_ntests} tests in ${test_name}."
+        )
+    endif()
 endfunction()
-function(check_test_fails test_name)
+function(check_test_fails test_name expected_ntests)
     execute_process(
-        COMMAND ${CMAKE_CTEST_COMMAND} -R ${test_name}
+        COMMAND ${CMAKE_CTEST_COMMAND} -V -R ${test_name}
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../pytest_build/"
-        RESULT_VARIABLE result OUTPUT_QUIET ERROR_QUIET
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE output
+        ERROR_QUIET
     )
     if(result EQUAL 0)
         message(FATAL_ERROR "test ${test_name} did not fail")
     endif()
+    if(NOT "${output}" MATCHES "collected ${expected_ntests} items")
+        message(STATUS "o: ${output}")
+        message(FATAL_ERROR
+            "Expected ${expected_ntests} in ${test_name}, got ${ntests}."
+        )
+    endif()
 endfunction()
 
-test_exists(package.this)
-test_exists(package.that)
-test_exists(package.cmdl)
-test_exists(package.fails.cmdl)
-check_test_passes(package.this)
-check_test_fails(package.that)
-check_test_passes(package.cmdl)
-check_test_fails(package.fails.cmdl)
+test_exists(hackage.this)
+test_exists(hackage.that)
+test_exists(hackage.cmdl)
+test_exists(hackage.fails.cmdl)
+test_exists(hackage.cython)
+check_test_passes(hackage.this 2)
+check_test_fails(hackage.that 1)
+check_test_passes(hackage.cmdl 1)
+check_test_fails(hackage.fails.cmdl 1)
+check_test_passes(hackage.cython 2)

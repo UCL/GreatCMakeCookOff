@@ -33,10 +33,11 @@ if(NOT EXISTS "${PROJECT_BINARY_DIR}/pure")
     )
 endif()
 
-add_python_module("pure" ${PROJECT_BINARY_DIR}/pure/*.py)
-add_python_module("pure.tests" ${PROJECT_BINARY_DIR}/pure/tests/*.py FAKE_INIT)
+add_python_module("pure" GLOB ${PROJECT_BINARY_DIR}/pure/*.py)
+add_python_module("pure.tests"
+    GLOB ${PROJECT_BINARY_DIR}/pure/tests/*.py FAKE_INIT)
 add_python_module("pure.noinstall"
-    "${PROJECT_BINARY_DIR}/pure/noinstall/*.py"
+    GLOB "${PROJECT_BINARY_DIR}/pure/noinstall/*.py"
     TARGETNAME nope
     NOINSTALL
 )
@@ -44,8 +45,5 @@ add_python_module("pure.noinstall"
 foreach(target pure pure.tests nope)
     if(NOT TARGET ${target})
         message(FATAL_ERROR "Target ${target} does not exist")
-    endif()
-    if(NOT TARGET ${target}-copy)
-        message(FATAL_ERROR "Target ${target}-copy does not exist")
     endif()
 endforeach()
