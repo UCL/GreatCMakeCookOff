@@ -15,6 +15,9 @@ add_to_python_path("${EXTERNAL_ROOT}/python")
 
 lookup_python_package(mako REQUIRED)
 find_program(mako_SCRIPT mako-render HINT "${EXTERNAL_ROOT}/python")
+if(NOT mako_SCRIPT)
+    message(FATAL_ERROR "Could not find mako-render script.")
+endif()
 
 file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/__init__.mako.py"
     "import other\n"
