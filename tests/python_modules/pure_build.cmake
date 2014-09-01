@@ -33,11 +33,14 @@ if(NOT EXISTS "${PROJECT_BINARY_DIR}/pure")
     )
 endif()
 
-add_python_module("pure" GLOB ${PROJECT_BINARY_DIR}/pure/*.py)
+add_python_module("pure"
+	${PROJECT_BINARY_DIR}/pure/__init__.py
+	${PROJECT_BINARY_DIR}/pure/that.py
+)
 add_python_module("pure.tests"
-    GLOB ${PROJECT_BINARY_DIR}/pure/tests/*.py FAKE_INIT)
+    ${PROJECT_BINARY_DIR}/pure/tests/this.py FAKE_INIT)
 add_python_module("pure.noinstall"
-    GLOB "${PROJECT_BINARY_DIR}/pure/noinstall/*.py"
+    "${PROJECT_BINARY_DIR}/pure/noinstall/__init__.py"
     TARGETNAME nope
     NOINSTALL
 )
