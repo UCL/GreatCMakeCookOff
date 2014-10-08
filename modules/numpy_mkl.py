@@ -54,7 +54,7 @@ def parse_ldd_output(output):
         if m_fname:
             # can't do better than this since the full path is unknown...
             mkl_libs.append("-l"+m_fname.group(1))
-            print "Warning: NumPy MKL dependency '"+fname+"' not found"
+            print ("Warning: NumPy MKL dependency '"+fname+"' not found")
 
     re2_match, output_lines = split_regex(output_lines, re2)
     for m in re2_match:
@@ -139,7 +139,7 @@ def get_mkl_dirs_and_libs_like_numpy():
         raise Exception("MKL autodetection failed: '"+lapack_lite_path+
                         "' is not a file. Specify MKL location manually")
     if platform.startswith('darwin'):
-        otool_output = check_output(['otool','-L',lapack_lite_path])
+        otool_output = check_output(['otool','-L',lapack_lite_path]).decode("utf-8")
         mkl_dirs,mkl_libs = parse_otool_output(otool_output)
     else: # 'linux' -- we've checked that its 'darwin' or 'linux' before
         env = environ.copy()
@@ -147,7 +147,7 @@ def get_mkl_dirs_and_libs_like_numpy():
         # appdata/canopy-*/lib directory
         if "VENV_LD_LIBRARY_PATH" in env:
             env["LD_LIBRARY_PATH"] = env["VENV_LD_LIBRARY_PATH"]
-        ldd_output = check_output(['ldd',lapack_lite_path],env=env)
+        ldd_output = check_output(['ldd',lapack_lite_path],env=env).decode("utf-8")
         mkl_dirs,mkl_libs = parse_ldd_output(ldd_output)
     return set(mkl_dirs), set(mkl_libs)
 

@@ -9,8 +9,8 @@ function(_lpp_check_is_syspath python syspath)
     set(program
         "from sys import path"
         "from os.path import abspath"
-        "print abspath('${syspath}')"
-        "print [abspath(u) for u in path]"
+        "print(abspath('${syspath}'))"
+        "print([abspath(u) for u in path])"
         "assert abspath('${syspath}') in [abspath(u) for u in path]"
     )
     execute_process(

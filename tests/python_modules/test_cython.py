@@ -19,9 +19,13 @@ def test_meaning_of_life():
 
 
 def test_message():
+    from sys import version
     from py.test import raises
     from extension.structure import Structure
     structure = Structure()
-    assert structure.message == "And everything"
+    if int(version[0]) < 3:
+        assert structure.message == "And everything"
+    else:
+        assert structure.message == bytes("And everything", 'utf-8')
     with raises(AttributeError):
         structure.message = "hello"
