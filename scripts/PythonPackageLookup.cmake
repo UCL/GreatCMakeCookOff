@@ -35,8 +35,10 @@ function(lookup_python_package package)
         set(lpp_PATH "${EXTERNAL_ROOT}/python")
     endif()
     set(arguments "")
+    set(package_install_name "${package}")
     if(lpp_VERSION)
         set(arguments "${arguments} VERSION ${lpp_VERSION}")
+        set(package_install_name "${package}==${lpp_VERSION}")
     endif()
     if(lpp_QUIET)
         set(arguments "${arguments} QUIET")
@@ -76,7 +78,7 @@ function(lookup_python_package package)
         "from sys import path, exit\n"
         "path.append('${lpp_PATH}')\n"
         "from setuptools.command.easy_install import main as install\n"
-        "result = install(['--install-dir', '${lpp_PATH}', '${package}'])\n"
+        "result = install(['--install-dir', '${lpp_PATH}', '${package_install_name}'])\n"
         "exit(0 if result == True or result is None else 1)\n"
     )
     execute_process(
