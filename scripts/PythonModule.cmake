@@ -282,7 +282,7 @@ function(_pm_add_cython module source)
     add_custom_command(
         OUTPUT "${c_source}"
         COMMAND ${arguments}
-            $<$<OR:$<CONFIG:RelWithDebInfo>,$<CONFIG:Debug>>:--dbg>
+            $<$<OR:$<CONFIG:RelWithDebInfo>,$<CONFIG:Debug>>:--gdb>
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         DEPENDS ${DEPENDENCIES}
         COMMENT "Generating c/c++ source ${source} with cython"
