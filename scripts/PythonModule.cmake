@@ -260,6 +260,7 @@ function(_pm_add_cython module source)
     # Call cython
     string(REGEX REPLACE "\\.pyx" "" cy_module "${source}")
     string(REGEX REPLACE "\\.pxd" "" cy_module "${cy_module}")
+    string(REGEX REPLACE "/" "." cy_module "${cy_module}")
     unset(arguments)
     if(cython_EXECUTABLE)
         set(arguments ${cython_EXECUTABLE})
@@ -287,7 +288,7 @@ function(_pm_add_cython module source)
         $<$<OR:$<CONFIG:RelWithDebInfo>,$<CONFIG:Debug>>:${cygdb_line}>
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         DEPENDS ${DEPENDENCIES}
-        COMMENT "Generating c/c++ source ${source} with cython"
+        COMMENT "Generating c/c++ source ${source} with cython (${directory})"
     )
 
     # Extension name
