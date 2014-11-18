@@ -5,19 +5,25 @@
 # - CFitsIO_INCLUDE_DIR is the path to the include directory
 # - CFitsIO_VERSION_STRING is the version of the library
 
-if(NOT CFitsIO_LIBRARY)
+find_library(CFitsIO_LIBRARY cfitsio DOC "Path to the cfitsio library")
+if(NOT "$ENV{CASAPATH}" STREQUAL "")
+    string(FIND "$ENV{CASAPATH}" " " endpath)
+    string(SUBSTRING "$ENV{CASAPATH}" 0 ${endpath} casapath)
+
     find_library(
       CFitsIO_LIBRARY cfitsio
+      NAMES libcfitsio${CMAKE_SHARED_LIBRARY_SUFFIX}.0
+      PATHS "${casapath}" "${casapath}/Frameworks"
       DOC "Path to the cfitsio library"
     )
 endif()
-if(NOT CFitsIO_INCLUDE_DIR)
-    find_path(
-      CFitsIO_INCLUDE_DIR fitsio.h
-      PATH_SUFFIXES include include/cfitsio
-      DOC "Path to the cfitsio include directory"
-    )
-endif()
+find_path(
+  CFitsIO_INCLUDE_DIR fitsio.h
+  PATH_SUFFIXES include include/cfitsio Frameworks/Headers
+  DOC "Path to the cfitsio include directory"
+  PATHS "${casapath}"
+)
+
 if(CFitsIO_INCLUDE_DIR)
   file(
     STRINGS ${CFitsIO_INCLUDE_DIR}/fitsio.h
