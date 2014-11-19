@@ -19,7 +19,7 @@ if(NOT "$ENV{CASAPATH}" STREQUAL "")
 endif()
 find_path(
   CFitsIO_INCLUDE_DIR fitsio.h
-  PATH_SUFFIXES include include/cfitsio Frameworks/Headers
+  PATH_SUFFIXES include include/cfitsio Frameworks/Headers/cfitsio
   DOC "Path to the cfitsio include directory"
   PATHS "${casapath}"
 )
