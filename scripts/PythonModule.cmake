@@ -281,11 +281,17 @@ function(_pm_add_cython module source)
         "${source}"
         -o "${CMAKE_CURRENT_BINARY_DIR}/${c_source}" ${inclusion}
     )
-    set(cygdb_line "--gdb --gdb-outdir ${PROJECT_BINARY_DIR}/cython_debug_files")
+    if(NOT CMAKE_VERSION VERSION_LESS "2.8.10")
+        set(cygdb_line 
+            "--gdb --gdb-outdir ${PROJECT_BINARY_DIR}/cython_debug_files")
+        set(cmdline
+            "$<$<OR:$<CONFIG:RelWithDebInfo>,$<CONFIG:Debug>>:${cygdb_line}>")
+        set(arguments "${arguments} ${cmdline}")
+    endif()
+        
     add_custom_command(
         OUTPUT "${c_source}"
         COMMAND ${arguments}
-        $<$<OR:$<CONFIG:RelWithDebInfo>,$<CONFIG:Debug>>:${cygdb_line}>
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         DEPENDS ${DEPENDENCIES}
         COMMENT "Generating c/c++ source ${source} with cython (${directory})"
