@@ -129,12 +129,14 @@ def get_mkl_dirs_and_libs_like_numpy():
     from sys import platform
     from os import environ
     from subprocess import check_output
+    from glob import glob
     try:
         import numpy
     except ImportError:
         raise Exception("MKL autodetection failed: NumPy could not "
                         "be imported. Specify MKL location manually")
-    lapack_lite_path = join(dirname(numpy.__file__), 'linalg', 'lapack_lite.so')
+
+    lapack_lite_path = glob(join(dirname(numpy.__file__), 'linalg', 'lapack_lite*.so'))[0]
     if not isfile(lapack_lite_path):
         raise Exception("MKL autodetection failed: '"+lapack_lite_path+
                         "' is not a file. Specify MKL location manually")
