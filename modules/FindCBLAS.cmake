@@ -1,6 +1,10 @@
 # First attempts using pkg-config. It is not unlikely to work and should be
 # quite reliable on linuxes.
 
+# Declares the variables BLAS_INCLUDE_DIR and BLAS_INCLUDE_FILENAME
+# The latter could be cblas.h, mkl.h, or Accelerate.h. It can be used to
+# include the right header: "#include BLAS_INCLUDE_FILENAME"
+
 #####
 #####  Macros corresponding to each step are defined first
 #####  And the actual code exectution is below the macros
@@ -77,11 +81,13 @@ function(_look_for_include_directories)
     if(NOT "${directories}" STREQUAL "")
         list(REMOVE_DUPLICATES directories)
         set(${OUTVAR} ${directories} PARENT_SCOPE)
-        # find_package blas does not look for cblas.h
-        find_path(BLAS_INCLUDE_DIR NAMES cblas.h mkl.h HINTS ${directories})
-    else()
-        find_path(BLAS_INCLUDE_DIR NAMES cblas.h mkl.h HINTS ${directories})
     endif()
+    # find_package blas does not look for cblas.h
+    find_path(BLAS_INCLUDE_DIR
+        NAMES cblas.h mkl.h Accelerate.h
+        HINTS ${directories}
+        PATH_SUFFIXES Headers
+    )
     set(BLAS_INCLUDE_DIR ${BLAS_INCLUDE_DIR} PARENT_SCOPE)
 endfunction()
 
@@ -133,3 +139,12 @@ if(BLAS_LIBRARIES)
 endif()
 
 found_or_not_found_blas()
+
+if(EXISTS "${BLAS_INCLUDE_DIR}/cblas.h")
+    set(BLAS_INCLUDE_FILENAME cblas.h)
+elseif(EXISTS "${BLAS_INCLUDE_DIR}/mkl.h")
+    set(BLAS_INCLUDE_FILENAME mkl.h)
+elseif(APPLE AND EXISTS "${BLAS_INCLUDE_DIR}/Accelerate.h")
+    set(BLAS_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -framework accelerate")
+    set(BLAS_INCLUDE_FILENAME Accelerate.h)
+endif()
