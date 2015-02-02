@@ -175,7 +175,7 @@ function(_pm_add_pure_python)
     file(RELATIVE_PATH targetname_copy "${PROJECT_SOURCE_DIR}"
         "${CMAKE_CURRENT_SOURCE_DIR}")
     string(REGEX REPLACE "( |/)" "_" targetname_copy "${targetname_copy}")
-    if("${targetname_copy}" STREQUAL "")
+    if(targetname_copy STREQUAL "")
         set(targetname_copy "${${py}_TARGET}-copy")
     else()
         set(targetname_copy "${targetname_copy}-copy")
