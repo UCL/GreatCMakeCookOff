@@ -25,7 +25,7 @@ if [ -e @PROJECT_BINARY_DIR@/paths/pypaths.pth ] && [ -n "@env_PYTHON@" ]; then
     done < @PROJECT_BINARY_DIR@/paths/pypaths.pth
     export PYTHONPATH=$PYTHONPATH
 fi
-
+export PATH=@PROJECT_BINARY_DIR@/external/bin:$PATH
 if [ -n "@env_WORKING_DIRECTORY@" ]; then
     cd @env_WORKING_DIRECTORY@
 fi
