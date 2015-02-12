@@ -14,7 +14,7 @@ submodule](http://git-scm.com/docs/git-submodule).
 
 However, the easiest method may well be to have this repository downloaded upon configuration of a
 project. In that case, the file
-[LookUp-GreatCMakeCookOff.cmake](https://github.com/UCL/GreatCMakeCookOff/tree/refactor/LookUp-GreatCMakeCookOff.cmake)
+[LookUp-GreatCMakeCookOff.cmake](https://github.com/UCL/GreatCMakeCookOff/tree/master/LookUp-GreatCMakeCookOff.cmake)
 should be downloaded and inserted into the target project. It can then be included in the target
 project's main `CMakeLists.txt` file:
 
