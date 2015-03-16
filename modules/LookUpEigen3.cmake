@@ -18,6 +18,7 @@ if(NOT Eigen3_HG_REPOSITORY AND NOT Eigen3_URL)
       endif()
   endif()
   if(NOT file_found)
+      file(MAKE_DIRECTORY "${EXTERNAL_ROOT}")
       find_package(Wget)
       if(WGET_FOUND)
           execute_process(COMMAND ${WGET_EXECUTABLE}
