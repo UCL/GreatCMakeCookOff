@@ -48,7 +48,7 @@ macro(configure_files)
         list(APPEND _cf_configured_files "${output}")
     endforeach()
 
-    if(NOT "${_cf_OUTPUT_FILES}" STREQUAL "")
+    if(NOT _cf_OUTPUT_FILES STREQUAL "")
         set(${_cf_OUTPUT_FILES} ${_cf_configured_files})
     endif()
 endmacro()
