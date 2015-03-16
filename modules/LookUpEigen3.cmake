@@ -7,8 +7,33 @@ if(Eigen3_ARGUMENTS)
     )
 endif()
 
-if(NOT Eigen3_HG_REPOSITORY)
-    set(Eigen3_HG_REPOSITORY https://bitbucket.org/eigen/eigen/)
+if(NOT Eigen3_HG_REPOSITORY AND NOT Eigen3_URL)
+  # Can't trust cmake to download file. It will fail bizarely if not compiled
+  # with SSL
+  set(file_found FALSE)
+  if(EXISTS "${EXTERNAL_ROOT}/eigen.tgz")
+      file(MD5 "${EXTERNAL_ROOT}/eigen.tgz" file_md5)
+      if(file_md5 EQUAL "4d0d77e06fef87b4fcd2c9b72cc8dc55")
+          set(file_found TRUE)
+      endif()
+  endif()
+  if(NOT file_found)
+      find_package(Wget)
+      if(WGET_FOUND)
+          execute_process(COMMAND ${WGET_EXECUTABLE}
+            http://bitbucket.org/eigen/eigen/get/3.2.4.tar.gz
+            -O ${EXTERNAL_ROOT}/eigen.tgz
+          )
+      else()
+          find_program(CURL_EXECUTABLE curl)
+          execute_process(COMMAND ${CURL_EXECUTABLE}
+            -L http://bitbucket.org/eigen/eigen/get/3.2.4.tar.gz
+            -o ${EXTERNAL_ROOT}/eigen.tgz
+          )
+      endif()
+  endif()
+  set(Eigen3_URL "${EXTERNAL_ROOT}/eigen.tgz")
+  set(Eigen3_MD5 4d0d77e06fef87b4fcd2c9b72cc8dc55)
 endif()
 if(NOT Eigen3_BUILD_TYPE)
     set(Eigen3_BUILD_TYPE Release)
