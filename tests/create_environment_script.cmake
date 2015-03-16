@@ -88,7 +88,7 @@ file(REMOVE_RECURSE
     "${PROJECT_BINARY_DIR}/lib32"
 )
 check_path()
-try_execute(dyld OUTPUT "${expected}")
+try_execute(dyld OUTPUT "$ENV{DYLD_LIBRARY_PATH}")
 
 # add a system environment path -- should not be added to ldpaths
 # for simplicity, do this first: the file ldpaths should not be created by call
