@@ -1,8 +1,8 @@
-file(GLOB scripts *.cmake)
+file(GLOB scripts *.cmake *.in.sh *.py)
 file(GLOB cpp_files RELATIVE cpp11 *.cpp)
 
 install(
-  FILES ${scripts} localbash.in.sh
+  FILES ${scripts}
   DESTINATION ${INSTALL_DIRECTORY}/scripts
 )
 
