@@ -2,7 +2,7 @@ file(GLOB scripts *.cmake)
 file(GLOB cpp_files RELATIVE cpp11 *.cpp)
 
 install(
-  FILES ${scripts}
+  FILES ${scripts} localbash.in.sh
   DESTINATION ${INSTALL_DIRECTORY}/scripts
 )
 
