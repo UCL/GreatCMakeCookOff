@@ -1,5 +1,5 @@
 file(GLOB scripts *.cmake *.in.sh *.py)
-file(GLOB cpp_files RELATIVE cpp11 *.cpp)
+file(GLOB cpp_files cpp11/*.cpp)
 
 install(
   FILES ${scripts}
@@ -8,6 +8,6 @@ install(
 
 install(
   FILES ${cpp_files}
-  DESTINATION ${INSTALL_DIRECTPORY}/scripts/cpp11
+  DESTINATION ${INSTALL_DIRECTORY}/scripts/cpp11
 )
 
