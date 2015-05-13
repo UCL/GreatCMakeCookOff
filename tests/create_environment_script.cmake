@@ -51,7 +51,7 @@ endfunction()
 # Check DYLD_ENVIRONMENT_PATH has expected path
 function(check_path)
     unset(expected)
-    foreach(current $ENV{DYLD_LIBRARY_PATH} ${ARGN})
+    foreach(current $ENV{DYLD_FALLBACK_LIBRARY_PATH} ${ARGN})
         if("${expected}" STREQUAL "")
             set(expected "${current}")
         else()
@@ -81,14 +81,14 @@ try_execute(ch_dir  OUTPUT "${directory}")
 
 # Check dyldpath modifications
 create_environment_script(PATH "${PROJECT_BINARY_DIR}/dyld.sh" 
-    EXECUTABLE "echo $DYLD_LIBRARY_PATH")
+    EXECUTABLE "echo $DYLD_FALLBACK_LIBRARY_PATH")
 file(REMOVE "${PROJECT_BINARY_DIR}/paths/ldpaths")
 file(REMOVE_RECURSE
     "${PROJECT_BINARY_DIR}/lib" "${PROJECT_BINARY_DIR}/lib64"
     "${PROJECT_BINARY_DIR}/lib32"
 )
 check_path()
-try_execute(dyld OUTPUT "$ENV{DYLD_LIBRARY_PATH}")
+try_execute(dyld OUTPUT "$ENV{DYLD_FALLBACK_LIBRARY_PATH}")
 
 # add a system environment path -- should not be added to ldpaths
 # for simplicity, do this first: the file ldpaths should not be created by call
