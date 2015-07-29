@@ -151,7 +151,6 @@ function(_pm_add_python_extension module)
     endif()
     add_dependencies(${container_target} ${module_target})
     if(NOT "${${ext}_DEPENDENCIES}" STREQUAL "")
-        message("ADDING TARGET *** ${${ext}_DEPENDENCIES}")
         add_dependencies(${module_target} ${${ext}_DEPENDENCIES})
     endif()
 
@@ -286,7 +285,6 @@ function(_pm_add_cython module source)
         set(cmdline
             "${cond}--gdb> ${cond}--gdb-outdir> ${cond}${PROJECT_BINARY_DIR}/cython_debug_files>")
     endif()
-    message(STATUS "c source ${c_source} -- ${arguments} -- ${DEPENDENCIES}")
     add_custom_command(
         OUTPUT "${c_source}"
         COMMAND ${arguments}
