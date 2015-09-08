@@ -29,16 +29,19 @@ function(_lpp_check_is_syspath python syspath)
 endfunction()
 
 function(lookup_python_package package)
-    cmake_parse_arguments(lpp "QUIET;REQUIRED" "VERSION;PATH" "" ${ARGN})
+    cmake_parse_arguments(lpp "QUIET;REQUIRED" "VERSION;PATH;PIPNAME" "" ${ARGN})
     _python_executable(LOCALPYTHON ${lpp_UNPARSED_ARGUMENTS})
     if(NOT lpp_PATH)
         set(lpp_PATH "${EXTERNAL_ROOT}/python")
     endif()
     set(arguments "")
+    if(NOT lpp_PIPNAME)
+      set(lpp_PIPNAME ${package})
+    endif()
     set(package_install_name "${package}")
     if(lpp_VERSION)
         list(APPEND arguments VERSION ${lpp_VERSION})
-        set(package_install_name "${package}==${lpp_VERSION}")
+        set(package_install_name "${lpp_PACKAGE}==${lpp_VERSION}")
     endif()
     if(lpp_QUIET)
         list(APPEND arguments QUIET)
@@ -67,7 +70,7 @@ function(lookup_python_package package)
         file(MAKE_DIRECTORY "${lpp_PATH}")
     endif()
     _lpp_check_is_syspath("${LOCALPYTHON}" "${lpp_PATH}")
-    file(WRITE "${EXTERNAL_ROOT}/install_${package}.py"
+    file(WRITE "${EXTERNAL_ROOT}/install_${lpp_PIPNAME}.py"
         "from os import environ\n"
         "if 'PYTHONPATH' not in environ:\n"
         "    environ['PYTHONPATH'] = '${lpp_PATH}'\n"
