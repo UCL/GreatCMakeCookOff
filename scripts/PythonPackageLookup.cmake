@@ -38,7 +38,7 @@ function(lookup_python_package package)
     if(NOT lpp_PIPNAME)
       set(lpp_PIPNAME ${package})
     endif()
-    set(package_install_name "${package}")
+    set(package_install_name "${lpp_PIPNAME}")
     if(lpp_VERSION)
         list(APPEND arguments VERSION ${lpp_VERSION})
         set(package_install_name "${lpp_PACKAGE}==${lpp_VERSION}")
@@ -70,7 +70,7 @@ function(lookup_python_package package)
         file(MAKE_DIRECTORY "${lpp_PATH}")
     endif()
     _lpp_check_is_syspath("${LOCALPYTHON}" "${lpp_PATH}")
-    file(WRITE "${EXTERNAL_ROOT}/install_${lpp_PIPNAME}.py"
+    file(WRITE "${EXTERNAL_ROOT}/install_${package}.py"
         "from os import environ\n"
         "if 'PYTHONPATH' not in environ:\n"
         "    environ['PYTHONPATH'] = '${lpp_PATH}'\n"
