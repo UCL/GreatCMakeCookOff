@@ -65,6 +65,15 @@ macro(_look_for_blas_libraries)
             )
         endif()
     endif()
+
+    # Try open-blas
+    if(NOT BLAS_LIBRARIES AND NOT BLAS_INCLUDE_DIR)
+        find_package(OpenBLAS)
+        if(OpenBLAS_FOUND)
+            set(BLAS_LIBRARIES ${OpenBLAS_LIBRARIES})
+            set(BLAS_INCLUDE_DIR ${OpenBLAS_INCLUDE_DIRS})
+        endif()
+    endif()
 endmacro()
 
 function(_look_for_include_directories)
