@@ -43,10 +43,10 @@ ExternalProject_Add(
     CMAKE_ARGS
         -C "${EXTERNAL_ROOT}/src/GTestVariables.cmake"
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_INSTALL_PREFIX=${EXTERNAL_ROOT}
         ${cmake_args}
 
     # Wrap download, configure and build steps in a script to log output
-    INSTALL_COMMAND ""
     UPDATE_COMMAND ""
     LOG_DOWNLOAD ON
     LOG_CONFIGURE ON
