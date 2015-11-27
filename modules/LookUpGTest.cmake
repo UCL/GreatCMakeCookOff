@@ -1,17 +1,17 @@
 # Installs GTest into build directory
 if(GTest_ARGUMENTS)
     cmake_parse_arguments(GTest
-        "SVN_REPOSITORY;TIMEOUT"
+        "GIT_REPOSITORY;TIMEOUT"
         ""
         ${GTest_ARGUMENTS}
     )
 endif()
 
-set(arguments SVN_REPOSITORY)
-if(GTest_SVN_REPOSITORY)
-    list(APPEND arguments ${GTest_SVN_REPOSITORY})
+set(arguments GIT_REPOSITORY)
+if(GTest_GIT_REPOSITORY)
+    list(APPEND arguments ${GTest_GIT_REPOSITORY})
 else()
-    list(APPEND arguments http://googletest.googlecode.com/svn/trunk/)
+    list(APPEND arguments https://github.com/google/googletest)
 endif()
 if(GTest_TIMEOUT)
     list(APPEND arguments TIMEOUT ${GTest_TIMEOUT})
