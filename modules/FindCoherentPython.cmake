@@ -55,6 +55,7 @@ if(NOT CMAKE_CROSS_COMPILING)
             "print(get_python_inc())"
         )
         if(DEFINED python_include AND EXISTS "${python_include}")
+            FILE(TO_CMAKE_PATH ${python_include} python_include)
             set(PYTHON_INCLUDE_DIR "${python_include}")
         endif()
         # And tries adding sysconfig.get_python_lib output
@@ -64,6 +65,7 @@ if(NOT CMAKE_CROSS_COMPILING)
             "print(get_python_lib())"
         )
         if(DEFINED python_lib)
+            FILE(TO_CMAKE_PATH ${python_lib} python_lib)
             if(EXISTS "${python_lib}")
                 list(INSERT CMAKE_LIBRARY_PATH 0 "${python_lib}")
             endif()
