@@ -73,7 +73,6 @@ function(find_python_package PACKAGE)
             "from os.path import dirname"
             "print(dirname(${PACKAGE}.__file__))"
         )
-        FILE(TO_CMAKE_PATH ${arguments} python_include)
         execute_process(
             COMMAND ${LOCALPYTHON} -c "${arguments}"
             WORKING_DIRECTORY "${PYPACK_WORKING_DIRECTORY}"
@@ -82,7 +81,8 @@ function(find_python_package PACKAGE)
             OUTPUT_VARIABLE OUTPUT
         )
         if("${LOCATION_WAS_FOUND}" STREQUAL "0")
-            string(STRIP "${OUTPUT}" ${PACKAGE}_LOCATION)
+            string(STRIP "${OUTPUT}" OUTPUT)
+            FILE(TO_CMAKE_PATH ${OUTPUT} ${PACKAGE}_LOCATION)
         endif()
     endif()
     find_package_handle_standard_args(${PACKAGE}
