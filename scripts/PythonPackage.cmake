@@ -73,6 +73,7 @@ function(find_python_package PACKAGE)
             "from os.path import dirname"
             "print(dirname(${PACKAGE}.__file__))"
         )
+        FILE(TO_CMAKE_PATH ${arguments} python_include)
         execute_process(
             COMMAND ${LOCALPYTHON} -c "${arguments}"
             WORKING_DIRECTORY "${PYPACK_WORKING_DIRECTORY}"
