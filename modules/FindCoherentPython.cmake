@@ -21,7 +21,7 @@ if(CoherentPython_FIND_VERSION_EXACT)
 endif()
 
 # Finds python interpreter first
-find_package(PythonInterp ${version} ${exact} ${required} ${qietly})
+find_package(PythonInterp ${version} ${exact} ${required} ${quietly})
 if(NOT PYTHONINTERP_FOUND)
     return()
 endif()
