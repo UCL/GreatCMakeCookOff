@@ -79,7 +79,7 @@ macro(_find_package_for_lookup package REQUIRED QUIET DOWNLOAD CHECK)
     endif()
     # First try and find package (unless downloading by default)
     set(dolook TRUE)
-    if(${DOWNLOAD} AND NOT ${recursive})
+    if(DOWNLOAD AND NOT recursive)
         if(${CHECK})
             set(do_rootchange TRUE)
         endif()
@@ -284,7 +284,7 @@ macro(add_recursive_cmake_step name)
     # Once the package has been found and configured,
     # the locations and such should not change, so
     # there is no need for a recursive cmake step.
-    if(NOT DEFINED ${found_var} OR NOT ${${found_var}})
+    if(NOT DEFINED ${found_var} OR NOT ${found_var})
         _get_sane_name(${recurse_name} SANENAME)
         set(cmakefile "${PROJECT_BINARY_DIR}/CMakeFiles/external")
         set(cmakefile "${cmakefile}/${name}_recursive.cmake")
@@ -309,7 +309,7 @@ macro(add_recursive_cmake_step name)
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             ${recursive_UNPARSED_ARGUMENTS}
         )
-        if(${${SANENAME}_REQUIREDONRECURSE})
+        if(${SANENAME}_REQUIREDONRECURSE)
             if(NOT ${found_var} OR "${${found_var}}" STREQUAL "")
                 unset(${SANENAME}_REQUIREDONRECURSE CACHE)
                 message(FATAL_ERROR
@@ -353,4 +353,3 @@ if(CMAKE_LIBRARY_PATH)
 endif()
 if(CMAKE_INCLUDE_PATH)
 endif()
-
