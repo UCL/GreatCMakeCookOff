@@ -4,7 +4,9 @@ initialize_cookoff()
 include(PackageLookup)
 lookup_package(Eigen3 DOWNLOAD_BY_DEFAULT KEEP)
 
-include_directories(${EIGEN3_INCLUDE_DIR})
+if(EIGEN3_INCLUDE_DIR)
+  include_directories(${EIGEN3_INCLUDE_DIR})
+endif()
 file(WRITE "${CMAKE_SOURCE_DIR}/main.cc"
     "#include <iostream>\n"
     "#include <Eigen/Dense>\n"
