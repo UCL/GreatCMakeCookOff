@@ -8,7 +8,7 @@ if(Eigen3_ARGUMENTS)
 endif()
 
 if(NOT Eigen3_HG_REPOSITORY AND NOT Eigen3_URL)
-  # Can't trust cmake to download file. It will fail bizarely if not compiled
+  # Can't trust cmake to download file. It will fail if not compiled
   # with SSL
   set(file_found FALSE)
   set(Eigen3_URL "${EXTERNAL_ROOT}/eigen.tgz")
