@@ -2,7 +2,7 @@
 find_package(Catch)
 if(NOT CATCH_FOUND)
   set(catch_url
-      https://raw.githubusercontent.com/philsquared/Catch/develop/single_include/catch.hpp)
+      https://raw.githubusercontent.com/philsquared/Catch/master/single_include/catch.hpp)
   set(catch_file "${EXTERNAL_ROOT}/include/catch.hpp")
   file(MAKE_DIRECTORY "${EXTERNAL_ROOT}/include")
   file(DOWNLOAD ${catch_url} "${catch_file}")
