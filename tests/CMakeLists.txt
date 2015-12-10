@@ -26,6 +26,8 @@ if(svn_EXECUTABLE)
     cmake_test(addgtest NOEXEC SOURCE
         --test-command ${CMAKE_MAKE_PROGRAM} test)
 endif()
+cmake_test(addcatchtest NOEXEC SOURCE --test-command ${CMAKE_MAKE_PROGRAM} test)
+
 
 add_subdirectory(cpp11)
 add_subdirectory(copy_files)
