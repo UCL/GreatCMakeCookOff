@@ -1,7 +1,3 @@
-if(NOT tests)
-    return()
-endif()
-
 # First finds or downloads catch
 find_package(Catch)
 if(NOT CATCH_FOUND)
