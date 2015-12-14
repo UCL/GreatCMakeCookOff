@@ -1,10 +1,9 @@
 # First finds or downloads catch
-if(NOT EXTERNAL_ROOT)
-  include(PackageLookup) # Just to set EXTERNAL_ROOT
-endif()
-
 find_package(Catch)
+
 if(NOT CATCH_FOUND)
+  # setups things so include can be found
+  include(PackageLookup)
   set(catch_url
       https://raw.githubusercontent.com/philsquared/Catch/master/single_include/catch.hpp)
   set(catch_file "${EXTERNAL_ROOT}/include/catch.hpp")
