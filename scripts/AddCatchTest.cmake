@@ -1,4 +1,8 @@
 # First finds or downloads catch
+if(NOT EXTERNAL_ROOT)
+  include(PackageLookup) # Just to set EXTERNAL_ROOT
+endif()
+
 find_package(Catch)
 if(NOT CATCH_FOUND)
   set(catch_url
