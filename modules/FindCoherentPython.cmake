@@ -47,9 +47,19 @@ if(NOT CMAKE_CROSS_COMPILING)
             endif()
         endif()
     endmacro()
-    # Figures out paths from distutils' sysconfig module
+    # Figures out paths from distutils' sysconfig module and sys.prefix
     # Started off for canopy and virtualenv
     macro(paths_from_distutils_sysconfig)
+        call_python(PYTHON_INTERP_PREFIX "import sys; print(sys.prefix)")
+        if(DEFINED PYTHON_INTERP_PREFIX)
+            FILE(TO_CMAKE_PATH ${PYTHON_INTERP_PREFIX} PYTHON_INTERP_PREFIX)
+            if(EXISTS "${PYTHON_INTERP_PREFIX}/libs")
+                # Conda stores its .lib files in ${PYTHON_INTERP_PREFIX/libs
+                # on windows. (Python35.lib etc needed for linking)
+                # The dlls should be on path.
+                list(INSERT CMAKE_LIBRARY_PATH 0 "${PYTHON_INTERP_PREFIX}/libs")
+            endif()
+        endif()
         call_python(python_include
         "from distutils.sysconfig import get_python_inc"
             "print(get_python_inc())"
