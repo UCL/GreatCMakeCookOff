@@ -2,7 +2,7 @@ include(CMakeParseArguments)
 
 function(cmake_test testname)
 
-  cmake_parse_arguments(CMAKETEST "SOURCE;NOEXEC" "" "" ${ARGN} )
+  cmake_parse_arguments(CMAKETEST "SOURCE;NOEXEC" "" "HEADER_LINES" ${ARGN} )
   # set source and build dir.
   set(FAKE_PROJECT_DIR ${CMAKE_CURRENT_BINARY_DIR}/${testname})
   set(BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/fake_project_builds/${testname})
@@ -16,6 +16,7 @@ function(cmake_test testname)
   endif()
   file(WRITE ${FAKE_PROJECT_DIR}/CMakeLists.txt
        "cmake_minimum_required(VERSION 2.8.3 FATAL_ERROR)\n"
+       ${CMAKETEST_HEADER_LINES}
        "project(allfeatures)\n"
        "include(\"${FAKE_PROJECT_DIR}/CMakeData.cmake\")\n"
        "enable_language(C)\n"

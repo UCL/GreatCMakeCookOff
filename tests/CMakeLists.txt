@@ -10,6 +10,12 @@ cmake_test(add_to_path)
 cmake_test(create_environment_script)
 cmake_test(output_filename)
 cmake_test(configure_files)
+cmake_test(hunter HEADER_LINES
+  "find_package(GreatCMakeCookOff NO_MODULE NO_DEFAULT_PATH PATHS \${cookoff_path} REQUIRED)\n"
+  "initialize_cookoff()\n"
+  "include(AddHunter)\n"
+  "initialize_hunter(HUNTER_ROOT \${CMAKE_BINARY_DIR}/hunter_root)\n"
+)
 
 find_program(Hg_EXECUTABLE hg)
 if("${CMAKE_VERSION}" VERSION_GREATER 2.8.9 AND Hg_EXECUTABLE)
