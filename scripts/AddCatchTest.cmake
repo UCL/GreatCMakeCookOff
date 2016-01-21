@@ -54,8 +54,8 @@ function(add_catch_test_with_seed testname testexec seed)
     set(EXTRA_ARGS WORKING_DIRECTORY ${catch_WORKING_DIRECTORY})
   endif()
   set(arguments ${catch_ARGUMENTS})
-  if(catch_SEED)
-    list(APPEND arguments --rng-seed ${catch_SEED})
+  if(NOT "${seed}" STREQUAL "")
+    list(APPEND arguments --rng-seed ${seed})
   else()
     list(APPEND arguments --rng-seed time)
   endif()
@@ -81,7 +81,7 @@ endfunction()
 function(add_catch_test testname)
   cmake_parse_arguments(catch
     "NOMAIN;NOTEST;NOCATCHLABEL"
-    "SEED;WORKING_DIRECTORY"
+    "SEED;WORKING_DIRECTORY;COMMON_MAIN;PRECOMMAND"
     "LIBRARIES;DEPENDS;INCLUDES;LABELS;ARGUMENTS"
     ${ARGN}
   )
@@ -100,9 +100,11 @@ function(add_catch_test testname)
   # We create here
   if(catch_NOMAIN)
     add_executable(test_${testname} ${source} ${catch_UNPARSED_ARGUMENTS})
+  elseif(catch_COMMON_MAIN)
+    add_executable(test_${testname}
+      ${source} $<TARGET_OBJECTS:${catch_COMMON_MAIN}> ${catch_UNPARSED_ARGUMENTS})
   else()
     common_catch_main()
-    # Construct executable
     add_executable(test_${testname}
       ${source} $<TARGET_OBJECTS:common_catch_main_object> ${catch_UNPARSED_ARGUMENTS})
   endif()
@@ -123,17 +125,18 @@ function(add_catch_test testname)
     add_dependencies(test_${testname} lookup_dependencies)
   endif()
 
-  if(NOT catch_SEED)
-    set(catch_SEED time)
-  endif()
   if(catch_NOCATCHLABEL)
     set(catch_NOCATCHLABEL "NOCATCHLABEL")
   else()
     unset(catch_NOCATCHLABEL)
   endif()
+  set(test_command test_${testname})
+  if(catch_PRECOMMAND)
+    set(test_command "${catch_PRECOMMAND} ${test_command}")
+  endif()
   if(NOT catch_NOTEST)
     add_catch_test_with_seed(
-      test_${testname} test_${testname} ${catch_SEED} ${catch_UNPARSED_ARGUMENTS}
+      test_${testname} "test_${testname}" "${catch_SEED}" ${catch_UNPARSED_ARGUMENTS}
       ${catch_NOCATCHLABEL} WORKING_DIRECTORY ${catch_WORKING_DIRECTORY}
       LABELS ${catch_LABELS} ARGUMENTS ${catch_ARGUMENTS}
     )
