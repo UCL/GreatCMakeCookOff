@@ -147,7 +147,10 @@ macro(_perform_actual_lookup package)
             endif()
         endif()
         set(CURRENT_LOOKUP_DIRECTORY "${${package}_LOOKUP_RECIPE_DIR}")
-        include(${${package}_LOOKUP_RECIPE_FILE})
+        if(NOT ${package}_LOOKUP_PACKAGE_INCLUSION_GUARD)
+          include(${${package}_LOOKUP_RECIPE_FILE})
+          set(${package}_LOOKUP_PACKAGE_INCLUSION_GUARD TRUE)
+        endif()
         unset(CURRENT_LOOKUP_DIRECTORY)
         set(${package}_LOOKUP_BUILD ${${package}_KEEP} CACHE BOOL
             "Whether package is obtained from a lookup build"
@@ -199,7 +202,6 @@ endmacro()
 
 # Looks for a lookup package file and includes it.
 macro(lookup_package package)
-
     # include potential hooks
     if(${package}_BUILT_AS_EXTERNAL_PROJECT)
         get_lookup_hookscript_name(post_lookup ${package})
