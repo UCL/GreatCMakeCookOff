@@ -11,7 +11,7 @@ passon_variables(GTest
 )
 
 ExternalProject_Add(
-    GBenchmark
+    Lookup-GBenchmark
     GIT_REPOSITORY https://github.com/mdavezac/benchmark.git
     PREFIX "${EXTERNAL_ROOT}"
     # Force separate output paths for debug and release builds to allow easy
@@ -26,4 +26,4 @@ ExternalProject_Add(
     LOG_DOWNLOAD ON LOG_CONFIGURE ON LOG_BUILD ON LOG_INSTALL ON
 )
 
-add_recursive_cmake_step(GBenchmark DEPENDEES install)
+add_recursive_cmake_step(Lookup-GBenchmark DEPENDEES install)

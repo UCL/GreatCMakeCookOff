@@ -1,6 +1,6 @@
 # Installs GBenchmark into build directory
 ExternalProject_Add(
-    spdlog
+    Lookup-spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog
     PREFIX "${EXTERNAL_ROOT}"
     # Force separate output paths for debug and release builds to allow easy
@@ -15,4 +15,4 @@ ExternalProject_Add(
     LOG_DOWNLOAD ON LOG_CONFIGURE ON LOG_BUILD ON LOG_INSTALL ON
 )
 
-add_recursive_cmake_step(spdlog DEPENDEES install)
+add_recursive_cmake_step(Lookup-spdlog DEPENDEES install)

@@ -74,7 +74,7 @@ passon_variables(Eigen3
 
 # Finally add project
 ExternalProject_Add(
-    Eigen3
+  Lookup-Eigen3
     PREFIX ${EXTERNAL_ROOT}
     ${arguments}
     CMAKE_ARGS
@@ -87,4 +87,4 @@ ExternalProject_Add(
     LOG_BUILD ON
 )
 
-add_recursive_cmake_step(Eigen3 DEPENDEES install)
+add_recursive_cmake_step(Lookup-Eigen3 DEPENDEES install)

@@ -3,6 +3,9 @@
 # - GBENCHMARK_FOUND if the library is found
 # - GBENCHMARK_LIBRARY is the path to the library
 # - GBENCHMARK_INCLUDE_DIR is the path to the include directory
+if(gbenchmark_FOUND)
+  return()
+endif()
 
 find_library(GBENCHMARK_LIBRARY benchmark DOC "Path to the google benchmark library")
 find_path(
@@ -16,3 +19,11 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(
   GBENCHMARK
   REQUIRED_VARS GBENCHMARK_LIBRARY GBENCHMARK_INCLUDE_DIR
 )
+if(GBENCHMARK_LIBRARY MATCHES "\\.a$")
+  add_library(gbenchmark STATIC IMPORTED GLOBAL)
+else()
+  add_library(gbenchmark SHARED IMPORTED GLOBAL)
+endif()
+set_target_properties(gbenchmark PROPERTIES
+  IMPORTED_LOCATION "${GBENCHMARK_LIBRARY}"
+  INTERFACE_INCLUDE_DIRECTORIES "${GBENCHMARK_INCLUDE_DIR}")

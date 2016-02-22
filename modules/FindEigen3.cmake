@@ -15,6 +15,9 @@
 # Copyright (c) 2009 Benoit Jacob <jacob.benoit.1@gmail.com>
 # Redistribution and use is allowed according to the terms of the 2-clause BSD license.
 # Modified by RSDT@UCL
+if(Eigen3_FOUND)
+  return()
+endif()
 
 if(NOT Eigen3_FIND_VERSION)
   if(NOT Eigen3_FIND_VERSION_MAJOR)
@@ -79,6 +82,9 @@ else (EIGEN3_INCLUDE_DIR)
 
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(Eigen3 DEFAULT_MSG EIGEN3_INCLUDE_DIR EIGEN3_VERSION_OK)
+  add_library(Eigen3 INTERFACE IMPORTED GLOBAL)
+  set_target_properties(Eigen3 PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${EIGEN3_INCLUDE_DIR}")
 
   mark_as_advanced(EIGEN3_INCLUDE_DIR)
 

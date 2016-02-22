@@ -4,6 +4,9 @@
 # - CFitsIO_LIBRARY is the path to the library
 # - CFitsIO_INCLUDE_DIR is the path to the include directory
 # - CFitsIO_VERSION_STRING is the version of the library
+if(CFitsIO_FOUND)
+  return()
+endif()
 
 find_library(CFitsIO_LIBRARY cfitsio DOC "Path to the cfitsio library")
 if(NOT "$ENV{CASAPATH}" STREQUAL "")
@@ -47,4 +50,9 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(
 )
 if(CFITSIO_FOUND AND NOT CFitsIO_FOUND)
     set(CFitsIO_FOUND ${CFITSIO_FOUND})
+endif()
+if(CFitsIO_LIBRARY MATCHES "\\.a$")
+  add_library(cfitsio STATIC IMPORT GLOBAL)
+else()
+  add_library(cfitsio STATIC IMPORT GLOBAL)
 endif()
