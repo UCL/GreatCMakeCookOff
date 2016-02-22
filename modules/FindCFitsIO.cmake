@@ -12,7 +12,7 @@ if(NOT "$ENV{CASAPATH}" STREQUAL "")
 
     find_library(
       CFitsIO_LIBRARY cfitsio
-      NAMES libcfitsio${CMAKE_SHARED_LIBRARY_SUFFIX}.0
+      NAMES libcfitsio${CMAKE_SHARED_LIBRARY_SUFFIX}.1 libcfitsio${CMAKE_SHARED_LIBRARY_SUFFIX}.0
       PATHS "${casapath}" "${casapath}/Frameworks"
       DOC "Path to the cfitsio library"
     )

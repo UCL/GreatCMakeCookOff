@@ -100,7 +100,7 @@ function(_look_for_blas_libraries)
             )
           FIND_PATH(OpenBLAS_INCLUDE_DIRS NAMES cblas.h PATHS ${Open_BLAS_INCLUDE_SEARCH_PATHS})
           FIND_LIBRARY(OpenBLAS_LIBRARIES NAMES openblas PATHS ${Open_BLAS_LIB_SEARCH_PATHS})
-          set(OpenBLAS_FOUND TRUE)J
+          set(OpenBLAS_FOUND TRUE)
         endif()
         if(OpenBLAS_FOUND)
             if(NOT EXISTS "${OpenBLAS_LIBRARIES}")
