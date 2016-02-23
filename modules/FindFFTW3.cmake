@@ -133,33 +133,35 @@ find_package_handle_standard_args(FFTW3
     VERSION_VAR FFTW3_VERSION_STRING
     HANDLE_COMPONENTS
 )
-if(FFTW3_SINGLE_LIBRARY MATCHES fftw3f)
-  if(FFTW3_SINGLE_LIBRARY MATCHES "\.a$")
-    add_library(fftw3::single STATIC IMPORTED GLOBAL)
-  else()
-    add_library(fftw3::single SHARED IMPORTED GLOBAL)
+if(FFTW3_FOUND)
+  if(FFTW3_SINGLE_LIBRARY MATCHES fftw3f)
+    if(FFTW3_SINGLE_LIBRARY MATCHES "\.a$")
+      add_library(fftw3::single STATIC IMPORTED GLOBAL)
+    else()
+      add_library(fftw3::single SHARED IMPORTED GLOBAL)
+    endif()
+    set_target_properties(fftw3::double PROPERTIES
+      IMPORTED_LOCATION "${FFTW3_SINGLE_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR}")
   endif()
-  set_target_properties(fftw3::double PROPERTIES
-    IMPORTED_LOCATION "${FFTW3_SINGLE_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR}")
-endif()
-if(FFTW3_DOUBLE_LIBRARY MATCHES fftw3)
-  if(FFTW3_DOUBLE_LIBRARY MATCHES "\\.a$")
-    add_library(fftw3::double STATIC IMPORTED GLOBAL)
-  else()
-    add_library(fftw3::double SHARED IMPORTED GLOBAL)
+  if(FFTW3_DOUBLE_LIBRARY MATCHES fftw3)
+    if(FFTW3_DOUBLE_LIBRARY MATCHES "\\.a$")
+      add_library(fftw3::double STATIC IMPORTED GLOBAL)
+    else()
+      add_library(fftw3::double SHARED IMPORTED GLOBAL)
+    endif()
+    set_target_properties(fftw3::double PROPERTIES
+      IMPORTED_LOCATION "${FFTW3_DOUBLE_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR}")
   endif()
-  set_target_properties(fftw3::double PROPERTIES
-    IMPORTED_LOCATION "${FFTW3_DOUBLE_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR}")
-endif()
-if(FFTW3_LONGDOUBLE_LIBRARY MATCHES fftw3)
-  if(FFTW3_LONGDOUBLE_LIBRARY MATCHES "\.a$")
-    add_library(fftw3::longdouble STATIC IMPORTED GLOBAL)
-  else()
-    add_library(fftw3::longdouble SHARED IMPORTED GLOBAL)
+  if(FFTW3_LONGDOUBLE_LIBRARY MATCHES fftw3)
+    if(FFTW3_LONGDOUBLE_LIBRARY MATCHES "\.a$")
+      add_library(fftw3::longdouble STATIC IMPORTED GLOBAL)
+    else()
+      add_library(fftw3::longdouble SHARED IMPORTED GLOBAL)
+    endif()
+    set_target_properties(fftw3::longdouble PROPERTIES
+      IMPORTED_LOCATION "${FFTW3_LONGDOUBLE_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR}")
   endif()
-  set_target_properties(fftw3::longdouble PROPERTIES
-    IMPORTED_LOCATION "${FFTW3_LONGDOUBLE_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR}")
 endif()
