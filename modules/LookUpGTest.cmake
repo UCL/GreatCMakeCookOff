@@ -53,7 +53,4 @@ ExternalProject_Add(
     LOG_BUILD ON
 )
 
-add_recursive_cmake_step(Lookup-GTest DEPENDEES build)
-# Required by FindGTest
-set(GTEST_ROOT "${EXTERNAL_ROOT}/src/GTest-build" CACHE
-    PATH "Path to gtest root install directory")
+add_recursive_cmake_step(Lookup-GTest DEPENDEES install)
