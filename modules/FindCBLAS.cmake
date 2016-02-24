@@ -68,40 +68,10 @@ function(_look_for_blas_libraries)
 
     # Try open-blas
     if(NOT BLAS_LIBRARIES OR NOT BLAS_INCLUDE_DIR)
-        find_package(OpenBLAS QUIET)
-        if(NOT OpenBLAS_FOUND)
-          # RH 6 does not include the cmake layer to find openblas
-          # The following paths are extracted from: github.com/BVLC/caffe
-          SET(Open_BLAS_INCLUDE_SEARCH_PATHS
-            /usr/include
-            /usr/include/openblas
-            /usr/include/openblas-base
-            /usr/local/include
-            /usr/local/include/openblas
-            /usr/local/include/openblas-base
-            /opt/OpenBLAS/include
-            $ENV{OpenBLAS_HOME}
-            $ENV{OpenBLAS_HOME}/include
-            )
-          SET(Open_BLAS_LIB_SEARCH_PATHS
-            /lib/
-            /lib/openblas-base
-            /lib64/
-            /usr/lib
-            /usr/lib/openblas-base
-            /usr/lib64
-            /usr/local/lib
-            /usr/local/lib64
-            /opt/OpenBLAS/lib
-            $ENV{OpenBLAS}
-            $ENV{OpenBLAS}/lib
-            $ENV{OpenBLAS_HOME}
-            $ENV{OpenBLAS_HOME}/lib
-            )
-          FIND_PATH(OpenBLAS_INCLUDE_DIRS NAMES cblas.h PATHS ${Open_BLAS_INCLUDE_SEARCH_PATHS})
-          FIND_LIBRARY(OpenBLAS_LIBRARIES NAMES openblas PATHS ${Open_BLAS_LIB_SEARCH_PATHS})
-          set(OpenBLAS_FOUND TRUE)
-        endif()
+        find_package(OpenBLAS QUIET
+          PATHS /usr/local $ENV{OpenBLAS_HOME} $ENV{OpenBLAS}
+          PATHS_SUFFIXES openblas openblas-base
+        )
         if(OpenBLAS_FOUND)
             if(NOT EXISTS "${OpenBLAS_LIBRARIES}")
               string(REPLACE "'" "" OpenBLAS_LIBRARIES ${OpenBLAS_LIBRARIES})
