@@ -50,9 +50,14 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(
 )
 if(CFITSIO_FOUND AND NOT CFitsIO_FOUND)
     set(CFitsIO_FOUND ${CFITSIO_FOUND})
-endif()
-if(CFitsIO_LIBRARY MATCHES "\\.a$")
-  add_library(cfitsio STATIC IMPORT GLOBAL)
-else()
-  add_library(cfitsio STATIC IMPORT GLOBAL)
+endif(
+if(CFitsIO_FOUND)
+  if(CFitsIO_LIBRARY MATCHES "\\.a$")
+    add_library(cfitsio STATIC IMPORTED GLOBAL)
+  else()
+    add_library(cfitsio SHARED IMPORTED GLOBAL)
+  endif()
+  set_target_properties(cfitsio PROPERTIES
+    IMPORTED_LOCATION "${CFitsIO_LIBRARY}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CFitsIO_INCLUDE_DIR}")
 endif()
