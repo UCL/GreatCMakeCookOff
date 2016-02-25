@@ -50,7 +50,7 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(
 )
 if(CFITSIO_FOUND AND NOT CFitsIO_FOUND)
     set(CFitsIO_FOUND ${CFITSIO_FOUND})
-endif(
+endif()
 if(CFitsIO_FOUND)
   if(CFitsIO_LIBRARY MATCHES "\\.a$")
     add_library(cfitsio STATIC IMPORTED GLOBAL)
