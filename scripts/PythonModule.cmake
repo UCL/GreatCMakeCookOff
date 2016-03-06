@@ -117,7 +117,7 @@ function(_pm_add_python_extension module)
     cmake_parse_arguments(${ext}
         ""
         "INSTALL;TARGET;LOCATION;EXTENSION;MODULE_TARGET"
-        "SOURCES;LIBRARIES;DEPENDENCIES"
+        "SOURCES;LIBRARIES;DEPENDENCIES;OBJECTS"
         ${ARGN}
     )
     if("${${ext}_SOURCES}" STREQUAL "")
@@ -134,7 +134,7 @@ function(_pm_add_python_extension module)
     python_extension_targetname(module_target
         ${${ext}_TARGET} MODULE_TARGET ${${ext}_MODULE_TARGET})
 
-    add_library(${module_target} MODULE ${${ext}_SOURCES})
+    add_library(${module_target} MODULE ${${ext}_SOURCES} ${${ext}_OBJECTS})
     target_link_libraries(${module_target} ${PYTHON_LIBRARIES})
     set(output_dir "${location}")
     if(NOT IS_ABSOLUTE "${location}")
@@ -377,7 +377,7 @@ function(add_python_module module)
     cmake_parse_arguments(${module}
         "FAKE_INIT;NOINSTALL;INSTALL;CPP"
         "HEADER_DESTINATION;TARGETNAME;LOCATION;OUTPUT_PYTHON_SOURCES"
-        "SOURCES;EXCLUDE;LIBRARIES;GLOB"
+        "SOURCES;EXCLUDE;LIBRARIES;GLOB;OBJECTS"
         ${ARGN}
     )
     # Sets submodule, location, and module from module
@@ -433,6 +433,7 @@ function(add_python_module module)
         LOCATION ${extension_location}
         LIBRARIES ${${module}_LIBRARIES}
         SOURCES ${C_SOURCES} ${CPP_SOURCES}
+        OBJECTS ${${module}_OBJECTS}
     )
 
     # Then copy/install pure python files
@@ -459,6 +460,7 @@ function(add_python_module module)
         INSTALL ${do_install}
         LIBRARIES ${${module}_LIBRARIES}
         TARGET ${targetname}
+        OBJECTS ${${module}_OBJECTS}
         SOURCES ${CY_SOURCES}
     )
 
