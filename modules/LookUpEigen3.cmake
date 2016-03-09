@@ -64,6 +64,7 @@ passon_variables(Eigen3
     FILENAME "${EXTERNAL_ROOT}/src/Eigen3Variables.cmake"
     PATTERNS
         "CMAKE_[^_]*_R?PATH"
+        "CMAKE_Fortran_.*"
         "CMAKE_C_.*"
         "CMAKE_CXX_.*"
         "BLAS_.*" "FFTW3_.*"
