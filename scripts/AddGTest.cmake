@@ -17,7 +17,7 @@ macro(add_gtest name source)
     # get_target_property(THISTEST_INCLUDE test_${name} INCLUDE_DIRECTORIES)
     # set_target_properties(test_${name} PROPERTIES INCLUDE_DIRECTORIES
     #                       "${source_dir}/include;${THISTEST_INCLUDE}")
- 
+
     add_executable(test_${name} ${source})
     if(MSVC)
       target_link_libraries(test_${name} ${EXTERNAL_ROOT}/lib/gtest.lib)
@@ -27,12 +27,12 @@ macro(add_gtest name source)
     if(CMAKE_THREAD_LIBS_INIT)
       target_link_libraries(test_${name} ${CMAKE_THREAD_LIBS_INIT})
     endif(CMAKE_THREAD_LIBS_INIT)
- 
-    add_dependencies(test_${name} GTest)
+
+    add_dependencies(test_${name} Lookup-GTest)
     if(NOT "${ARGN}" STREQUAL "")
       target_link_libraries(test_${name} ${ARGN})
     endif(NOT "${ARGN}" STREQUAL "")
- 
+
     add_test(cxx_${name} ${EXECUTABLE_OUTPUT_PATH}/test_${name}
                 --gtest_output=xml:${CMAKE_BINARY_DIR}/test-results/test_${name}.xml)
     set_tests_properties(cxx_${name} PROPERTIES LABELS "gtest")
