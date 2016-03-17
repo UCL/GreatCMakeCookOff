@@ -38,7 +38,7 @@ function(_look_for_blas_libraries)
       set(BLAS_LIBRARIES ${CBLAS_LIBRARIES})
       set(BLAS_INCLUDE_DIR ${CBLAS_INCLUDE_DIRS})
     endif()
- 
+
     # include -pthread so MKL can be included on Ubuntu + enthought
     if(use_pthread_flag)
       set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
@@ -68,7 +68,10 @@ function(_look_for_blas_libraries)
 
     # Try open-blas
     if(NOT BLAS_LIBRARIES OR NOT BLAS_INCLUDE_DIR)
-        find_package(OpenBLAS QUIET)
+        find_package(OpenBLAS QUIET
+          PATHS /usr/local $ENV{OpenBLAS_HOME} $ENV{OpenBLAS}
+          PATHS_SUFFIXES openblas openblas-base
+        )
         if(OpenBLAS_FOUND)
             if(NOT EXISTS "${OpenBLAS_LIBRARIES}")
               string(REPLACE "'" "" OpenBLAS_LIBRARIES ${OpenBLAS_LIBRARIES})
