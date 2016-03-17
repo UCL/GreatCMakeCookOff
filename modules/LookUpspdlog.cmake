@@ -8,7 +8,9 @@ ExternalProject_Add(
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND
-      ${CMAKE_COMMAND} -E copy_directory ${EXTERNAL_ROOT}/src/spdlog/include ${EXTERNAL_ROOT}/include
+      ${CMAKE_COMMAND} -E copy_directory
+          ${EXTERNAL_ROOT}/src/Lookup-spdlog/include
+          ${EXTERNAL_ROOT}/include
 
     # Wrap download, configure and build steps in a script to log output
     UPDATE_COMMAND ""
