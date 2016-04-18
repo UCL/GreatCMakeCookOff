@@ -274,3 +274,24 @@ if (MKL_INCLUDE_DIR)
   endif()
   unset(_MKL_VERSION)
 endif()
+
+# ------------------------------------------------------------------------------
+# Find libraries
+# ------------------------------------------------------------------------------
+if (MKL_FOUND)
+
+  set(MKL_LIBRARIES "")
+
+  # Find the core library
+  find_library(MKL_CORE_LIB
+               "mkl_core"
+               HINTS ${MKL_INCLUDE_DIR}/../lib)
+  if("${MKL_CORE_LIB}" STREQUAL "MKL_CORE_LIB-NOTFOUND")
+    set(MKL_FOUND 0)
+  else()
+    list(APPEND MKL_LIBRARIES ${MKL_CORE_LIB})
+  endif()
+
+  # Construct MKL_LIBRARIES
+  list(REMOVE_DUPLICATES MKL_LIBRARIES)
+endif()
