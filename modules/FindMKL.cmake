@@ -280,12 +280,24 @@ endif()
 # ------------------------------------------------------------------------------
 if (MKL_FOUND)
 
+  # Work out whether to search the ia32/ or intel64/ lib/ subdirectories
+  set(_MKL_LIBRARY_SEARCH_DIRS "${MKL_INCLUDE_DIR}/../lib")
+  try_run(_MKL_IS_64BIT
+          _MKL_IS_64BIT_COMPILE_RESULT
+          "${CMAKE_BINARY_DIR}"
+          "${CMAKE_CURRENT_LIST_DIR}/arch/test_is_64bit.c")
+  if (_MKL_IS_64BIT)
+    list(APPEND _MKL_LIBRARY_SEARCH_DIRS "${MKL_INCLUDE_DIR}/../lib/intel64")
+  else()
+    list(APPEND _MKL_LIBRARY_SEARCH_DIRS "${MKL_INCLUDE_DIR}/../lib/ia32")
+  endif()
+
   set(MKL_LIBRARIES "")
 
   # Find the core library
   find_library(MKL_CORE_LIB
                "mkl_core"
-               HINTS ${MKL_INCLUDE_DIR}/../lib)
+               HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
   if("${MKL_CORE_LIB}" STREQUAL "MKL_CORE_LIB-NOTFOUND")
     set(MKL_FOUND 0)
   else()
