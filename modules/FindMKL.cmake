@@ -230,3 +230,47 @@ if(NOT MKL_INCLUDE_DIR)
     PATH_SUFFIXES ${_MKL_PATH_SUFFIXES}
   )
 endif()
+
+# ------------------------------------------------------------------------------
+#  Extract version information from mkl.h (or mkl_version.h in newer versions)
+# ------------------------------------------------------------------------------
+
+# Set MKL_FOUND based only on header location and version.
+# It will be updated below for component libraries.
+if (MKL_INCLUDE_DIR)
+  # Extract __INTEL_MKL__, __INTEL_MKL_MINOR__ and __INTEL_MKL_UPDATE__ from
+  # mkl.h or mkl_version.h
+  if(EXISTS "${MKL_INCLUDE_DIR}/mkl_version.h")
+    file(STRINGS "${MKL_INCLUDE_DIR}/mkl_version.h" _MKL_VERSION_CONTENTS REGEX "#define __INTEL_MKL(_MINOR|_UPDATE)?__ ")
+  else()
+    file(STRINGS "${MKL_INCLUDE_DIR}/mkl.h" _MKL_VERSION_CONTENTS REGEX "#define __INTEL_MKL(_MINOR|_UPDATE)?__ ")
+  endif()
+
+  if("${_MKL_VERSION_CONTENTS}" MATCHES "#define __INTEL_MKL__ ([0-9]+)")
+    set(MKL_MAJOR_VERSION "${CMAKE_MATCH_1}")
+  endif()
+  if("${_MKL_VERSION_CONTENTS}" MATCHES "#define __INTEL_MKL_MINOR__ ([0-9]+)")
+    set(MKL_MINOR_VERSION "${CMAKE_MATCH_1}")
+  endif()
+  if("${_MKL_VERSION_CONTENTS}" MATCHES "#define __INTEL_MKL_UPDATE__ ([0-9]+)")
+    set(MKL_UPDATE_VERSION "${CMAKE_MATCH_1}")
+  endif()
+  unset(_MKL_VERSION_CONTENTS)
+
+  math(EXPR MKL_VERSION "${MKL_MAJOR_VERSION} * 10000 + ${MKL_MINOR_VERSION} * 100 + ${MKL_UPDATE_VERSION}")
+  set(_MKL_VERSION "${MKL_MAJOR_VERSION}.${MKL_MINOR_VERSION}.${MKL_UPDATE_VERSION}")
+  if (NOT MKL_FIND_QUIETLY)
+    message(STATUS "Found MKL: ${MKL_INCLUDE_DIR} (found version \"${_MKL_VERSION}\")")
+  endif()
+
+  # Check version against any requested
+  if (MKL_FIND_VERSION_EXACT AND NOT "${_MKL_VERSION}" VERSION_EQUAL "${MKL_FIND_VERSION}")
+    set(MKL_FOUND 0)
+  elseif (MKL_FIND_VERSION AND "${_MKL_VERSION}" VERSION_LESS "${MKL_FIND_VERSION}")
+    set(MKL_FOUND 0)
+  else()
+    set(MKL_FOUND 1)
+    set(MKL_INCLUDE_DIRS ${MKL_INCLUDE_DIR})
+  endif()
+  unset(_MKL_VERSION)
+endif()
