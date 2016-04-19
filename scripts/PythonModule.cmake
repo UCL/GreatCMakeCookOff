@@ -244,10 +244,7 @@ function(_pm_add_cython module source)
     string(REGEX REPLACE "/" "_" cy "cy.${module}")
     cmake_parse_arguments(${cy} "CPP" "TARGET;STARTLINE" "" ${ARGN})
     # Creates command-line arguments for cython for include directories
-    get_property(included_dirs
-        DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        PROPERTY INCLUDE_DIRECTORIES
-    )
+    get_property(included_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
     set(inclusion)
     foreach(included ${included_dirs})
         set(inclusion ${inclusion} -I${included})
