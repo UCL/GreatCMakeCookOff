@@ -61,9 +61,6 @@
 #
 #   MKL_USE_STATIC_LIBS      - Set to ON to force the use of static libraries.
 #                              Default is OFF.
-#   MKL_XEON_PHI_USAGE_MODEL - Set to "none", "native", "automatic" or
-#                              "compiler" to select how the MKL is to use any
-#                              Xeon Phi coprocessors found.  Default is "none".
 #   MKL_INTERFACE            - Set to "lp64" or "ilp64" (case-insensitive) to
 #                              select 32-bit or 64-bit integer interface.
 #                              Default is blank on 32-bit platforms (where no
@@ -109,9 +106,6 @@
 # Set defaults
 if (NOT DEFINED MKL_USE_STATIC_LIBS)
   set(MKL_USE_STATIC_LIBS OFF)
-endif()
-if (NOT DEFINED MKL_XEON_PHI_USAGE_MODEL)
-  set(MKL_XEON_PHI_USAGE_MODEL none)
 endif()
 if (NOT DEFINED MKL_THREADING)
   set(MKL_THREADING OpenMP)
