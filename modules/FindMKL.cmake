@@ -64,6 +64,11 @@
 #   MKL_XEON_PHI_USAGE_MODEL - Set to "none", "native", "automatic" or
 #                              "compiler" to select how the MKL is to use any
 #                              Xeon Phi coprocessors found.  Default is "none".
+#   MKL_INTERFACE            - Set to "lp64" or "ilp64" (case-insensitive) to
+#                              select 32-bit or 64-bit integer interface.
+#                              Default is blank on 32-bit platforms (where no
+#                              interface library is needed) and to guess based
+#                              on sizeof(int) on 64-bit platforms.
 #   MKL_THREADING            - Set to "Sequential", "OpenMP" or "TBB"  to select
 #                              threading library.  Default is "OpenMP".
 #   MKL_OPENMP               - Set to "Intel", "GNU" or "PGI" to use vendor
@@ -293,6 +298,7 @@ if (MKL_FOUND)
   endif()
 
   set(MKL_LIBRARIES "")
+  set(MKL_DEFINITIONS "")
 
   # Find the core library
   find_library(MKL_CORE_LIB
@@ -305,21 +311,24 @@ if (MKL_FOUND)
   endif()
 
   # Work out interface layer
-  if (_MKL_IS_64BIT)
-    include(CheckTypeSize)
-    CHECK_TYPE_SIZE("int" _MKL_SIZEOF_INT)
-    if (${_MKL_SIZEOF_INT} EQUAL 4)
-      set(_MKL_INTERFACE "lp64")
-    elseif(${_MKL_SIZEOF_INT} EQUAL 8)
-      set(_MKL_INTERFACE "ilp64")
-      set(MKL_DEFINITIONS "-DMKL_ILP64")
+  if (NOT DEFINED MKL_INTERFACE)
+    if (_MKL_IS_64BIT)
+      include(CheckTypeSize)
+      CHECK_TYPE_SIZE("int" _MKL_SIZEOF_INT)
+      if (${_MKL_SIZEOF_INT} EQUAL 4)
+        set(MKL_INTERFACE "lp64")
+      elseif(${_MKL_SIZEOF_INT} EQUAL 8)
+        set(MKL_INTERFACE "ilp64")
+      endif()
+      unset(_MKL_SIZEOF_INT)
     endif()
   endif()
-  if (DEFINED _MKL_INTERFACE)
+  if (DEFINED MKL_INTERFACE)
+    string(TOLOWER ${MKL_INTERFACE} _MKL_INTERFACE_LC)
     if (${CMAKE_COMPILER_IS_GNUG77})
-      set(_MKL_INTERFACE_LIBRARY "mkl_gf_${_MKL_INTERFACE}")
+      set(_MKL_INTERFACE_LIBRARY "mkl_gf_${_MKL_INTERFACE_LC}")
     else()
-      set(_MKL_INTERFACE_LIBRARY "mkl_intel_${_MKL_INTERFACE}")
+      set(_MKL_INTERFACE_LIBRARY "mkl_intel_${_MKL_INTERFACE_LC}")
     endif()
     find_library(MKL_INTERFACE_LIB
                  "${_MKL_INTERFACE_LIBRARY}"
@@ -327,12 +336,17 @@ if (MKL_FOUND)
     if("${MKL_INTERFACE_LIB}" STREQUAL "MKL_INTERFACE_LIB-NOTFOUND")
       set(MKL_FOUND 0)
     else()
+      if("${_MKL_INTERFACE_LC}" STREQUAL "ilp64")
+        list(APPEND MKL_DEFINITIONS "-DMKL_ILP64")
+      endif()
       list(APPEND MKL_LIBRARIES ${MKL_INTERFACE_LIB})
     endif()
+    unset(_MKL_INTERFACE_LC)
+    unset(_MKL_INTERFACE_LIBRARY)
     unset(_MKL_IS_64BIT)
-    unset(_MKL_INTERFACE)
   endif()
 
-  # Construct MKL_LIBRARIES
+  # Construct MKL_LIBRARIES and MKL_DEFINITIONS
+  list(REMOVE_DUPLICATES MKL_DEFINITIONS)
   list(REMOVE_DUPLICATES MKL_LIBRARIES)
 endif()
