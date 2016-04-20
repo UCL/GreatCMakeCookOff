@@ -280,7 +280,8 @@ endif()
 if (MKL_FOUND)
 
   # Work out whether to search the ia32/ or intel64/ lib/ subdirectories
-  set(_MKL_LIBRARY_SEARCH_DIRS "${MKL_INCLUDE_DIR}/../lib")
+  set(_MKL_LIBRARY_SEARCH_DIRS
+      "${MKL_INCLUDE_DIR}/../lib;${MKL_INCLUDE_DIR}/../../compiler/lib;${MKL_INCLUDE_DIR}/../../tbb/lib")
   try_run(_MKL_IS_64BIT
           _MKL_IS_64BIT_COMPILE_RESULT
           "${CMAKE_BINARY_DIR}"
@@ -339,6 +340,35 @@ if (MKL_FOUND)
     unset(_MKL_INTERFACE_LIBRARY)
     unset(_MKL_IS_64BIT)
   endif()
+
+  # Work out threading layer
+  string(TOLOWER ${MKL_THREADING} _MKL_THREADING_LC)
+  if(${_MKL_THREADING_LC} STREQUAL "sequential")
+    set(_MKL_THREADING_LIBS "mkl_sequential")
+  elseif(${_MKL_THREADING_LC} STREQUAL "tbb")
+    set(_MKL_THREADING_LIBS "mkl_tbb_thread;tbb")
+  elseif(${_MKL_THREADING_LC} STREQUAL "openmp")
+    string(TOLOWER ${MKL_OPENMP} _MKL_OPENMP_LC)
+    if (${_MKL_OPENMP_LC} STREQUAL "intel")
+      set(_MKL_THREADING_LIBS "mkl_intel_thread;iomp5")
+    elseif(${_MKL_OPENMP_LC} STREQUAL "gnu")
+      set(_MKL_THREADING_LIBS "mkl_gnu_thread;gomp")
+    elseif(${_MKL_OPENMP_LC} STREQUAL "pgi")
+      set(_MKL_THREADING_LIBS "mkl_pgi_thread;pgf90libs")
+    endif()
+  endif()
+  foreach(lib ${_MKL_THREADING_LIBS})
+    find_library(_MKL_THREADING_${lib}
+                 "${lib}"
+                 HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
+    if("${_MKL_THREADING_${lib}}" STREQUAL "_MKL_THREADING_${lib}-NOTFOUND")
+      set(MKL_FOUND 0)
+    else()
+      list(APPEND MKL_LIBRARIES ${_MKL_THREADING_${lib}})
+    endif()
+  endforeach()
+  unset(_MKL_THREADING_LC)
+  unset(_MKL_THREADING_LIBS)
 
   # Construct MKL_LIBRARIES and MKL_DEFINITIONS
   list(REMOVE_DUPLICATES MKL_DEFINITIONS)
