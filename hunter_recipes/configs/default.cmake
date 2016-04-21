@@ -22,3 +22,4 @@ include(hunter_user_error)
 # NOTE: no names with spaces!
 hunter_config(CFitsIO VERSION 3370)
 hunter_config(CCFits VERSION "2.4")
+hunter_config(GBenchmark VERSION "1.0.0")
