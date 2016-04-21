@@ -388,13 +388,13 @@ if (MKL_FOUND)
     endif()
     unset(_MKL_MPI_LC)
 
-    find_library(MKL_BLACS_LIB
+    find_library(MKL_BLACS_LIBRARY
                  "${_MKL_BLACS_LIBNAME}"
                  HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
-    if("${MKL_BLACS_LIB}" STREQUAL "MKL_BLACS_LIB-NOTFOUND")
+    if("${MKL_BLACS_LIBRARY}" STREQUAL "MKL_BLACS_LIBRARY-NOTFOUND")
       set(MKL_FOUND 0)
     else()
-      list(APPEND MKL_LIBRARIES ${MKL_BLACS_LIB})
+      list(APPEND MKL_LIBRARIES ${MKL_BLACS_LIBRARY})
       set(MKL_BLACS_FOUND TRUE)
     endif()
 
@@ -416,13 +416,13 @@ if (MKL_FOUND)
     # CDFT
     list(FIND MKL_FIND_COMPONENTS CDFT _MKL_INDEXOF_CDFT)
     if (${_MKL_INDEXOF_CDFT} GREATER -1)
-      find_library(MKL_CDFT_LIB
+      find_library(MKL_CDFT_LIBRARY
                    "mkl_cdft_core"
                    HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
-      if("${MKL_CDFT_LIB}" STREQUAL "MKL_CDFT_LIB-NOTFOUND")
+      if("${MKL_CDFT_LIBRARY}" STREQUAL "MKL_CDFT_LIBRARY-NOTFOUND")
         set(MKL_FOUND 0)
       else()
-        list(APPEND MKL_LIBRARIES ${MKL_CDFT_LIB})
+        list(APPEND MKL_LIBRARIES ${MKL_CDFT_LIBRARY})
         set(MKL_CDFT_FOUND TRUE)
       endif()
     endif()
@@ -431,13 +431,13 @@ if (MKL_FOUND)
     # ScaLAPACK
     list(FIND MKL_FIND_COMPONENTS ScaLAPACK _MKL_INDEXOF_SCALAPACK)
     if (${_MKL_INDEXOF_SCALAPACK} GREATER -1)
-      find_library(MKL_SCALAPACK_LIB
+      find_library(MKL_SCALAPACK_LIBRARY
                    "mkl_scalapack_${_MKL_INTERFACE_LC}"
                    HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
-      if("${MKL_SCALAPACK_LIB}" STREQUAL "MKL_SCALAPACK_LIB-NOTFOUND")
+      if("${MKL_SCALAPACK_LIBRARY}" STREQUAL "MKL_SCALAPACK_LIBRARY-NOTFOUND")
         set(MKL_FOUND 0)
       else()
-        list(APPEND MKL_LIBRARIES ${MKL_SCALAPACK_LIB})
+        list(APPEND MKL_LIBRARIES ${MKL_SCALAPACK_LIBRARY})
         set(MKL_SCALAPACK_FOUND TRUE)
       endif()
     endif()
