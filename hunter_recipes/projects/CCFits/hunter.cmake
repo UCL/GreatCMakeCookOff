@@ -35,4 +35,3 @@ hunter_add_version(
 
 hunter_pick_scheme(DEFAULT ccfits)
 hunter_download(PACKAGE_NAME CCFits PACKAGE_DEPENDS_ON CFitsIO)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
