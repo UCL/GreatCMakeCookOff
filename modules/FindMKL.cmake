@@ -9,8 +9,10 @@
 #   find_package(MKL
 #     [version] [EXACT]      # Minimum or EXACT version e.g. 11.3.2,
 #     [REQUIRED]             # Fail with error if MKL is not found
-#     [COMPONENTS <libs>...] # Cluster libraries by their canonical name e.g.
-#     )                      # "ScaLAPACK" for "libmkl_scalapack_{i}lp64.{a,so}"
+#     [COMPONENTS <libs>...] # Cluster libraries e.g. "PARDISO", "CDFT",
+#     )                      # "ScaLAPACK" or "BLACS" (case sensitive).
+#                            # Dependencies (PARDISO, CDFT and ScaLAPACK require
+#                            # BLACS) are handled automatically
 #
 # This module finds headers and requested cluster libraries.  Results are
 # reported in variables::
@@ -336,7 +338,6 @@ if (MKL_FOUND)
       endif()
       list(APPEND MKL_LIBRARIES ${MKL_INTERFACE_LIB})
     endif()
-    unset(_MKL_INTERFACE_LC)
     unset(_MKL_INTERFACE_LIBRARY)
     unset(_MKL_IS_64BIT)
   endif()
@@ -369,6 +370,80 @@ if (MKL_FOUND)
   endforeach()
   unset(_MKL_THREADING_LC)
   unset(_MKL_THREADING_LIBS)
+
+  # All components currently require BLACS so if any are listed find BLACS first
+  list(LENGTH MKL_FIND_COMPONENTS _MKL_NUM_COMPONENTS)
+  if(${_MKL_NUM_COMPONENTS} GREATER 0)
+    STRING(TOLOWER ${MKL_MESSAGE_PASSING} _MKL_MPI_LC)
+    if(${_MKL_MPI_LC} STREQUAL "intel")
+      set(_MKL_BLACS_LIBNAME "mkl_blacs_intelmpi_${_MKL_INTERFACE_LC}")
+    elseif(${_MKL_MPI_LC} STREQUAL "mpich")
+      set(_MKL_BLACS_LIBNAME "mkl_blacs_${_MKL_INTERFACE_LC}")
+    elseif(${_MKL_MPI_LC} STREQUAL "mpich2")
+      set(_MKL_BLACS_LIBNAME "mkl_blacs_intelmpi_${_MKL_INTERFACE_LC}")
+    elseif(${_MKL_MPI_LC} STREQUAL "openmpi")
+      set(_MKL_BLACS_LIBNAME "mkl_blacs_openmpi_${_MKL_INTERFACE_LC}")
+    elseif(${_MKL_MPI_LC} STREQUAL "sgi")
+      set(_MKL_BLACS_LIBNAME "mkl_blacs_sgimpt_${_MKL_INTERFACE_LC}")
+    endif()
+    unset(_MKL_MPI_LC)
+
+    find_library(MKL_BLACS_LIB
+                 "${_MKL_BLACS_LIBNAME}"
+                 HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
+    if("${MKL_BLACS_LIB}" STREQUAL "MKL_BLACS_LIB-NOTFOUND")
+      set(MKL_FOUND 0)
+    else()
+      list(APPEND MKL_LIBRARIES ${MKL_BLACS_LIB})
+      set(MKL_BLACS_FOUND TRUE)
+    endif()
+
+    # There is absolutely no pattern to the component libraries in MKL.
+    # Cluster PARDISO has no library
+    # CDFT is only available as libmkl_cdft_core.so
+    # ScaLAPACK is available as libmkl_scalapack_lp64.so or
+    # libmkl_scalapack_ilp64.so depending on MKL_INTERFACE and only on intel64
+    # and not Mac OS
+
+    # Cluster PARDISO
+    list(FIND MKL_FIND_COMPONENTS PARDISO _MKL_INDEXOF_PARDISO)
+    if (${_MKL_INDEXOF_PARDISO} GREATER -1)
+      set(MKL_PARDISO_LIB "") # :trollface:
+      set(MKL_PARDISO_FOUND TRUE)
+    endif()
+    unset(_MKL_INDEXOF_PARDISO)
+
+    # CDFT
+    list(FIND MKL_FIND_COMPONENTS CDFT _MKL_INDEXOF_CDFT)
+    if (${_MKL_INDEXOF_CDFT} GREATER -1)
+      find_library(MKL_CDFT_LIB
+                   "mkl_cdft_core"
+                   HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
+      if("${MKL_CDFT_LIB}" STREQUAL "MKL_CDFT_LIB-NOTFOUND")
+        set(MKL_FOUND 0)
+      else()
+        list(APPEND MKL_LIBRARIES ${MKL_CDFT_LIB})
+        set(MKL_CDFT_FOUND TRUE)
+      endif()
+    endif()
+    unset(_MKL_INDEXOF_CDFT)
+
+    # ScaLAPACK
+    list(FIND MKL_FIND_COMPONENTS ScaLAPACK _MKL_INDEXOF_SCALAPACK)
+    if (${_MKL_INDEXOF_SCALAPACK} GREATER -1)
+      find_library(MKL_SCALAPACK_LIB
+                   "mkl_scalapack_${_MKL_INTERFACE_LC}"
+                   HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
+      if("${MKL_SCALAPACK_LIB}" STREQUAL "MKL_SCALAPACK_LIB-NOTFOUND")
+        set(MKL_FOUND 0)
+      else()
+        list(APPEND MKL_LIBRARIES ${MKL_SCALAPACK_LIB})
+        set(MKL_SCALAPACK_FOUND TRUE)
+      endif()
+    endif()
+    unset(_MKL_INDEXOF_SCALAPACK)
+  endif()
+  unset(_MKL_INTERFACE_LC)
 
   # Construct MKL_LIBRARIES and MKL_DEFINITIONS
   list(REMOVE_DUPLICATES MKL_DEFINITIONS)
