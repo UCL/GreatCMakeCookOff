@@ -32,7 +32,7 @@ macro(initialize_hunter)
     set(HUNTER_REPOSITORY_cookoff_VERSION "none")
     list(APPEND HUNTER_REPOSITORIES cookoff)
     list(APPEND HUNTER_RECIPE_DIRS "${HUNTER_REPOSITORY_cookoff_DIRECTORY}")
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/find")
+    list(APPEND CMAKE_MODULE_PATH "${HUNTER_REPOSITORY_cookoff_DIRECTORY}/find")
   endif()
 endmacro()
 
