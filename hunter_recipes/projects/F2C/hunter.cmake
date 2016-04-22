@@ -4,6 +4,7 @@ include(hunter_add_version)
 include(hunter_download)
 include(hunter_pick_scheme)
 include(hunter_add_package)
+include(hunter_configuration_types)
 
 # Makes it possible to use syste cfitsio
 hunter_add_version(
