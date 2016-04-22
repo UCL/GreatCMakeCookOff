@@ -18,4 +18,5 @@ hunter_add_version(
 )
 
 hunter_pick_scheme(DEFAULT F2C)
+hunter_configuration_types(F2C CONFIGURATION_TYPES Release)
 hunter_download(PACKAGE_NAME F2C)
