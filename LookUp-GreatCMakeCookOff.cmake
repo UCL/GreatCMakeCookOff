@@ -9,7 +9,7 @@
 
 
 # First attempts to find the package
-set(COOKOFF_DOWNLOAD_DIR "${PROJECT_BINARY_DIR}/external/src/GreatCMakeCookOff")
+set(COOKOFF_DOWNLOAD_DIR "${CMAKE_BINARY_DIR}/external/src/GreatCMakeCookOff")
 find_package(GreatCMakeCookOff NO_MODULE PATHS "${COOKOFF_DOWNLOAD_DIR}" QUIET)
 
 # Otherwise attempts to download it.
