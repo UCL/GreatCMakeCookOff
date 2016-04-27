@@ -289,9 +289,9 @@ if (MKL_FOUND)
           "${CMAKE_BINARY_DIR}"
           "${CMAKE_CURRENT_LIST_DIR}/arch/test_is_64bit.c")
   if (_MKL_IS_64BIT)
-    list(APPEND _MKL_LIBRARY_SEARCH_DIRS "${MKL_INCLUDE_DIR}/../lib/intel64")
+    list(APPEND _MKL_LIBRARY_SEARCH_DIRS "${MKL_INCLUDE_DIR}/../lib/intel64;${MKL_INCLUDE_DIR}/../../compiler/lib/intel64;${MKL_INCLUDE_DIR}/../../tbb/lib/intel64")
   else()
-    list(APPEND _MKL_LIBRARY_SEARCH_DIRS "${MKL_INCLUDE_DIR}/../lib/ia32")
+    list(APPEND _MKL_LIBRARY_SEARCH_DIRS "${MKL_INCLUDE_DIR}/../lib/ia32;${MKL_INCLUDE_DIR}/../../compiler/lib/ia32;${MKL_INCLUDE_DIR}/../../tbb/lib/intel64")
   endif()
 
   set(MKL_LIBRARIES "")
