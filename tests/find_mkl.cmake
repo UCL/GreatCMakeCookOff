@@ -10,6 +10,10 @@ find_package(OpenMP REQUIRED)
 add_definitions(${MKL_DEFINITIONS})
 include_directories(${MKL_INCLUDE_DIRS})
 
+message(STATUS "MKL_DEFINITIONS = ${MKL_DEFINITIONS}")
+message(STATUS "MKL_INCLUDE_DIRS = ${MKL_INCLUDE_DIRS}")
+message(STATUS "MKL_LIBRARIES = ${MKL_LIBRARIES}")
+
 file(WRITE "${CMAKE_SOURCE_DIR}/mkl_sgemm.c"
     "#include <mkl.h>\n"
     "int main() {\n"
