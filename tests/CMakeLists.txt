@@ -10,7 +10,11 @@ cmake_test(add_to_path)
 cmake_test(create_environment_script)
 cmake_test(output_filename)
 cmake_test(configure_files)
-cmake_test(find_mkl SOURCE NOEXEC)
+
+# There is no MKL on the Mac OS slaves
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  cmake_test(find_mkl SOURCE NOEXEC)
+endif()
 
 find_program(Hg_EXECUTABLE hg)
 if("${CMAKE_VERSION}" VERSION_GREATER 2.8.9 AND Hg_EXECUTABLE)
