@@ -5,7 +5,12 @@ find_package(GreatCMakeCookOff NO_MODULE PATHS ${cookoff_path} REQUIRED)
 initialize_cookoff()
 
 find_package(MKL REQUIRED)
-find_package(OpenMP REQUIRED)
+
+# AppleClang does not yet support OpenMP
+# Mainline Clang does, but not on Legion
+if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
+  find_package(OpenMP REQUIRED)
+endif()
 
 add_definitions(${MKL_DEFINITIONS})
 include_directories(${MKL_INCLUDE_DIRS})
