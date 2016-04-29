@@ -35,3 +35,18 @@ file(WRITE "${CMAKE_SOURCE_DIR}/mkl_sgemm.c"
 
 add_executable(mkl_sgemm mkl_sgemm.c)
 target_link_libraries(mkl_sgemm ${MKL_LIBRARIES})
+
+# Using GCC requires -lm
+include(CheckFunctionExists)
+
+CHECK_FUNCTION_EXISTS(logf LOGF_EXISTS)
+if(NOT LOGF_EXISTS)
+  unset(LOGF_EXISTS)
+  list(APPEND CMAKE_REQUIRED_LIBRARIES m)
+  CHECK_FUNCTION_EXISTS(logf LOGF_EXISTS)
+  if(LOGF_EXISTS)
+    target_link_libraries(mkl_sgemm m)
+  else()
+    message(FATAL_ERROR "No logf() found")
+  endif()
+endif()
