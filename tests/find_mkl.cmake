@@ -6,12 +6,6 @@ initialize_cookoff()
 
 find_package(MKL REQUIRED)
 
-# AppleClang does not yet support OpenMP
-# Mainline Clang does, but not on Legion
-if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
-  find_package(OpenMP REQUIRED)
-endif()
-
 add_definitions(${MKL_DEFINITIONS})
 include_directories(${MKL_INCLUDE_DIRS})
 
@@ -40,5 +34,4 @@ file(WRITE "${CMAKE_SOURCE_DIR}/mkl_sgemm.c"
 )
 
 add_executable(mkl_sgemm mkl_sgemm.c)
-target_compile_options(mkl_sgemm PUBLIC ${OpenMP_C_FLAGS})
 target_link_libraries(mkl_sgemm ${MKL_LIBRARIES})
