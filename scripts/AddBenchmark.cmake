@@ -1,5 +1,6 @@
-include(PackageLookup)  # check for existence, or install external projects
-lookup_package(GBenchmark REQUIRED)
+if(TARGET lookup_dependencies)
+  lookup_package(GBenchmark REQUIRED)
+endif()
 
 
 if(NOT TARGET benchmarks)
