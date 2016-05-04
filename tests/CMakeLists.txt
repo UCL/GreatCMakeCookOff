@@ -10,9 +10,7 @@ cmake_test(add_to_path)
 cmake_test(create_environment_script)
 cmake_test(output_filename)
 cmake_test(configure_files)
-
-# There is no MKL on the Mac OS slaves
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(TEST_FIND_MKL)
   cmake_test(find_mkl SOURCE NOEXEC)
 endif()
 
