@@ -213,7 +213,7 @@ if(NOT MKL_INCLUDE_DIR)
   # TODO: Prepend new versions to this as they are released (they must remain
   # sorted in descending order).
   set(_MKL_PACKAGE_KNOWN_VERSIONS ${MKL_PACKAGE_ADDITIONAL_VERSIONS}
-      "2016.1.111" "2016.0.109" "2015.2.164")
+      "2016.2.181". "2016.1.111" "2016.0.109" "2015.2.164")
   foreach(v ${_MKL_PACKAGE_KNOWN_VERSIONS})
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       list(APPEND _MKL_PATH_SUFFIXES "compilers_and_libraries_${v}/windows/mkl/include")
