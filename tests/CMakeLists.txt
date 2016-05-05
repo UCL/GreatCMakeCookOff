@@ -18,6 +18,9 @@ if(CMAKE_VERSION VERSION_GREATER "3.0" OR CMAKE_VERSION VERSION_EQUAL "3.0")
     "initialize_hunter(HUNTER_ROOT \${CMAKE_BINARY_DIR}/hunter_root)\n"
   )
 endif()
+if(TEST_FIND_MKL)
+  cmake_test(find_mkl SOURCE NOEXEC)
+endif()
 
 find_program(Hg_EXECUTABLE hg)
 if("${CMAKE_VERSION}" VERSION_GREATER 2.8.9 AND Hg_EXECUTABLE)
