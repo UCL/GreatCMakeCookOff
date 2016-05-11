@@ -3,7 +3,7 @@
 # - GBENCHMARK_FOUND if the library is found
 # - GBENCHMARK_LIBRARY is the path to the library
 # - GBENCHMARK_INCLUDE_DIR is the path to the include directory
-if(gbenchmark_FOUND)
+if(GBENCHMARK_FOUND)
   return()
 endif()
 
