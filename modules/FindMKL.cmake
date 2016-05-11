@@ -213,7 +213,7 @@ if(NOT MKL_INCLUDE_DIR)
   # TODO: Prepend new versions to this as they are released (they must remain
   # sorted in descending order).
   set(_MKL_PACKAGE_KNOWN_VERSIONS ${MKL_PACKAGE_ADDITIONAL_VERSIONS}
-      "2016.2.181". "2016.1.111" "2016.0.109" "2015.2.164")
+      "2016.2.181" "2016.1.111" "2016.0.109" "2015.2.164")
   foreach(v ${_MKL_PACKAGE_KNOWN_VERSIONS})
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       list(APPEND _MKL_PATH_SUFFIXES "compilers_and_libraries_${v}/windows/mkl/include")
@@ -297,9 +297,17 @@ if (MKL_FOUND)
   set(MKL_LIBRARIES "")
   set(MKL_DEFINITIONS "")
 
+  # Handle static libraries
+  set(_MKL_LIB_PREFIX "")
+  set(_MKL_LIB_SUFFIX "")
+  if(MKL_USE_STATIC_LIBS)
+    set(_MKL_LIB_PREFIX "lib")
+    set(_MKL_LIB_SUFFIX ".a")
+  endif()
+
   # Find the core library
   find_library(MKL_CORE_LIB
-               "mkl_core"
+               "${_MKL_LIB_PREFIX}mkl_core${_MKL_LIB_SUFFIX}"
                HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
   if("${MKL_CORE_LIB}" STREQUAL "MKL_CORE_LIB-NOTFOUND")
     set(MKL_FOUND 0)
@@ -328,7 +336,7 @@ if (MKL_FOUND)
       set(_MKL_INTERFACE_LIBRARY "mkl_intel_${_MKL_INTERFACE_LC}")
     endif()
     find_library(MKL_INTERFACE_LIB
-                 "${_MKL_INTERFACE_LIBRARY}"
+                 "${_MKL_LIB_PREFIX}${_MKL_INTERFACE_LIBRARY}${_MKL_LIB_SUFFIX}"
                  HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
     if("${MKL_INTERFACE_LIB}" STREQUAL "MKL_INTERFACE_LIB-NOTFOUND")
       set(MKL_FOUND 0)
@@ -360,7 +368,7 @@ if (MKL_FOUND)
   endif()
   foreach(lib ${_MKL_THREADING_LIBS})
     find_library(_MKL_THREADING_${lib}
-                 "${lib}"
+                 "${_MKL_LIB_PREFIX}${lib}${_MKL_LIB_SUFFIX}"
                  HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
     if("${_MKL_THREADING_${lib}}" STREQUAL "_MKL_THREADING_${lib}-NOTFOUND")
       set(MKL_FOUND 0)
@@ -389,7 +397,7 @@ if (MKL_FOUND)
     unset(_MKL_MPI_LC)
 
     find_library(MKL_BLACS_LIBRARY
-                 "${_MKL_BLACS_LIBNAME}"
+                 "${_MKL_LIB_PREFIX}${_MKL_BLACS_LIBNAME}${_MKL_LIB_SUFFIX}"
                  HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
     if("${MKL_BLACS_LIBRARY}" STREQUAL "MKL_BLACS_LIBRARY-NOTFOUND")
       set(MKL_FOUND 0)
@@ -417,7 +425,7 @@ if (MKL_FOUND)
     list(FIND MKL_FIND_COMPONENTS CDFT _MKL_INDEXOF_CDFT)
     if (${_MKL_INDEXOF_CDFT} GREATER -1)
       find_library(MKL_CDFT_LIBRARY
-                   "mkl_cdft_core"
+                   "${_MKL_LIB_PREFIX}mkl_cdft_core${_MKL_LIB_SUFFIX}"
                    HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
       if("${MKL_CDFT_LIBRARY}" STREQUAL "MKL_CDFT_LIBRARY-NOTFOUND")
         set(MKL_FOUND 0)
@@ -432,7 +440,7 @@ if (MKL_FOUND)
     list(FIND MKL_FIND_COMPONENTS ScaLAPACK _MKL_INDEXOF_SCALAPACK)
     if (${_MKL_INDEXOF_SCALAPACK} GREATER -1)
       find_library(MKL_ScaLAPACK_LIBRARY
-                   "mkl_scalapack_${_MKL_INTERFACE_LC}"
+                   "${_MKL_LIB_PREFIX}mkl_scalapack_${_MKL_INTERFACE_LC}${_MKL_LIB_SUFFIX}"
                    HINTS ${_MKL_LIBRARY_SEARCH_DIRS})
       if("${MKL_ScaLAPACK_LIBRARY}" STREQUAL "MKL_ScaLAPACK_LIBRARY-NOTFOUND")
         set(MKL_FOUND 0)
@@ -444,6 +452,9 @@ if (MKL_FOUND)
     unset(_MKL_INDEXOF_SCALAPACK)
   endif()
   unset(_MKL_INTERFACE_LC)
+
+  unset(_MKL_LIB_PREFIX)
+  unset(_MKL_LIB_SUFFIX)
 
   # Construct MKL_LIBRARIES and MKL_DEFINITIONS
   list(REMOVE_DUPLICATES MKL_DEFINITIONS)
