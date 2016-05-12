@@ -303,6 +303,7 @@ if (MKL_FOUND)
   if(MKL_USE_STATIC_LIBS)
     set(_MKL_LIB_PREFIX "lib")
     set(_MKL_LIB_SUFFIX ".a")
+    list(APPEND MKL_LIBRARIES "-Wl,--start-group")
   endif()
 
   # Find the core library
@@ -455,6 +456,10 @@ if (MKL_FOUND)
 
   unset(_MKL_LIB_PREFIX)
   unset(_MKL_LIB_SUFFIX)
+
+  if(MKL_USE_STATIC_LIBS)
+    list(APPEND MKL_LIBRARIES "-Wl,--end-group")
+  endif()
 
   # Construct MKL_LIBRARIES and MKL_DEFINITIONS
   list(REMOVE_DUPLICATES MKL_DEFINITIONS)
