@@ -8,6 +8,8 @@ set(MKL_USE_STATIC_LIBS ON)
 set(MKL_MESSAGE_PASSING OpenMPI)
 
 find_package(MKL REQUIRED COMPONENTS ScaLAPACK)
+find_package(Threads REQUIRED)
+find_package(MPI REQUIRED)
 
 add_definitions(${MKL_DEFINITIONS})
 include_directories(${MKL_INCLUDE_DIRS})
@@ -30,7 +32,7 @@ file(WRITE "${CMAKE_SOURCE_DIR}/mkl_scalapack.c"
 )
 
 add_executable(mkl_scalapack mkl_scalapack.c)
-target_link_libraries(mkl_scalapack ${MKL_LIBRARIES})
+target_link_libraries(mkl_scalapack ${MKL_LIBRARIES} ${MPI_C_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 # Using GCC requires -lm
 include(CheckFunctionExists)
