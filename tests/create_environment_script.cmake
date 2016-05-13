@@ -7,6 +7,8 @@ include(EnvironmentScript)
 # Executes an environment script, checks its result and output
 function(try_execute script)
     cmake_parse_arguments(try_execute "" "OUTPUT" "ARGS" ${ARGN})
+    string(REPLACE ":" " " try_execute_OUTPUT "${try_execute_OUTPUT}")
+    string(STRIP "${try_execute_OUTPUT}" try_execute_OUTPUT)
 
     execute_process(
         COMMAND "${PROJECT_BINARY_DIR}/${script}.sh" ${try_execute_ARGS}
@@ -20,6 +22,8 @@ function(try_execute script)
         message(FATAL_ERROR "environment script failed with "
             "${result}: ${error}")
     endif()
+    string(REPLACE ":" " " output "${output}")
+    string(STRIP "${output}" output)
     if(NOT "${output}" STREQUAL "${try_execute_OUTPUT}")
         message(FATAL_ERROR "environment script did not output expected"
             " result\n"
@@ -51,14 +55,16 @@ endfunction()
 # Check DYLD_ENVIRONMENT_PATH has expected path
 function(check_path)
     unset(expected)
-    foreach(current $ENV{DYLD_FALLBACK_LIBRARY_PATH} ${ARGN})
+    string(REPLACE ":" " " vars "$ENV{DYLD_FALLBACK_LIBRARY_PATH} ${ARGN}")
+    string(STRIP "${vars}" vars)
+    foreach(current ${vars})
         if("${expected}" STREQUAL "")
             set(expected "${current}")
         else()
             set(expected "${expected}:${current}")
         endif()
     endforeach()
-    
+
     try_execute(dyld OUTPUT "${expected}")
 endfunction()
 
@@ -67,20 +73,20 @@ create_environment_script(PATH "${PROJECT_BINARY_DIR}/noexec.sh")
 try_execute(noexec ARGS echo "hello" OUTPUT "hello")
 
 # With an executable/command
-create_environment_script(PATH "${PROJECT_BINARY_DIR}/with_exec.sh" 
+create_environment_script(PATH "${PROJECT_BINARY_DIR}/with_exec.sh"
     EXECUTABLE echo)
 try_execute(with_exec ARGS "hello, world" OUTPUT "hello, world")
 
 # Changing work directory
 get_filename_component(directory "${PROJECT_BINARY_DIR}/CMakeFiles" ABSOLUTE)
-create_environment_script(PATH "${PROJECT_BINARY_DIR}/ch_dir.sh" 
+create_environment_script(PATH "${PROJECT_BINARY_DIR}/ch_dir.sh"
     EXECUTABLE pwd WORKING_DIRECTORY "${directory}"
 )
 try_execute(ch_dir  OUTPUT "${directory}")
 
 
 # Check dyldpath modifications
-create_environment_script(PATH "${PROJECT_BINARY_DIR}/dyld.sh" 
+create_environment_script(PATH "${PROJECT_BINARY_DIR}/dyld.sh"
     EXECUTABLE "echo $DYLD_FALLBACK_LIBRARY_PATH")
 file(REMOVE "${PROJECT_BINARY_DIR}/paths/ldpaths")
 file(REMOVE_RECURSE
