@@ -22,9 +22,9 @@ if(TEST_FIND_MKL)
   cmake_test(find_mkl SOURCE NOEXEC)
 endif()
 
+cmake_test(lookup_eigen NOEXEC)
 find_program(Hg_EXECUTABLE hg)
 if("${CMAKE_VERSION}" VERSION_GREATER 2.8.9 AND Hg_EXECUTABLE)
-    cmake_test(lookup_eigen SOURCE -DLOOKUP_EIGEN=TRUE)
     cmake_test(use_external)
     cmake_test(use_external_download_by_default)
     set_tests_properties(
