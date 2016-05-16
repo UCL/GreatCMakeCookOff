@@ -21,3 +21,5 @@ file(WRITE "${CMAKE_SOURCE_DIR}/main.cc"
     "  return 0;\n"
     "}\n"
 )
+add_executable(eigen "${CMAKE_SOURCE_DIR}/main.cc")
+add_dependencies(eigen lookup_dependencies)
