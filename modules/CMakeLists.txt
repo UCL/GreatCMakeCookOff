@@ -3,3 +3,4 @@ file(GLOB numpy numpy/*.cc numpy/*.c)
 
 install(FILES ${scripts} DESTINATION ${INSTALL_DIRECTORY}/modules)
 install(FILES ${numpy} DESTINATION ${INSTALL_DIRECTORY}/modules/numpy)
+install(DIRECTORY arch DESTINATION ${INSTALL_DIRECTORY}/modules/)
