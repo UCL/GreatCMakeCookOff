@@ -12,6 +12,8 @@ install(
   DESTINATION ${INSTALL_DIRECTORY}/cmake COMPONENT dev
 )
 
+install(DIRECTORY hunter_recipes DESTINATION ${INSTALL_DIRECTORY})
+
 if(tests)
   enable_testing()
   list(APPEND CMAKE_MODULE_PATH
