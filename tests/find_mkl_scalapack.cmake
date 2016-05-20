@@ -4,9 +4,6 @@ project(mkl_scalapack C)
 find_package(GreatCMakeCookOff NO_MODULE PATHS ${cookoff_path} REQUIRED)
 initialize_cookoff()
 
-set(MKL_USE_STATIC_LIBS ON)
-set(MKL_MESSAGE_PASSING OpenMPI)
-
 find_package(MKL REQUIRED COMPONENTS ScaLAPACK)
 find_package(Threads REQUIRED)
 find_package(MPI REQUIRED)
