@@ -20,6 +20,7 @@ if(CMAKE_VERSION VERSION_GREATER "3.0" OR CMAKE_VERSION VERSION_EQUAL "3.0")
 endif()
 if(TEST_FIND_MKL)
   cmake_test(find_mkl SOURCE NOEXEC)
+  cmake_test(find_mkl_scalapack SOURCE NOEXEC)
 endif()
 
 cmake_test(lookup_eigen NOEXEC)
