@@ -35,6 +35,7 @@ list(FIND FFTW3_FIND_COMPONENTS SINGLE LOOK_FOR_SINGLE)
 list(FIND FFTW3_FIND_COMPONENTS DOUBLE LOOK_FOR_DOUBLE)
 list(FIND FFTW3_FIND_COMPONENTS LONGDOUBLE LOOK_FOR_LONGDOUBLE)
 list(FIND FFTW3_FIND_COMPONENTS THREADED LOOK_FOR_THREADED)
+list(FIND FFTW3_FIND_COMPONENTS OPENMP LOOK_FOR_OPENMP)
 
 if(WIN32)
   set(HINT_DIRS ${FFTW3_DIRECTORY} $ENV{FFTW3_DIRECTORY})
@@ -92,6 +93,10 @@ if(WIN32)
   #   # FIXME What's the case for windows?
   #   find_library(FFTW3_THREADED_LIBRARY NAMES libfftw3l-3 HINTS ${HINT_DIRS})
   # endif()
+  # if(LOOK_FOR_OPENMP GREATER -1)
+  #   # FIXME What's the case for windows?
+  #   find_library(FFTW3_OPENMP_LIBRARY NAMES libfftw3l-3 HINTS ${HINT_DIRS})
+  # endif()
 else()
   set(HINT_DIRS ${PC_FFTW3_LIBDIR} ${PC_FFTW3_LIBRARY_DIRS}
                 $ENV{FFTW3_LIBRARY_DIR} ${FFTW3_LIBRARY_DIR} )
@@ -105,7 +110,10 @@ else()
     find_library(FFTW3_LONGDOUBLE_LIBRARY NAMES fftw3l HINTS ${HINT_DIRS})
   endif()
   if(LOOK_FOR_THREADED GREATER -1)
-    find_library(FFTW3_THREADED_LIBRARY NAMES fftw3f_threads HINTS ${HINT_DIRS})
+    find_library(FFTW3_THREADED_LIBRARY NAMES fftw3_threads HINTS ${HINT_DIRS})
+  endif()
+  if(LOOK_FOR_OPENMP GREATER -1)
+    find_library(FFTW3_OPENMP_LIBRARY NAMES fftw3_omp HINTS ${HINT_DIRS})
   endif()
 endif(WIN32)
 
@@ -124,10 +132,14 @@ if(FFTW3_LONGDOUBLE_LIBRARY MATCHES fftw3l)
   set(FFTW3_LIBRARIES ${FFTW3_LIBRARIES} ${FFTW3_LONGDOUBLE_LIBRARY})
   set(FFTW3_LONGDOUBLE_FOUND TRUE)
 endif(FFTW3_LONGDOUBLE_LIBRARY MATCHES fftw3l)
-if(FFTW3_THREADED_LIBRARY MATCHES fftw3l)
+if(FFTW3_THREADED_LIBRARY MATCHES fftw3_threads)
   set(FFTW3_LIBRARIES ${FFTW3_LIBRARIES} ${FFTW3_THREADED_LIBRARY})
   set(FFTW3_THREADED_FOUND TRUE)
-endif(FFTW3_THREADED_LIBRARY MATCHES fftw3f_threads)
+endif(FFTW3_THREADED_LIBRARY MATCHES fftw3_threads)
+if(FFTW3_OPENMP_LIBRARY MATCHES fftw3_omp)
+  set(FFTW3_LIBRARIES ${FFTW3_LIBRARIES} ${FFTW3_OPENMP_LIBRARY})
+  set(FFTW3_OPENMP_FOUND TRUE)
+endif(FFTW3_OPENMP_LIBRARY MATCHES fftw3_omp)
 
 if(FFTW3_SINGLE_FOUND AND FFTW3_INCLUDE_DIR)
     find_version(FFTW3_VERSION_STRING ${FFTW3_SINGLE_LIBRARY} f)
@@ -137,6 +149,8 @@ elseif(FFTW3_LONGDOUBLE_FOUND AND FFTW3_INCLUDE_DIR)
     find_version(FFTW3_VERSION_STRING ${FFTW3_LONGDOUBLE_LIBRARY} "l")
 elseif(FFTW3_THREADED_FOUND AND FFTW3_INCLUDE_DIR)  # TODO What happens when you ask for double and threaded?
     find_version(FFTW3_VERSION_STRING ${FFTW3_THREADED_LIBRARY} "t") # TODO is this ok?
+elseif(FFTW3_OPENMP_FOUND AND FFTW3_INCLUDE_DIR)  # TODO What happens when you ask for double and openmp?
+    find_version(FFTW3_VERSION_STRING ${FFTW3_OPENMP_LIBRARY} "t") # TODO is this ok?
 endif()
 
 include(FindPackageHandleStandardArgs)
@@ -179,14 +193,24 @@ if(FFTW3_FOUND)
       INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR}")
   endif()
   # TODO do I need this?
-  # if(FFTW3_THREADED_LIBRARY MATCHES fftw3_threads)
-  #   if(FFTW3_THREADED_LIBRARY MATCHES "\.a$")
-  #     add_library(fftw3::threaded STATIC IMPORTED GLOBAL)
-  #   else()
-  #     add_library(fftw3::threaded SHARED IMPORTED GLOBAL)
-  #   endif()
-  #   set_target_properties(fftw3::threaded PROPERTIES
-  #     IMPORTED_LOCATION "${FFTW3_THREADED_LIBRARY}"
-  #     INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR}")
-  # endif()
+  if(FFTW3_THREADED_LIBRARY MATCHES fftw3f_threads)
+    if(FFTW3_THREADED_LIBRARY MATCHES "\.a$")
+      add_library(fftw3::threaded STATIC IMPORTED GLOBAL)
+    else()
+      add_library(fftw3::threaded SHARED IMPORTED GLOBAL)
+    endif()
+    set_target_properties(fftw3::threaded PROPERTIES
+      IMPORTED_LOCATION "${FFTW3_THREADED_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR}")
+  endif()
+  if(FFTW3_OPENMP_LIBRARY MATCHES fftw3f_omp)
+    if(FFTW3_OPENMP_LIBRARY MATCHES "\.a$")
+      add_library(fftw3::openmp STATIC IMPORTED GLOBAL)
+    else()
+      add_library(fftw3::openmp SHARED IMPORTED GLOBAL)
+    endif()
+    set_target_properties(fftw3::openmp PROPERTIES
+      IMPORTED_LOCATION "${FFTW3_OPENMP_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR}")
+  endif()
 endif()
