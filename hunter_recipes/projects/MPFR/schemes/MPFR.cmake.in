@@ -64,7 +64,6 @@ foreach(configuration @HUNTER_PACKAGE_CONFIGURATION_TYPES@)
   if(NOT is_release AND is_empty)
     set("${postfix_name}" "-${configuration}")
   endif()
-
   set(current_project "@HUNTER_EP_NAME@-${configuration}")
   ExternalProject_Add(
       "${current_project}"
@@ -81,7 +80,7 @@ foreach(configuration @HUNTER_PACKAGE_CONFIGURATION_TYPES@)
       BUILD_IN_SOURCE 1
       TEST_BEFORE_INSTALL 1
       CONFIGURE_COMMAND
-        "@HUNTER_PACKAGE_SOURCE_DIR@/configure" --prefix=@HUNTER_PACKAGE_INSTALL_PREFIX@ --with-gmp=@HUNTER_PACKAGE_INSTALL_PREFIX@
+        "@HUNTER_PACKAGE_SOURCE_DIR@/configure" --prefix=@HUNTER_PACKAGE_INSTALL_PREFIX@ --with-gmp-include=${GMP_INCLUDES} --with-gmp-lib=${GMP_LIB_DIR}
       BUILD_COMMAND
         make
       TEST_COMMAND
