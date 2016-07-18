@@ -24,6 +24,12 @@ if(FFTW3_INCLUDE_DIR AND FFTW3_LIBRARIES)
 endif()
 
 macro(find_specific_libraries KIND PARALLEL)
+  list(APPEND FFTW3_FIND_COMPONENTS ${KIND}_${PARALLEL})
+  message(STATUS "========= ${${PARALLEL}_FOUND} ===========")
+  if(NOT (${PARALLEL} STREQUAL "SERIAL") AND NOT ${PARALLEL}_FOUND)
+    message(FATAL_ERROR "Please, find ${PARALLEL} libraries before FFTW")
+  endif()
+
   message(STATUS "Checking for ${KIND} and ${PARALLEL}")
   message(STATUS "Looking for: fftw3${SUFFIX_${KIND}}${SUFFIX_${PARALLEL}}${SUFFIX_FINAL} ")
   find_library(FFTW3_${KIND}_${PARALLEL}_LIBRARY NAMES
@@ -58,34 +64,43 @@ macro(find_specific_libraries KIND PARALLEL)
     # adding target properties to the different cases
     ##   MPI
     if(PARALLEL STREQUAL "MPI")
-      if(NOT MPI_C_FOUND)
-        message(FATAL_ERROR "Please, find mpi libraries before FFTW")
-      else()
-        if(MPI_C_LIBRARIES)
-          target_link_libraries(fftw3::${kind}::mpi ${MPI_C_LIBRARIES})
-        endif()
-        if(MPI_C_INCLUDE_DIRS)
-          target_include_directories(fftw3::${kind}::mpi SYSTEM ${MPI_C_INCLUDE_PATH})
-        endif()
-        if(MPI_C_FLAGS)
-          target_compile_options(fftw3::${kind}::mpi INTERFACE ${MPI_C_FLAGS})
-        endif()
+      if(MPI_C_LIBRARIES)
+        message(STATUS "MPI_libraries: ${MPI_C_LIBRARIES}")
+        set_target_properties(fftw3::${kind}::mpi PROPERTIES
+          IMPORTED_LOCATION "${FFTW3_${KIND}_${PARALLEL}_LIBRARY}"
+          INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR_PARALLEL}"
+          IMPORTED_LINK_INTERFACE_LIBRARIES ${MPI_C_LIBRARIES})
       endif()
+        # Below seems to be the same path than include_dir_parallel but it fails
+        # if(MPI_C_INCLUDE_PATH)
+        #   message(STATUS "MPI PATH: ${MPI_C_INCLUDE_PATH} VS ${FFTW3_INCLUDE_DIR_PARALLEL}")
+        #   target_include_directories(fftw3::${kind}::mpi SYSTEM INTERFACE ${MPI_C_INCLUDE_PATH})
+        # endif()
+        # It seems the flags are not anywhere to be found
+        # if(MPI_C_COMPILE_FLAGS)
+        #   message(STATUS "mpi flags: ${MPI_C_COMPILE_FLAGS}")
+        #   target_compile_options(fftw3::${kind}::mpi INTERFACE ${MPI_C_COMPILE_FLAGS})
+        # endif()
+      #endif()
     endif()
     ##   OpenMP
     if(PARALLEL STREQUAL "OPENMP")
-      if(NOT OPENMP_FOUND)
-        message(FATAL_ERROR "Please, find openmp libraries before FFTW")
-      else()
-        if(OPENMP_C_FLAGS)
-          target_compile_options(fftw3::${kind}::openmp INTERFACE ${OPENMP_C_FLAGS})
+      if(OPENMP_C_FLAGS)
+        message(STATUS "OPENMP C Flags: ${OPENMP_C_FLAGS}")
+        set_target_properties(fftw3::${kind}::${parallel} PROPERTIES
+           IMPORTED_LOCATION "${FFTW3_${KIND}_${PARALLEL}_LIBRARY}"
+           INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR_PARALLEL}"
+           INTERFACE_COMPILE_OPTIONS "${OPENMP_C_FLAGS}")
         endif()
-      endif()
     endif()
-    ##  THREADED
-    if(PARALLEL STREQUAL "THREADED")
-      if(CMAKE_THREAD_LIBS_INIT)
-        target_link_libraries(fftw3::${kind}::thread ${CMAKE_THREAD_LIBS_INIT})
+    ##  THREADS
+    if(PARALLEL STREQUAL "THREADS")
+      if(CMAKE_THREAD_LIBS_INIT) # TODO: this is not running
+        message(STATUS "THREAD_LIBS_INITS: ${CMAKE_THREAD_LIBS_INIT}")
+        set_target_properties(fftw3::${kind}::${parallel} PROPERTIES
+          IMPORTED_LOCATION "${FFTW3_${KIND}_${PARALLEL}_LIBRARY}"
+          INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR_PARALLEL}"
+          INTERFACE_COMPILE_OPTIONS "${CMAKE_THREAD_LIBS_INIT}")
       endif()
     endif()
 
@@ -108,16 +123,22 @@ message(STATUS "MY COMPONENTS ARE: ${FFTW3_FIND_COMPONENTS}")
 list(FIND FFTW3_FIND_COMPONENTS SINGLE LOOK_FOR_SINGLE)
 list(FIND FFTW3_FIND_COMPONENTS DOUBLE LOOK_FOR_DOUBLE)
 list(FIND FFTW3_FIND_COMPONENTS LONGDOUBLE LOOK_FOR_LONGDOUBLE)
-list(FIND FFTW3_FIND_COMPONENTS THREADED LOOK_FOR_THREADED)
+list(FIND FFTW3_FIND_COMPONENTS THREADS LOOK_FOR_THREADS)
 list(FIND FFTW3_FIND_COMPONENTS OPENMP LOOK_FOR_OPENMP)
 list(FIND FFTW3_FIND_COMPONENTS MPI LOOK_FOR_MPI)
 list(FIND FFTW3_FIND_COMPONENTS SERIAL LOOK_FOR_SERIAL)
 
 # set serial as default if none parallel component has been set
-if((LOOK_FOR_THREADED LESS 0) AND (LOOK_FOR_MPI LESS 0) AND
+if((LOOK_FOR_THREADS LESS 0) AND (LOOK_FOR_MPI LESS 0) AND
     (LOOK_FOR_OPENMP LESS 0))
   set(LOOK_FOR_SERIAL 1)
 endif()
+
+if(MPI_C_FOUND)
+  set(MPI_FOUND ${MPI_C_FOUND})
+endif()
+unset(FFTW3_FIND_COMPONENTS)
+
 
 
 
@@ -176,7 +197,7 @@ set(SUFFIX_LONGDOUBLE "l")
 set(SUFFIX_SERIAL "")
 set(SUFFIX_OPENMP "_omp")
 set(SUFFIX_MPI "_mpi")
-set(SUFFIX_THREADED "_threads")
+set(SUFFIX_THREADS "_threads")
 set(SUFFIX_FINAL "")
 
 if(WIN32)
@@ -188,13 +209,13 @@ endif(WIN32)
 
 unset(FFTW3_LIBRARIES)
 set(FFTW3_INCLUDE_DIRS ${FFTW3_INCLUDE_DIR} ) # TODO what's for?
-
+set(FFTW3_FLAGS_C "")
 foreach(KIND SINGLE DOUBLE LONGDOUBLE)
   message(STATUS "Checking ${KIND}")
   if(LOOK_FOR_${KIND} LESS 0)
     continue()
   endif()
-  foreach(PARALLEL SERIAL MPI OPENMP THREADED)
+  foreach(PARALLEL SERIAL MPI OPENMP THREADS)
     message(STATUS "Checking for ${PARALLEL}")
     if(LOOK_FOR_${PARALLEL} LESS 0)
       message(STATUS "skipping macro ${PARALLEL}:${LOOK_FOR_${PARALLEL}}")
@@ -203,20 +224,24 @@ foreach(KIND SINGLE DOUBLE LONGDOUBLE)
     find_specific_libraries(${KIND} ${PARALLEL})
   endforeach()
 endforeach()
-
+message(STATUS "My components are: ${FFTW3_FIND_COMPONENTS}")
+message(STATUS "My flags are: ${FFTW3_FLAGS_C}")
 
 message(STATUS "my library is:  ${FFTW3_LIBRARIES}")
-message(STATUS ($<bool:${FFTW3_FOUND}>))
 message(STATUS "${FFTW3_INCLUDE_DIR}")
 if(FFTW3_INCLUDE_DIR)
-  # TODO: This just look on the simple case, but that may not been defined...
-  # How can I get the last one?
-  set(KIND "SINGLE")
-  set(PARALLEL "SERIAL")
-  message(STATUS "${FFTW3_${KIND}_${PARALLEL}_LIBRARY}")
-  message(STATUS "${SUFFIX_${KIND}}${SUFFIX_${PARALLEL}}${SUFFIX_FINAL}")
+  list(GET FFTW3_FIND_COMPONENTS 0 smallerrun)
+  string(REPLACE "_" ";" RUNLIST ${smallerrun})
+  list(GET RUNLIST 0 KIND)
+  list(GET RUNLIST 1 PARALLEL)
+  unset(smallerrun)
+  unset(RUNLIST)
+  message(STATUS "Using ${KIND} and ${PARALLEL} to extract the version")
+  # message(STATUS "I'm running: ${FFTW3_${smallerrun}_LIBRARY}")
+  # message(STATUS "${SUFFIX_${KIND}}${SUFFIX_${PARALLEL}}${SUFFIX_FINAL}")
+  # suffix is quoted so it pass empty in the case of double as it's empty
   find_version(FFTW3_VERSION_STRING ${FFTW3_${KIND}_${PARALLEL}_LIBRARY}
-    ${SUFFIX_${KIND}}${SUFFIX_${PARALLEL}}${SUFFIX_FINAL})
+    "${SUFFIX_${KIND}}${SUFFIX_${PARALLEL}}${SUFFIX_FINAL}")
 endif()
 message(STATUS "my version is: ${FFTW3_VERSION_STRING}")
 
@@ -232,7 +257,5 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(FFTW3
     REQUIRED_VARS FFTW3_LIBRARIES FFTW3_INCLUDE_DIR
     VERSION_VAR FFTW3_VERSION_STRING
-    #HANDLE_COMPONENTS
-    # FIXME: HANDLE_COMPONENTS fails in this current implementation because
-    # COMPONENTS inputs are as SINGLE, but SINGLE_SERIAL is found.
+    HANDLE_COMPONENTS
 )
