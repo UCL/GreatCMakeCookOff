@@ -66,17 +66,6 @@ macro(find_specific_libraries KIND PARALLEL)
           INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR_PARALLEL}"
           IMPORTED_LINK_INTERFACE_LIBRARIES ${MPI_C_LIBRARIES})
       endif()
-        # Below seems to be the same path than include_dir_parallel but it fails
-        # if(MPI_C_INCLUDE_PATH)
-        #   message(STATUS "MPI PATH: ${MPI_C_INCLUDE_PATH} VS ${FFTW3_INCLUDE_DIR_PARALLEL}")
-        #   target_include_directories(fftw3::${kind}::mpi SYSTEM INTERFACE ${MPI_C_INCLUDE_PATH})
-        # endif()
-        # It seems the flags are not anywhere to be found
-        # if(MPI_C_COMPILE_FLAGS)
-        #   message(STATUS "mpi flags: ${MPI_C_COMPILE_FLAGS}")
-        #   target_compile_options(fftw3::${kind}::mpi INTERFACE ${MPI_C_COMPILE_FLAGS})
-        # endif()
-      #endif()
     endif()
     ##   OpenMP
     if(PARALLEL STREQUAL "OPENMP")
