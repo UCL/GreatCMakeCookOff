@@ -3,11 +3,12 @@
 #  FFTW3_FOUND - System has FFTW3
 #  FFTW3_INCLUDE_DIRS - The FFTW3 include directories
 #  FFTW3_LIBRARIES - The libraries needed to use FFTW3
-#  FFTW3_THREADED_LIBRARIES - The libraries needed to use threaded FFTW3
 #  FFTW3_DEFINITIONS - Compiler switches required for using FFTW3
-#  FFTW3_SINGLE_FOUND- Set if FFTW3 exists in single precision format.
-#  FFTW3_DOUBLE_FOUND- Set if FFTW3 exists in double precision format.
-#  FFTW3_LONGDOUBLE_FOUND - Set if FFTW3 exists in double precision format.
+#  FFTW3_$KIND_$PARALLEL_FOUND- Set if FFTW3 exists in KIND precision format for PARALLEL mode.
+#                             where KIND can be: SINGLE, DOUBLE, LONGDOUBLE
+#                             and PARALLEL: SERIAL, OPENMP, MPI, THREADS.
+#  FFTW3_$KIND_$PARALLEL_LIBRARY - The libraries needed to use.
+#  FFTW3_INCLUDE_DIR_PARALLEL - The FFTW3 include directories for parallels mode.
 
 if(FFTW3_FOUND)
   return()
@@ -25,25 +26,18 @@ endif()
 
 macro(find_specific_libraries KIND PARALLEL)
   list(APPEND FFTW3_FIND_COMPONENTS ${KIND}_${PARALLEL})
-  message(STATUS "========= ${${PARALLEL}_FOUND} ===========")
   if(NOT (${PARALLEL} STREQUAL "SERIAL") AND NOT ${PARALLEL}_FOUND)
     message(FATAL_ERROR "Please, find ${PARALLEL} libraries before FFTW")
   endif()
 
-  message(STATUS "Checking for ${KIND} and ${PARALLEL}")
-  message(STATUS "Looking for: fftw3${SUFFIX_${KIND}}${SUFFIX_${PARALLEL}}${SUFFIX_FINAL} ")
   find_library(FFTW3_${KIND}_${PARALLEL}_LIBRARY NAMES
     fftw3${SUFFIX_${KIND}}${SUFFIX_${PARALLEL}}${SUFFIX_FINAL} HINTS ${HINT_DIRS})
-  message(STATUS "Library: ${FFTW3_${KIND}_${PARALLEL}_LIBRARY} ?")
   if(FFTW3_${KIND}_${PARALLEL}_LIBRARY MATCHES fftw3)
-    message(STATUS "Library: ${FFTW3_${KIND}_${PARALLEL}_LIBRARY} matches fftw3")
     list(APPEND FFTW3_LIBRARIES ${FFTW3_${KIND}_${PARALLEL}_LIBRARY})
     set(FFTW3_${KIND}_${PARALLEL}_FOUND TRUE)
 
-
     STRING(TOLOWER "${KIND}" kind)
     STRING(TOLOWER "${PARALLEL}" parallel)
-    message(STATUS "Setting target: ${kind} /// ${parallel}")
     if(FFTW3_${kind}_${parallel}_LIBRARY MATCHES "\\.a$")
       add_library(fftw3::${kind}::${parallel} STATIC IMPORTED GLOBAL)
     else()
@@ -65,7 +59,6 @@ macro(find_specific_libraries KIND PARALLEL)
     ##   MPI
     if(PARALLEL STREQUAL "MPI")
       if(MPI_C_LIBRARIES)
-        message(STATUS "MPI_libraries: ${MPI_C_LIBRARIES}")
         set_target_properties(fftw3::${kind}::mpi PROPERTIES
           IMPORTED_LOCATION "${FFTW3_${KIND}_${PARALLEL}_LIBRARY}"
           INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR_PARALLEL}"
@@ -103,22 +96,17 @@ macro(find_specific_libraries KIND PARALLEL)
           INTERFACE_COMPILE_OPTIONS "${CMAKE_THREAD_LIBS_INIT}")
       endif()
     endif()
-
   endif()
 endmacro()
 
 
 
 
-# if(fftw3_FIND_COMPONENTS)
-#     set(FFTW3_FIND_COMPONENTS ${fftw3_FIND_COMPONENTS})
-# endif()
 if(NOT FFTW3_FIND_COMPONENTS)
   set(FFTW3_FIND_COMPONENTS SINGLE DOUBLE LONGDOUBLE SERIAL)
 endif()
 
 string(TOUPPER "${FFTW3_FIND_COMPONENTS}" FFTW3_FIND_COMPONENTS)
-message(STATUS "MY COMPONENTS ARE: ${FFTW3_FIND_COMPONENTS}")
 
 list(FIND FFTW3_FIND_COMPONENTS SINGLE LOOK_FOR_SINGLE)
 list(FIND FFTW3_FIND_COMPONENTS DOUBLE LOOK_FOR_DOUBLE)
@@ -127,6 +115,10 @@ list(FIND FFTW3_FIND_COMPONENTS THREADS LOOK_FOR_THREADS)
 list(FIND FFTW3_FIND_COMPONENTS OPENMP LOOK_FOR_OPENMP)
 list(FIND FFTW3_FIND_COMPONENTS MPI LOOK_FOR_MPI)
 list(FIND FFTW3_FIND_COMPONENTS SERIAL LOOK_FOR_SERIAL)
+
+# FIXME - This may fail in computers wihtout serial
+# Default serial to obtain version number
+set(LOOK_FOR_SERIAL 1)
 
 # set serial as default if none parallel component has been set
 if((LOOK_FOR_THREADS LESS 0) AND (LOOK_FOR_MPI LESS 0) AND
@@ -160,7 +152,6 @@ if (LOOK_FOR_MPI)  # Probably is going to be the same as fftw3.h
 endif()
 
 function(find_version OUTVAR LIBRARY SUFFIX)
-    message(STATUS "Finding version")
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/fftw${SUFFIX}/main.c
       # TODO: do we need to add include for mpi headers?
       "#include <fftw3.h>
@@ -171,7 +162,6 @@ function(find_version OUTVAR LIBRARY SUFFIX)
        }"
   )
 if(NOT CMAKE_CROSSCOMPILING)
-  message(STATUS "${LIBRARY} ${FFTW3_INCLUDE_DIR}")
     try_run(RUN_RESULT COMPILE_RESULT
         "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/fftw${SUFFIX}/"
         "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/fftw${SUFFIX}/main.c"
@@ -211,24 +201,17 @@ unset(FFTW3_LIBRARIES)
 set(FFTW3_INCLUDE_DIRS ${FFTW3_INCLUDE_DIR} ) # TODO what's for?
 set(FFTW3_FLAGS_C "")
 foreach(KIND SINGLE DOUBLE LONGDOUBLE)
-  message(STATUS "Checking ${KIND}")
   if(LOOK_FOR_${KIND} LESS 0)
     continue()
   endif()
   foreach(PARALLEL SERIAL MPI OPENMP THREADS)
-    message(STATUS "Checking for ${PARALLEL}")
     if(LOOK_FOR_${PARALLEL} LESS 0)
-      message(STATUS "skipping macro ${PARALLEL}:${LOOK_FOR_${PARALLEL}}")
       continue()
     endif()
     find_specific_libraries(${KIND} ${PARALLEL})
   endforeach()
 endforeach()
-message(STATUS "My components are: ${FFTW3_FIND_COMPONENTS}")
-message(STATUS "My flags are: ${FFTW3_FLAGS_C}")
 
-message(STATUS "my library is:  ${FFTW3_LIBRARIES}")
-message(STATUS "${FFTW3_INCLUDE_DIR}")
 if(FFTW3_INCLUDE_DIR)
   list(GET FFTW3_FIND_COMPONENTS 0 smallerrun)
   string(REPLACE "_" ";" RUNLIST ${smallerrun})
@@ -236,19 +219,10 @@ if(FFTW3_INCLUDE_DIR)
   list(GET RUNLIST 1 PARALLEL)
   unset(smallerrun)
   unset(RUNLIST)
-  message(STATUS "Using ${KIND} and ${PARALLEL} to extract the version")
-  # message(STATUS "I'm running: ${FFTW3_${smallerrun}_LIBRARY}")
-  # message(STATUS "${SUFFIX_${KIND}}${SUFFIX_${PARALLEL}}${SUFFIX_FINAL}")
   # suffix is quoted so it pass empty in the case of double as it's empty
   find_version(FFTW3_VERSION_STRING ${FFTW3_${KIND}_${PARALLEL}_LIBRARY}
-    "${SUFFIX_${KIND}}${SUFFIX_${PARALLEL}}${SUFFIX_FINAL}")
+    "${SUFFIX_${KIND}}")
 endif()
-message(STATUS "my version is: ${FFTW3_VERSION_STRING}")
-
-
-message(STATUS "Printing all the variables:")
-message(STATUS  "ReqVars: FFT_LIB = ${FFTW3_LIBRARIES} FFT_INC = ${FFTW3_INCLUDE_DIR}")
-message(STATUS "version=${FFTW3_VERSION_STRING}")
 
 # FIXME: fails if use REQUIRED.
 include(FindPackageHandleStandardArgs)
