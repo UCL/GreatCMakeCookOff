@@ -78,6 +78,8 @@ foreach(configuration @HUNTER_PACKAGE_CONFIGURATION_TYPES@)
       INSTALL_DIR
       "@HUNTER_PACKAGE_INSTALL_PREFIX@"
       BUILD_IN_SOURCE 1
+      PATCH_COMMAND
+        patch -N -Z -p1 < "@CMAKE_CURRENT_LIST_DIR@/patches/@HUNTER_PACKAGE_VERSION@/allpatches"
       TEST_BEFORE_INSTALL 1
       CONFIGURE_COMMAND
         "@HUNTER_PACKAGE_SOURCE_DIR@/configure" --prefix=@HUNTER_PACKAGE_INSTALL_PREFIX@ --with-gmp-include=${GMP_INCLUDES} --with-gmp-lib=${GMP_LIB_DIR}
