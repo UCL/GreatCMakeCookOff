@@ -10,6 +10,8 @@
 #  FFTW3_$KIND_$PARALLEL_LIBRARY - The libraries needed to use.
 #  FFTW3_INCLUDE_DIR_PARALLEL - The FFTW3 include directories for parallels mode.
 
+cmake_policy(SET CMP0054 NEW)
+
 if(FFTW3_FOUND)
   return()
 endif()
@@ -79,7 +81,6 @@ macro(find_specific_libraries KIND PARALLEL)
     ##   OpenMP
     if(PARALLEL STREQUAL "OPENMP")
       if(OPENMP_C_FLAGS)
-        message(STATUS "OPENMP C Flags: ${OPENMP_C_FLAGS}")
         set_target_properties(fftw3::${kind}::${parallel} PROPERTIES
            IMPORTED_LOCATION "${FFTW3_${KIND}_${PARALLEL}_LIBRARY}"
            INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR_PARALLEL}"
@@ -89,7 +90,6 @@ macro(find_specific_libraries KIND PARALLEL)
     ##  THREADS
     if(PARALLEL STREQUAL "THREADS")
       if(CMAKE_THREAD_LIBS_INIT) # TODO: this is not running
-        message(STATUS "THREAD_LIBS_INITS: ${CMAKE_THREAD_LIBS_INIT}")
         set_target_properties(fftw3::${kind}::${parallel} PROPERTIES
           IMPORTED_LOCATION "${FFTW3_${KIND}_${PARALLEL}_LIBRARY}"
           INTERFACE_INCLUDE_DIRECTORIES "${FFTW3_INCLUDE_DIR_PARALLEL}"
