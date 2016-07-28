@@ -76,8 +76,21 @@ endif(MPFR_INCLUDES)
 find_library(MPFR_LIBRARIES mpfr PATHS $ENV{GMPDIR} ${LIB_INSTALL_DIR})
 
 # Epilogue
-
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(MPFR DEFAULT_MSG
                                   MPFR_INCLUDES MPFR_LIBRARIES MPFR_VERSION_OK)
 mark_as_advanced(MPFR_INCLUDES MPFR_LIBRARIES)
+
+if(MPFR_FOUND)
+  if(MPFR_LIBRARIES MATCHES "\\.a$")
+    message(STATUS "STATIC ${MPFR_LIBRARIES}")
+    add_library(mpfr STATIC IMPORTED GLOBAL)
+  else()
+    message(STATUS "SHARED ${MPFR_LIBRARIES}")
+    add_library(mpfr SHARED IMPORTED GLOBAL)
+  endif()
+  set_target_properties(mpfr PROPERTIES
+      IMPORTED_LOCATION "${MPFR_LIBRARIES}"
+      INTERFACE_INCLUDE_DIRECTORIES "${MPFR_INCLUDES}"
+      IMPORTED_LINK_INTERFACE_LIBRARIES gmp)
+endif()
