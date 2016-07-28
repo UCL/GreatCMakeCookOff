@@ -83,10 +83,8 @@ mark_as_advanced(MPFR_INCLUDES MPFR_LIBRARIES)
 
 if(MPFR_FOUND)
   if(MPFR_LIBRARIES MATCHES "\\.a$")
-    message(STATUS "STATIC ${MPFR_LIBRARIES}")
     add_library(mpfr STATIC IMPORTED GLOBAL)
   else()
-    message(STATUS "SHARED ${MPFR_LIBRARIES}")
     add_library(mpfr SHARED IMPORTED GLOBAL)
   endif()
   set_target_properties(mpfr PROPERTIES

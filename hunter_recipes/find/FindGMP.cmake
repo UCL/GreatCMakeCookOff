@@ -22,10 +22,8 @@ mark_as_advanced(GMP_INCLUDES GMP_LIBRARIES)
 
 if(GMP_FOUND)
   if(GMP_LIBRARIES MATCHES "\\.a$")
-    message(STATUS "STATIC ${GMP_LIBRARIES}")
     add_library(gmp STATIC IMPORTED GLOBAL)
   else()
-    message(STATUS "SHARED ${GMP_LIBRARIES}")
     add_library(gmp SHARED IMPORTED GLOBAL)
   endif()
   set_target_properties(gmp PROPERTIES
