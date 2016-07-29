@@ -8,7 +8,7 @@ include(hunter_add_package)
 include(hunter_configuration_types)
 
 # Makes it possible to use system gmp
-if(NOT ${GMP_FOUND})
+if(NOT GMP_FOUND)
   hunter_add_package(GMP)
   find_package(GMP REQUIRED)
   if(NOT GMP)
@@ -29,6 +29,6 @@ hunter_add_version(
 
 hunter_pick_scheme(DEFAULT MPFR)
 get_filename_component(GMP_LIB_DIR ${GMP_LIBRARIES} DIRECTORY)
-hunter_cmake_args(MPFR CMAKE_ARGS GMP_INCLUDES=${GMP_INCLUDES} GMP_LIB_DIR=${GMP_LIB_DIR})
+hunter_cmake_args(MPFR CMAKE_ARGS GMP_INCLUDES="${GMP_INCLUDES}" GMP_LIB_DIR="${GMP_LIB_DIR}")
 hunter_configuration_types(MPFR CONFIGURATION_TYPES Release)
 hunter_download(PACKAGE_NAME MPFR PACKAGE_DEPENDS_ON GMP)
