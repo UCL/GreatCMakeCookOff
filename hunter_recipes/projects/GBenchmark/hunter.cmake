@@ -31,9 +31,9 @@ hunter_add_version(
     VERSION
     "1.1.0"
     URL
-    "https://github.com/mdavezac/benchmark/archive/v1.1.0.tar.gz"
+    "https://github.com/google/benchmark/archive/v1.1.0.tar.gz"
     SHA1
-    772372564531dc0023037367a122391326bd1dc0
+    8c539bbe2a212618fa87b6c38fba087100b6e4ae
 )
 
 hunter_cmake_args(GBenchmark CMAKE_ARGS BENCHMARK_ENABLE_TESTING=OFF)
