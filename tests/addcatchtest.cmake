@@ -6,6 +6,10 @@ if(tests)
   enable_testing()
 endif(tests)
 
+if(NOT CATCH_VERSION_STRING)
+  message(FATAL_ERROR "NO Catch version defined")
+endif()
+
 file(WRITE ${CMAKE_SOURCE_DIR}/mytest.cc
      "#include <catch.hpp>\n\n"
      "TEST_CASE(\"A test case\") {\n"
