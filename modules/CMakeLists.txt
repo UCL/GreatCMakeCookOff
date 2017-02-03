@@ -1,4 +1,4 @@
-file(GLOB scripts *.cmake *.py)
+file(GLOB scripts *.cmake *.py *.cc)
 file(GLOB numpy numpy/*.cc numpy/*.c)
 
 install(FILES ${scripts} DESTINATION ${INSTALL_DIRECTORY}/modules)
