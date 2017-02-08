@@ -38,6 +38,11 @@ macro(initialize_hunter)
     list(APPEND HUNTER_RECIPE_DIRS "${HUNTER_REPOSITORY_cookoff_DIRECTORY}")
     list(APPEND CMAKE_MODULE_PATH "${HUNTER_REPOSITORY_cookoff_DIRECTORY}/find")
   endif()
+  # Add env cmake prefix path explictly since hunter will set internal version,
+  # at which point cmake would ignore env one
+  if(NOT CMAKE_PREFIX_PATH AND NOT "$ENV{CMAKE_PREFIX_PATH}" STREQUAL "")
+    string(REGEX REPLACE ":" ";" CMAKE_PREFIX_PATH $ENV{CMAKE_PREFIX_PATH})
+  endif()
 endmacro()
 
 macro(find_or_add_hunter_package package)
