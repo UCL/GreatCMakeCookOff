@@ -219,7 +219,7 @@ macro(lookup_package package)
     cmake_parse_arguments(${package}
         "DOWNLOAD_BY_DEFAULT;REQUIRED;QUIET;KEEP;NOFIND;CHECK_EXTERNAL"
         ""
-        "ARGUMENTS;COMPONENTS"
+        "ARGUMENTS;COMPONENTS;OPTIONAL_COMPONENTS"
         ${ARGN}
     )
     # Set explicitly to TRUE or FALSE to simplify setting
@@ -253,6 +253,10 @@ macro(lookup_package package)
     if(${package}_COMPONENTS)
         list(APPEND ${package}_UNPARSED_ARGUMENTS COMPONENTS)
         list(APPEND ${package}_UNPARSED_ARGUMENTS ${${package}_COMPONENTS})
+    endif()
+    if(${package}_OPTIONAL_COMPONENTS)
+      list(APPEND ${package}_UNPARSED_ARGUMENTS OPTIONAL_COMPONENTS)
+      list(APPEND ${package}_UNPARSED_ARGUMENTS ${${package}_OPTIONAL_COMPONENTS})
     endif()
     # First try and locate package
     _find_package_for_lookup(${package}
