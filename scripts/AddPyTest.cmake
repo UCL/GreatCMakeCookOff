@@ -87,7 +87,7 @@ function(add_pytest)
     unset(all_tests)
     foreach(source ${sources})
         get_filename_component(filename "${source}" NAME)
-        if("${filename}" MATCHES "^tests?_.*\\.py")
+        if("${filename}" MATCHES "^tests?_?.*\\.py")
             set(filename "${location}/${filename}")
             pytest_name(testname "${source}" "${pytests_PREFIX}")
             add_test(NAME ${testname}
