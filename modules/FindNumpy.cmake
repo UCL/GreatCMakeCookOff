@@ -2,9 +2,8 @@
 # This module finds if NumPy is installed, and sets the following variables
 # indicating where it is.
 #
-# TODO: Update to provide the libraries and paths for linking npymath lib.
-#
 #  NUMPY_FOUND               - was NumPy found
+#  NumpyLibrary_FOUND        - were Numpy and its headers found
 #  NUMPY_VERSION             - the version of NumPy found as a string
 #  NUMPY_VERSION_MAJOR       - the major version number of NumPy
 #  NUMPY_VERSION_MINOR       - the minor version number of NumPy
@@ -43,6 +42,8 @@ if(NOT _NUMPY_SEARCH_SUCCESS MATCHES 0)
     endif()
     set(NUMPY_FOUND FALSE)
     return()
+else()
+    set(NUMPY_FOUND TRUE)
 endif()
 
 # Convert the process output into a list
