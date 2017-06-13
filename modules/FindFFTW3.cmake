@@ -1,4 +1,12 @@
 # - Try to find FFTW
+#
+# By default, it will look only for the serial libraries with single, double,
+# and long double precision. Any combination of precision (SINGLE, DOUBLE,
+# LONGDOUBLE) and library type (SERIAL, [THREADS|OPENMP], MPI) is possible by
+# using the COMPONENTS keyword. For example,
+#
+# find_package(FFTW3 COMPONENTS SINGLE DOUBLE OPENMP MPI)
+#
 # Once done this will define
 #  FFTW3_FOUND - System has FFTW3
 #  FFTW3_INCLUDE_DIRS - The FFTW3 include directories
