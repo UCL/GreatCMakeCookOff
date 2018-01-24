@@ -1,4 +1,11 @@
 # Installs GBenchmark into build directory
+if(GBenchmark_ARGUMENTS)
+  cmake_parse_arguments(GBenchmark "" "GIT_REPOSITORY" "" ${GBenchmark_ARGUMENTS})
+endif()
+if(NOT GBenchmark_GIT_REPOSITORY)
+  set(GBenchmark_GIT_REPOSITORY  https://github.com/google/benchmark.git)
+endif()
+
 include(PassonVariables)
 passon_variables(GTest
     FILENAME "${EXTERNAL_ROOT}/src/GBenchmarkVariables.cmake"
@@ -12,7 +19,7 @@ passon_variables(GTest
 
 ExternalProject_Add(
     Lookup-GBenchmark
-    GIT_REPOSITORY https://github.com/mdavezac/benchmark.git
+    GIT_REPOSITORY ${GBenchmark_GIT_REPOSITORY}
     PREFIX "${EXTERNAL_ROOT}"
     # Force separate output paths for debug and release builds to allow easy
     # identification of correct lib in subsequent TARGET_LINK_LIBRARIES commands
