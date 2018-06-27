@@ -5,7 +5,7 @@ if(NOT CATCH_FOUND)
   # setups things so include can be found
   include(PackageLookup)
   set(catch_url
-      https://raw.githubusercontent.com/philsquared/Catch/master/single_include/catch.hpp)
+      https://raw.githubusercontent.com/catchorg/Catch2/master/single_include/catch2/catch.hpp)
   set(catch_file "${EXTERNAL_ROOT}/include/catch.hpp")
   file(MAKE_DIRECTORY "${EXTERNAL_ROOT}/include")
   file(DOWNLOAD ${catch_url} "${catch_file}")
