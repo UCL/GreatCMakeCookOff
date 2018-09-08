@@ -1,8 +1,8 @@
 # First finds or downloads catch
-find_package(Catch)
 
-if(NOT CATCH_FOUND)
-  # setups things so include can be found
+if(NOT Catch_FOUND AND Catch_WANTED_VERSION)
+  lookup_package(Catch REQUIRED ARGUMENTS VERSION ${Catch_WANTED_VERSION})
+else(NOT Catch_FOUND)
   lookup_package(Catch REQUIRED)
 endif()
 

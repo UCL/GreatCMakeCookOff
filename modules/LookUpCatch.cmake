@@ -55,11 +55,12 @@ ExternalProject_Add(
     PREFIX "${EXTERNAL_ROOT}"
     DOWNLOAD_COMMAND ""
     # ARGUMENTS
-    # Force separate output paths for debug and release builds to allow easy
-
+    # identification of correct lib in subsequent TARGET_LINK_LIBRARIES commands
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
     # Wrap download, configure and build steps in a script to log output
     UPDATE_COMMAND ""
     LOG_DOWNLOAD ON LOG_CONFIGURE ON LOG_BUILD ON LOG_INSTALL ON
 )
 
-add_recursive_cmake_step(Lookup-Catch DEPENDEES install)
