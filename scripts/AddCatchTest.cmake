@@ -3,31 +3,7 @@ find_package(Catch)
 
 if(NOT CATCH_FOUND)
   # setups things so include can be found
-  include(PackageLookup)
-  set(catch_url
-      https://raw.githubusercontent.com/catchorg/Catch2/master/single_include/catch2/catch.hpp)
-  set(catch_file "${EXTERNAL_ROOT}/include/catch.hpp")
-  file(MAKE_DIRECTORY "${EXTERNAL_ROOT}/include")
-  file(DOWNLOAD ${catch_url} "${catch_file}")
-  file(READ "${catch_file}" CATCHSTRING LIMIT 1000)
-  string(LENGTH "${CATCHSTRING}" CATCHLENGTH)
-  if(NOT CATCHLENGTH GREATER 500)
-    # CMake can't download over https if build lacks ssl. So use wget or curl
-    find_package(Wget)
-    if(WGET_FOUND)
-      execute_process(COMMAND ${WGET_EXECUTABLE} ${catch_url} -O "${catch_file}")
-    else()
-      find_program(CURL_EXECUTABLE curl)
-      execute_process(COMMAND ${CURL_EXECUTABLE} -L ${catch_url} -o "${catch_file}")
-    endif()
-    file(READ "${catch_file}" CATCHSTRING LIMIT 1000)
-    string(LENGTH "${CATCHSTRING}" CATCHLENGTH)
-    if(NOT CATCHLENGTH GREATER 500)
-      file(REMOVE "${catch_file}")
-      message(FATAL_ERROR "Failed to download Catch ${CATCHSTRING} ${CATCHLENGTH}")
-    endif()
-  endif()
-  find_package(Catch REQUIRED)
+  lookup_package(Catch REQUIRED)
 endif()
 
 # Function to create a common main
