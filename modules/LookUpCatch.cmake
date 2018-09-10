@@ -22,10 +22,13 @@ set(Catch_FILE "${EXTERNAL_ROOT}/include/catch.hpp")
 file(MAKE_DIRECTORY "${EXTERNAL_ROOT}/include")
 file(DOWNLOAD ${Catch_URL} "${Catch_FILE}")
 
+# I imagine this is checking whether the file download
+# is long enough. This could be the case that cmake hasn't
+# been built with ssl support and a https download will fail.
 file(READ "${Catch_FILE}" CATCHSTRING LIMIT 1000)
 string(LENGTH "${CATCHSTRING}" CATCHLENGTH)
 
-
+# In case the download fails with cmake then try with wget/curl
 if(NOT CATCHLENGTH GREATER 500)
     find_package(Wget)
     if(WGET_FOUND)

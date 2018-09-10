@@ -2,7 +2,7 @@
 
 if(NOT Catch_FOUND AND Catch_WANTED_VERSION)
   lookup_package(Catch REQUIRED ARGUMENTS VERSION ${Catch_WANTED_VERSION})
-else(NOT Catch_FOUND)
+elseif(NOT Catch_FOUND)
   lookup_package(Catch REQUIRED)
 endif()
 
