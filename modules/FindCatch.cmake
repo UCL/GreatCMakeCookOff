@@ -16,7 +16,10 @@ if(Catch_FOUND)
   return()
 endif()
 
-find_path(CATCH_INCLUDE_DIR catch.hpp PATHS ${EXTERNAL_ROOT}/include)
+find_path(CATCH_INCLUDE_DIR catch.hpp PATHS /usr/include ${EXTERNAL_ROOT}/include PATH_SUFFIXES catch2)
+# <package>_FIND_VERSION var dessapears after the first time this runs
+set(Catch_WANTED_VERSION ${Catch_FIND_VERSION})
+
 if(CATCH_INCLUDE_DIR)
   file(
     STRINGS ${CATCH_INCLUDE_DIR}/catch.hpp
@@ -32,8 +35,12 @@ if(CATCH_INCLUDE_DIR)
   )
 endif()
 
-set(CATCH_INCLUDE_DIRS ${CATCH_INCLUDE_DIR} )
-set(Catch_INCLUDE_DIRS ${CATCH_INCLUDE_DIR} )
+if(Catch_FIND_VERSION AND (NOT "${CATCH_VERSION_STRING}" STREQUAL "${Catch_FIND_VERSION}"))
+  set(CATCH_INCLUDE_DIR "")
+else()
+  set(CATCH_INCLUDE_DIRS ${CATCH_INCLUDE_DIR} )
+  set(Catch_INCLUDE_DIRS ${CATCH_INCLUDE_DIR} )
+endif()
 
 if(CATCH_INCLUDE_DIR)
   try_run(CATCH_RUNS CATCH_COMPILES
