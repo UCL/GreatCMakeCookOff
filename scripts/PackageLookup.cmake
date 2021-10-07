@@ -331,7 +331,7 @@ macro(add_recursive_cmake_step name)
             ${name} reCMake
             COMMAND
                 ${CMAKE_COMMAND} -C "${cmakefile}"
-                    --no-varn-unused-cli "${CMAKE_SOURCE_DIR}"
+                    --no-warn-unused-cli "${CMAKE_SOURCE_DIR}"
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             ${recursive_UNPARSED_ARGUMENTS}
         )
