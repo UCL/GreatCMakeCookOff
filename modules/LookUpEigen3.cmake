@@ -24,13 +24,13 @@ if(NOT Eigen3_HG_REPOSITORY AND NOT Eigen3_URL)
       find_package(Wget)
       if(WGET_FOUND)
           execute_process(COMMAND ${WGET_EXECUTABLE}
-            http://bitbucket.org/eigen/eigen/get/3.3.7.tar.gz
+            https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
             -O ${EXTERNAL_ROOT}/eigen.tgz
           )
       else()
           find_program(CURL_EXECUTABLE curl)
           execute_process(COMMAND ${CURL_EXECUTABLE}
-            -L http://bitbucket.org/eigen/eigen/get/3.3.7.tar.gz
+            -L https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
             -o ${EXTERNAL_ROOT}/eigen.tgz
           )
       endif()
