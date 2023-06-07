@@ -1,9 +1,9 @@
 # Adds subdirectory to CMAKE_MODULE_PATH so the scripts of the GreatCMakeCookOff can be found.
-set(GREAT_CMAKE_COOKOFF_MODULE_DIR ${CMAKE_CURRENT_LIST_DIR}/../modules CACHE DOC
+set(GREAT_CMAKE_COOKOFF_MODULE_DIR ${CMAKE_CURRENT_LIST_DIR}/../modules CACHE STRING
     "Path to GreatCMakeCookOff module directory")
-set(GREAT_CMAKE_COOKOFF_SCRIPT_DIR ${CMAKE_CURRENT_LIST_DIR}/../scripts CACHE DOC
+set(GREAT_CMAKE_COOKOFF_SCRIPT_DIR ${CMAKE_CURRENT_LIST_DIR}/../scripts CACHE STRING
     "Path to GreatCMakeCookOff script directory")
-set(GREAT_CMAKE_COOKOFF_HUNTER_RECIPES_DIR ${CMAKE_CURRENT_LIST_DIR}/../hunter_recipes CACHE DOC
+set(GREAT_CMAKE_COOKOFF_HUNTER_RECIPES_DIR ${CMAKE_CURRENT_LIST_DIR}/../hunter_recipes CACHE STRING
     "Path to GreatCMakeCookOff script directory")
 macro(initialize_cookoff)
     if(CMAKE_VERSION VERSION_LESS 2.8)
